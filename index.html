@@ -132,7 +132,7 @@
           <div id="scanErrorMsg" class="text-sm font-bold text-[#B3432B] hidden"></div>
         </div>
 
-        <input type="text" id="scanInput" onkeydown="if(event.key==='Enter') handleScan()" placeholder="สแกนบาร์โค้ด หรือพิมพ์ชื่อ/รหัสสินค้า..." 
+        <input type="text" id="scanInput" placeholder="สแกนบาร์โค้ด หรือพิมพ์ชื่อ/รหัสสินค้า..." 
           class="w-full text-2xl p-4 rounded-2xl border-2 border-[#0F5C52] bg-[#F5F3EE] focus:outline-none font-bold" autofocus>
         
         <div class="flex items-center gap-2 overflow-x-auto pb-1" id="posCategoryFilter"></div>
@@ -251,8 +251,7 @@
           <i data-lucide="scan-line" class="w-6 h-6"></i> ⚡ ยิงบาร์โค้ดเพื่อเติมสต็อกสินค้าด่วน
         </div>
         <div class="flex gap-3">
-          <input type="text" id="lowStockScanInput" onkeydown="if(event.key==='Enter') handleStockScan('lowStockScanInput')" 
-            placeholder="สแกนบาร์โค้ดสินค้าที่นำมาเติม ระบบจะเปิดหน้าต่างเติมสต็อกให้อัตโนมัติ..." 
+          <input type="text" id="lowStockScanInput" placeholder="สแกนบาร์โค้ดสินค้าที่นำมาเติม ระบบจะเปิดหน้าต่างเติมสต็อกให้อัตโนมัติ..." 
             class="flex-1 text-xl p-3.5 rounded-xl border-2 border-[#0F5C52] bg-white font-bold focus:outline-none">
           <button onclick="handleStockScan('lowStockScanInput')" class="bg-[#0F5C52] text-white px-6 py-3.5 rounded-xl font-bold text-lg font-display hover:opacity-90 transition shadow-sm">
             ค้นหาด่วน
@@ -745,7 +744,7 @@
   <div id="productModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 no-print">
     <div class="bg-[#F5F3EE] p-6 rounded-3xl max-w-md w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b-2 border-[#DEDACB] pb-3">
-        <h3 id="pModalTitle" class="font-bold text-2xl font-display">เพิ่ม/แก้ไข สินค้า</h3>
+        <h3 id="pModalTitle" class="font-bold text-2xl font-display">แก้ไขข้อมูลสินค้า</h3>
         <button onclick="closeProductModal()"><i data-lucide="x" class="w-6 h-6"></i></button>
       </div>
       <div>
@@ -787,20 +786,20 @@
         <input type="number" id="p-price" placeholder="0.00" class="w-full p-2.5 border-2 border-[#0284C7] rounded-xl bg-white text-xl font-bold font-display text-[#0284C7]">
       </div>
 
-      <!-- ส่วนเติมสต็อกลอตใหม่ -->
+      <!-- ส่วนจัดการสต็อกและต้นทุน (ปรับแก้ไขตรงๆ ได้เลย) -->
       <div class="bg-white p-4 rounded-2xl border-2 border-[#DEDACB] space-y-3">
         <div class="flex justify-between items-center">
-          <span id="batchTitleText" class="text-xs font-bold text-[#0F5C52]">📦 สต็อกและต้นทุนสินค้า</span>
+          <span id="batchTitleText" class="text-sm font-bold text-[#0F5C52]">📦 จัดการสต็อกและต้นทุน</span>
           <span id="currentStockBadgeText" class="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full font-bold"></span>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label id="lblStockQty" class="text-xs font-bold text-[#1C2321] block mb-1">จำนวนที่นำมาเติมเพิ่ม</label>
+            <label id="lblStockQty" class="text-xs font-bold text-[#1C2321] block mb-1">จำนวนสต็อกคงเหลือ</label>
             <input type="number" id="p-addQty" placeholder="0" class="w-full p-2.5 border-2 border-[#DEDACB] rounded-xl bg-[#F5F3EE] text-xl font-bold font-display">
           </div>
           <div>
-            <label id="lblStockCost" class="text-xs font-bold text-[#1C2321] block mb-1">ต้นทุนต่อชิ้นรอบนี้ (บาท)</label>
+            <label id="lblStockCost" class="text-xs font-bold text-[#1C2321] block mb-1">ต้นทุนต่อชิ้น (บาท)</label>
             <input type="number" step="0.01" id="p-addCost" placeholder="0.00" class="w-full p-2.5 border-2 border-[#DEDACB] rounded-xl bg-[#F5F3EE] text-xl font-bold font-display">
           </div>
         </div>
@@ -832,6 +831,7 @@
     let currentPage = 1;
     const itemsPerPage = 20;
     let isProductsLoaded = false;
+    let isReStockMode = false; // ตัวแปรเช็คว่าเป็นโหมดเติมลอตใหม่จากหน้าเตือนสต็อกหรือไม่
 
     function focusScanInput() {
       const scanInput = document.getElementById('scanInput');
@@ -943,24 +943,57 @@
       });
     }
 
-    // ถอดรหัสบาร์โค้ดตัวเลขอารบิกบริสุทธิ์ (Strict Digit Input)
+    // ⚡ ระบบดักจับรหัสปุ่มกดคีย์บอร์ดโดยตรง (Direct KeyCode Listener)
+    let barcodeBuffer = '';
+    let lastKeyTime = Date.now();
+
+    const keyToDigitMap = {
+      'Digit1':'1', 'Digit2':'2', 'Digit3':'3', 'Digit4':'4', 'Digit5':'5',
+      'Digit6':'6', 'Digit7':'7', 'Digit8':'8', 'Digit9':'9', 'Digit0':'0',
+      'Numpad1':'1', 'Numpad2':'2', 'Numpad3':'3', 'Numpad4':'4', 'Numpad5':'5',
+      'Numpad6':'6', 'Numpad7':'7', 'Numpad8':'8', 'Numpad9':'9', 'Numpad0':'0',
+      'Minus':'-', 'NumpadSubtract':'-'
+    };
+
+    document.addEventListener('keydown', function(e) {
+      const activeEl = document.activeElement;
+      if (activeEl && activeEl.id !== 'scanInput') return;
+
+      const currentTime = Date.now();
+      if (currentTime - lastKeyTime > 100) {
+        barcodeBuffer = '';
+      }
+      lastKeyTime = currentTime;
+
+      if (e.code in keyToDigitMap) {
+        barcodeBuffer += keyToDigitMap[e.code];
+      }
+
+      if (e.key === 'Enter') {
+        if (barcodeBuffer.length >= 8) {
+          e.preventDefault();
+          const scanInput = document.getElementById('scanInput');
+          scanInput.value = barcodeBuffer;
+          processBarcodeData(barcodeBuffer);
+          barcodeBuffer = '';
+        } else {
+          handleScan();
+        }
+      }
+    });
+
     function cleanBarcodeInput(str) {
       if (!str) return '';
-
-      // 1. แปลงเลขไทย
       const thaiNums = ['๐','๑','๒','๓','๔','๕','๖','๗','๘','๙'];
       for (let i = 0; i < 10; i++) {
         str = str.replaceAll(thaiNums[i], String(i));
       }
-
-      // 2. แมปปิ้งแป้นพิมพ์ Kedmanee แถวบนเพื่อถอดกลับเป็นเลขอารบิก
       const thaiMap = {
         'ๅ':'1', '╱':'2', 'ฃ':'2', 'ฅ':'2', '-':'3', 'ภ':'4', 'ถ':'5', 
         'ุ':'6', 'ึ':'7', 'ค':'8', 'ต':'9', 'จ':'0', 'ข':'-', 'ช':'=',
         '๑':'1', '๒':'2', '๓':'3', '๔':'4', '๕':'5', '๖':'6', '๗':'7', '๘':'8', '๙':'9', '๐':'0',
         'ๆ':'%', '็':'7', '่':'8', '้':'9', '๊':'0', '๋':'+', '์':'-', 'ํ': '6', 'ั': 'y'
       };
-
       let cleaned = '';
       for (let char of str) {
         if (thaiMap[char] !== undefined) {
@@ -969,8 +1002,67 @@
           cleaned += char;
         }
       }
-
       return cleaned.replaceAll('/', '').trim();
+    }
+
+    function processBarcodeData(code) {
+      const errorMsg = document.getElementById('scanErrorMsg');
+      const input = document.getElementById('scanInput');
+
+      const p = products.find(i => {
+        const itemCodeClean = cleanBarcodeInput(String(i.barcode));
+        return (
+          String(i.barcode).trim() === code ||
+          (itemCodeClean && itemCodeClean === code)
+        );
+      });
+
+      if (p) {
+        addToCart(p.id);
+        input.value = '';
+        if (errorMsg) errorMsg.classList.add('hidden');
+      } else {
+        if (errorMsg) {
+          errorMsg.innerText = `❌ ไม่พบสินค้ารหัส: ${code}`;
+          errorMsg.classList.remove('hidden');
+        }
+        input.value = '';
+      }
+      focusScanInput();
+    }
+
+    function handleScan() {
+      const input = document.getElementById('scanInput');
+      const rawCode = input.value.trim();
+      if (!rawCode) return;
+      const code = cleanBarcodeInput(rawCode);
+      processBarcodeData(code || rawCode);
+    }
+
+    function handleStockScan(inputId = 'lowStockScanInput') {
+      const input = document.getElementById(inputId);
+      const rawCode = input.value.trim();
+      if (!rawCode) return;
+
+      const code = cleanBarcodeInput(rawCode);
+
+      const p = products.find(i => {
+        const itemCodeClean = cleanBarcodeInput(String(i.barcode));
+        return (
+          String(i.barcode).trim() === code ||
+          String(i.barcode).trim() === rawCode ||
+          (itemCodeClean && itemCodeClean === code) ||
+          String(i.name).trim().toLowerCase() === rawCode.toLowerCase()
+        );
+      });
+
+      if (p) {
+        input.value = '';
+        openEditProductModal(p.id, true); // เปิดโหมดเติมลอต
+      } else {
+        alert('ไม่พบสินค้ารหัส: ' + (code || rawCode));
+        input.value = '';
+      }
     }
 
     function setQuickCash(amt) {
@@ -1326,65 +1418,6 @@
       focusScanInput();
     }
 
-    // ฟังก์ชันยิงขายสินค้า ค้นหาสมบูรณ์แบบ ไม่ขึ้น Alert เด้งเตือนขัดจังหวะ
-    function handleScan() {
-      const input = document.getElementById('scanInput');
-      const errorMsg = document.getElementById('scanErrorMsg');
-      const rawCode = input.value.trim();
-      if (!rawCode) return;
-
-      const code = cleanBarcodeInput(rawCode);
-
-      const p = products.find(i => {
-        const itemCodeClean = cleanBarcodeInput(String(i.barcode));
-        return (
-          String(i.barcode).trim() === code ||
-          String(i.barcode).trim() === rawCode ||
-          (itemCodeClean && itemCodeClean === code) ||
-          String(i.name).trim().toLowerCase() === rawCode.toLowerCase()
-        );
-      });
-
-      if (p) {
-        addToCart(p.id);
-        input.value = '';
-        if (errorMsg) errorMsg.classList.add('hidden');
-      } else {
-        if (errorMsg) {
-          errorMsg.innerText = `❌ ไม่พบสินค้ารหัส: ${code || rawCode}`;
-          errorMsg.classList.remove('hidden');
-        }
-        input.value = '';
-      }
-      focusScanInput();
-    }
-
-    function handleStockScan(inputId = 'lowStockScanInput') {
-      const input = document.getElementById(inputId);
-      const rawCode = input.value.trim();
-      if (!rawCode) return;
-
-      const code = cleanBarcodeInput(rawCode);
-
-      const p = products.find(i => {
-        const itemCodeClean = cleanBarcodeInput(String(i.barcode));
-        return (
-          String(i.barcode).trim() === code ||
-          String(i.barcode).trim() === rawCode ||
-          (itemCodeClean && itemCodeClean === code) ||
-          String(i.name).trim().toLowerCase() === rawCode.toLowerCase()
-        );
-      });
-
-      if (p) {
-        input.value = '';
-        openEditProductModal(p.id);
-      } else {
-        alert('ไม่พบสินค้ารหัส: ' + (code || rawCode));
-        input.value = '';
-      }
-    }
-
     function renderProducts() {
       const grid = document.getElementById('productGrid');
       
@@ -1504,7 +1537,7 @@
               <button onclick="printProductBarcode('${p.barcode}', '${p.name}', '${p.category||'ทั่วไป'}', ${p.price})" class="text-blue-600 hover:text-blue-900 mr-2" title="ปริ้นหรือเซฟรูปบาร์โค้ด">
                 <i data-lucide="printer" class="w-5 h-5 inline"></i>
               </button>
-              <button onclick="openEditProductModal('${p.id}')" class="text-gray-600 hover:text-black mr-2" title="แก้ไขข้อมูลสินค้า">
+              <button onclick="openEditProductModal('${p.id}', false)" class="text-gray-600 hover:text-black mr-2" title="แก้ไขข้อมูลสินค้า">
                 <i data-lucide="pencil" class="w-5 h-5 inline"></i>
               </button>
               <button onclick="deleteProduct('${p.id}')" class="text-[#B3432B] hover:opacity-70" title="ลบสินค้า"><i data-lucide="trash-2" class="w-5 h-5 inline"></i></button>
@@ -1541,8 +1574,8 @@
           <td class="py-3"><span class="bg-[#F5F3EE] border border-[#DEDACB] px-2.5 py-1 rounded-full text-xs font-bold">${p.category || 'ทั่วไป'}</span></td>
           <td class="py-3 text-right font-normal text-[#B3432B] text-xl font-display">${p.stock} ชิ้น</td>
           <td class="py-3 text-right">
-            <button onclick="openEditProductModal('${p.id}')" class="bg-[#0F5C52] text-white px-4 py-2 rounded-xl text-sm font-bold font-display shadow-sm">
-              เติมสต็อก
+            <button onclick="openEditProductModal('${p.id}', true)" class="bg-[#0F5C52] text-white px-4 py-2 rounded-xl text-sm font-bold font-display shadow-sm">
+              ⚡ เติมสต็อกลอตใหม่
             </button>
           </td>
         </tr>
@@ -1944,6 +1977,7 @@
       editingProductId = null;
       activeEditingProductObj = null;
       uploadedBase64Image = "";
+      isReStockMode = false;
       document.getElementById('pModalTitle').innerText = 'เพิ่มสินค้าใหม่';
       ['p-barcode','p-name','p-price','p-addQty','p-addCost','p-file'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('p-category').value = 'ทั่วไป';
@@ -1958,25 +1992,37 @@
       document.getElementById('productModal').classList.remove('hidden');
     }
 
-    function openEditProductModal(id) {
+    function openEditProductModal(id, isReStock = false) {
       editingProductId = id;
+      isReStockMode = isReStock;
       const p = products.find(i => i.id === id);
       activeEditingProductObj = p;
       uploadedBase64Image = p.imageUrl || "";
 
-      document.getElementById('pModalTitle').innerText = 'เติมสต็อก / แก้ไขสินค้า';
       document.getElementById('p-barcode').value = p.barcode || '';
       document.getElementById('p-name').value = p.name || '';
       document.getElementById('p-category').value = p.category || 'ทั่วไป';
       document.getElementById('p-price').value = p.price || '';
       
-      document.getElementById('p-addQty').value = '';
-      document.getElementById('p-addCost').value = p.cost || '';
-
-      document.getElementById('batchTitleText').innerText = "⚡ เติมสต็อกลอตใหม่ (สร้างลอตต้นทุนเพิ่ม)";
-      document.getElementById('lblStockQty').innerText = "จำนวนที่นำมาเติมเพิ่ม";
-      document.getElementById('lblStockCost').innerText = "ต้นทุนต่อชิ้นรอบนี้ (บาท)";
-      document.getElementById('currentStockBadgeText').innerText = `ของเดิมเหลือ ${p.stock} ชิ้น`;
+      if (isReStock) {
+        // โหมดเติมลอตใหม่จากหน้าเตือนสต็อก
+        document.getElementById('pModalTitle').innerText = '⚡ เติมสต็อกสินค้าลอตใหม่';
+        document.getElementById('batchTitleText').innerText = "⚡ เติมสต็อกลอตใหม่ (สร้างลอตต้นทุนเพิ่ม)";
+        document.getElementById('lblStockQty').innerText = "จำนวนที่นำมาเติมเพิ่ม";
+        document.getElementById('lblStockCost').innerText = "ต้นทุนต่อชิ้นรอบนี้ (บาท)";
+        document.getElementById('p-addQty').value = '';
+        document.getElementById('p-addCost').value = p.cost || '';
+        document.getElementById('currentStockBadgeText').innerText = `ของเดิมเหลือ ${p.stock} ชิ้น`;
+      } else {
+        // โหมดแก้ไขข้อมูลในคลังปกติ
+        document.getElementById('pModalTitle').innerText = '✏️ แก้ไขข้อมูลสินค้า';
+        document.getElementById('batchTitleText').innerText = "📦 จัดการสต็อกและต้นทุน";
+        document.getElementById('lblStockQty').innerText = "จำนวนสต็อกคงเหลือ";
+        document.getElementById('lblStockCost').innerText = "ต้นทุนต่อชิ้น (บาท)";
+        document.getElementById('p-addQty').value = p.stock;
+        document.getElementById('p-addCost').value = p.cost || '';
+        document.getElementById('currentStockBadgeText').innerText = '';
+      }
 
       if (uploadedBase64Image) {
         document.getElementById('imgPreview').src = uploadedBase64Image;
@@ -2000,7 +2046,6 @@
       }
 
       document.getElementById('productModal').classList.remove('hidden');
-      setTimeout(() => document.getElementById('p-addQty').focus(), 100);
     }
 
     function closeProductModal() { 
@@ -2022,12 +2067,23 @@
       if (editingProductId && activeEditingProductObj) {
         let batches = activeEditingProductObj.batches ? [...activeEditingProductObj.batches] : [];
 
-        if (addQty > 0) {
-          batches.push({
-            qty: addQty,
-            cost: addCost,
-            ts: Date.now()
-          });
+        if (isReStockMode) {
+          // ถ้าเติมลอตใหม่ ให้เอาจำนวนไปบวกเพิ่มเป็นลอตใหม่
+          if (addQty > 0) {
+            batches.push({
+              qty: addQty,
+              cost: addCost,
+              ts: Date.now()
+            });
+          }
+        } else {
+          // ถ้าแก้ไขในหน้าสต็อกปกติ ให้ปรับยอดสต็อกของลอตแรกหรือปรับรวมตรงๆ
+          if (batches.length > 0) {
+            batches[0].qty = addQty;
+            batches[0].cost = addCost;
+          } else {
+            batches = [{ qty: addQty, cost: addCost, ts: Date.now() }];
+          }
         }
 
         const data = {
@@ -2037,8 +2093,8 @@
           price,
           imageUrl: uploadedBase64Image,
           batches: batches,
-          cost: batches.length > 0 ? batches[0].cost : addCost,
-          stock: batches.reduce((sum, b) => sum + b.qty, 0)
+          cost: addCost,
+          stock: isReStockMode ? batches.reduce((sum, b) => sum + b.qty, 0) : addQty
         };
 
         db.collection("products").doc(editingProductId).update(data);
@@ -2761,7 +2817,7 @@
         <div class="p-4 bg-[#1C2321] text-white rounded-2xl border-2 border-[#DEDACB]">
           <div class="text-xs font-bold text-gray-300">💰 เงินสดคงเหลือจริงในเก๊ะ</div>
           <div class="text-2xl font-bold text-amber-400 font-display mt-1">฿${netCashInDrawer.toFixed(2)}</div>
-          <div class="text-xs text-gray-400 mt-1">รายจ่ายออก: ฿${totalExp.toFixed(2)}</div>
+          <div class="text-xs text-[#FFFFFF]/60 mt-1">รายจ่ายออก: ฿${totalExp.toFixed(2)}</div>
         </div>
       `;
 

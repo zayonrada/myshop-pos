@@ -1,0 +1,16 @@
+{
+  "short_name": "ร้านขวัญใจ",
+  "name": "ร้านค้าขวัญใจ POS",
+  "icons": [
+    {
+      "src": "shopping-bag.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#F5F3EE",
+  "theme_color": "#0F5C52",
+  "display": "standalone"
+}

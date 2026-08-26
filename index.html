@@ -32,19 +32,29 @@
     @media print {
       body * { visibility: hidden !important; }
       .print-area, .print-area * { visibility: visible !important; }
+      
       .print-area {
         position: absolute !important;
         left: 0 !important;
+        right: 0 !important;
         top: 0 !important;
-        width: 100% !important;
+        margin: 0 auto !important;
         padding: 0 !important;
-        margin: 0 !important;
         box-shadow: none !important;
         border: none !important;
         background: white !important;
         color: black !important;
       }
+      
+      .receipt-print-box {
+        width: 80mm !important;
+        max-width: 100% !important;
+        margin: 0 auto !important;
+        padding: 4mm !important;
+      }
+
       .no-print { display: none !important; }
+      
       .a4-page {
         page-break-after: always !important;
         break-after: page !important;
@@ -161,7 +171,7 @@
           </div>
         </div>
         
-        <div id="cartItems" class="p-5 max-h-[420px] overflow-y-auto divide-y-2 divide-[#DEDACB]">
+        <div id="cartItems" class="p-5 max-h-[380px] overflow-y-auto divide-y-2 divide-[#DEDACB]">
           <p class="text-center text-base text-[#6B6A61] py-12 font-medium">ยังไม่มีสินค้าในตะกร้า<br>สแกนบาร์โค้ดเพื่อเริ่มขาย</p>
         </div>
 
@@ -199,6 +209,25 @@
               <i data-lucide="home" class="w-4 h-4"></i> 🏠 บันทึกกิน/ใช้เองในบ้าน (ตัดสต็อกตามต้นทุน)
             </button>
           </div>
+
+          <!-- ⚡ กล่องคิดเงินด่วน/สินค้าไม่มีในระบบ -->
+          <div class="bg-white p-3.5 rounded-2xl border-2 border-amber-500 shadow-sm space-y-2 mt-2">
+            <div class="text-xs font-bold text-amber-800 flex items-center gap-1 font-display">
+              <i data-lucide="zap" class="w-4 h-4 text-amber-600"></i> สินค้าด่วน / ไม่มีในระบบ
+            </div>
+            <div class="grid grid-cols-[1fr_110px_auto] gap-2 items-center">
+              <input type="text" id="quickNameInput" placeholder="ชื่อรายการ (เว้นได้)..." 
+                class="w-full p-2 border-2 border-amber-300 rounded-xl text-base font-bold bg-[#F5F3EE] focus:outline-none focus:bg-white">
+              
+              <input type="number" step="0.5" id="quickPriceInput" onkeydown="if(event.key==='Enter') addQuickItemDirect()" 
+                placeholder="ราคา..." class="w-full p-2 border-2 border-amber-400 rounded-xl text-base font-bold font-display bg-[#F5F3EE] focus:outline-none focus:bg-white text-right text-[#B3432B]">
+              
+              <button onclick="addQuickItemDirect()" class="bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-2 rounded-xl font-bold text-base font-display shadow-sm whitespace-nowrap transition">
+                + เพิ่ม
+              </button>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -503,6 +532,34 @@
 
   </main>
 
+  <!-- Modal หน้าต่างยืนยันรหัสลบบิลขาย -->
+  <div id="deleteSaleModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 no-print">
+    <div class="bg-[#F5F3EE] p-6 rounded-3xl max-w-sm w-full space-y-4 shadow-2xl text-center border-4 border-[#B3432B]">
+      <div class="w-14 h-14 bg-red-100 text-[#B3432B] rounded-2xl flex items-center justify-center mx-auto">
+        <i data-lucide="alert-triangle" class="w-8 h-8"></i>
+      </div>
+      <div>
+        <h3 class="font-bold text-2xl font-display text-[#1C2321]">ยืนยันการลบบิลขาย</h3>
+        <p class="text-xs text-[#6B6A61] mt-1 font-semibold">ใส่รหัสผ่านเพื่อยืนยันการลบบิล และ คืนสินค้าเข้าสต็อก</p>
+      </div>
+
+      <input type="password" id="deletePinInput" maxlength="6" placeholder="• • • • • •" 
+        onkeydown="if(event.key==='Enter') confirmDeleteSaleWithPin()"
+        class="w-full text-center text-3xl tracking-[0.3em] p-3 rounded-2xl border-2 border-[#B3432B] bg-white font-bold font-display focus:outline-none">
+
+      <p id="deletePinError" class="text-[#B3432B] text-xs font-bold hidden">❌ รหัสผ่านไม่ถูกต้อง</p>
+
+      <div class="grid grid-cols-2 gap-2 pt-1">
+        <button onclick="closeDeleteSaleModal()" class="py-3 bg-gray-200 text-gray-800 rounded-xl font-bold font-display hover:bg-gray-300 transition">
+          ยกเลิก
+        </button>
+        <button onclick="confirmDeleteSaleWithPin()" class="py-3 bg-[#B3432B] text-white rounded-xl font-bold font-display hover:opacity-90 transition shadow-sm">
+          🗑️ ยืนยันลบ
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal หน้าต่างเลือกพนักงานเข้ากะแบบการ์ดใหญ่ -->
   <div id="staffShiftModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 no-print">
     <div class="bg-[#F5F3EE] p-7 rounded-3xl max-w-lg w-full space-y-5 shadow-2xl">
@@ -553,6 +610,45 @@
   <!-- พื้นที่พิมพ์บาร์โค้ดลง A4 -->
   <div id="printAllBarcodesArea" class="hidden print-area space-y-6">
     <div id="allBarcodesCategoryWrapper"></div>
+  </div>
+
+  <!-- 🖨️ พื้นที่สำหรับสั่งพิมพ์รายงานสรุปยอดขาย (A4 / สรุปประจำช่วงเวลา) -->
+  <div id="printSalesArea" class="hidden print-area p-8 space-y-6 bg-white text-black">
+    <div class="text-center border-b-2 border-black pb-4">
+      <h1 class="text-3xl font-bold font-display">ร้านค้าขวัญใจ — รายงานสรุปยอดขายและกำไร</h1>
+      <div id="p-sales-period" class="text-lg font-bold font-display text-gray-700 mt-1"></div>
+      <div class="text-xs text-gray-500 mt-1">วันที่พิมพ์รายงาน: <span id="p-sales-print-date"></span></div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 border border-black p-4 rounded-xl">
+      <div><b>ยอดขายรวมสุทธิ:</b> <span id="p-sales-cash-in" class="font-bold font-display"></span></div>
+      <div><b>ต้นทุนสินค้าขาย:</b> <span id="p-sales-total-cost" class="font-bold font-display"></span></div>
+      <div><b>รายจ่ายออกรวม:</b> <span id="p-sales-exp-out" class="font-bold font-display text-red-600"></span></div>
+      <div><b>กำไรสุทธิจริง:</b> <span id="p-sales-net-profit" class="font-bold font-display text-blue-600"></span></div>
+      <div class="col-span-2 pt-2 border-t"><b>เงินสดคงเหลือจริงในเก๊ะ:</b> <span id="p-sales-drawer-cash" class="font-bold font-display text-emerald-700"></span></div>
+    </div>
+
+    <div>
+      <h3 class="font-bold text-lg font-display mb-2">สรุปตัวเลขทางบัญชี</h3>
+      <table class="w-full border-collapse border border-black text-sm">
+        <tbody id="p-sales-summary-table"></tbody>
+      </table>
+    </div>
+
+    <div>
+      <h3 class="font-bold text-lg font-display mb-2">ประวัติการทำรายการในช่วงเวลานี้</h3>
+      <table class="w-full border-collapse border border-black text-xs text-left">
+        <thead>
+          <tr class="bg-gray-100 border-b border-black font-bold">
+            <th class="p-2 border border-black">เวลาทำรายการ</th>
+            <th class="p-2 border border-black">ประเภท/รายละเอียด</th>
+            <th class="p-2 border border-black">พนักงาน</th>
+            <th class="p-2 border border-black text-right">จำนวนเงิน</th>
+          </tr>
+        </thead>
+        <tbody id="p-sales-history-table"></tbody>
+      </table>
+    </div>
   </div>
 
   <!-- Modal สำหรับตั้งเงินทอนเปิดเก๊ะประจำวัน -->
@@ -698,9 +794,9 @@
     </div>
   </div>
 
-  <!-- Modal ใบเสร็จ -->
+  <!-- Modal ใบเสร็จ (ขยายขนาดเป็น 440px และจัดวางตำแหน่งชื่อสินค้าไม่ให้เบียดราคา) -->
   <div id="receiptModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-    <div class="bg-white p-7 rounded-3xl max-w-sm w-full space-y-4 print-area text-center text-lg shadow-2xl">
+    <div class="bg-white p-7 rounded-3xl max-w-[440px] w-full space-y-4 print-area receipt-print-box text-center text-lg shadow-2xl">
       <div class="space-y-1">
         <div class="font-bold text-3xl font-display">ร้านค้าขวัญใจ</div>
         <div id="r-doc-type" class="text-sm font-bold text-white bg-black py-1 rounded-xl my-2">ใบเสร็จรับเงิน</div>
@@ -708,7 +804,7 @@
         <div id="r-staff" class="text-sm text-[#6B6A61] font-medium"></div>
       </div>
       
-      <div id="r-items" class="border-t-2 border-b-2 border-dashed border-black py-4 space-y-2.5 text-left font-semibold text-lg"></div>
+      <div id="r-items" class="border-t-2 border-b-2 border-dashed border-black py-4 space-y-3 text-left font-semibold text-lg"></div>
       
       <div class="space-y-1.5 pt-1">
         <div id="r-subtotal-box" class="hidden flex justify-between text-sm text-gray-600 font-bold">
@@ -786,7 +882,7 @@
         <input type="number" id="p-price" placeholder="0.00" class="w-full p-2.5 border-2 border-[#0284C7] rounded-xl bg-white text-xl font-bold font-display text-[#0284C7]">
       </div>
 
-      <!-- ส่วนจัดการสต็อกและต้นทุน (ปรับแก้ไขตรงๆ ได้เลย) -->
+      <!-- ส่วนจัดการสต็อกและต้นทุน -->
       <div class="bg-white p-4 rounded-2xl border-2 border-[#DEDACB] space-y-3">
         <div class="flex justify-between items-center">
           <span id="batchTitleText" class="text-sm font-bold text-[#0F5C52]">📦 จัดการสต็อกและต้นทุน</span>
@@ -815,7 +911,7 @@
   </div>
 
   <script>
-    const CORRECT_PIN = "141615"; // รหัสผ่านสำหรับเข้าใช้งาน
+    const CORRECT_PIN = "141615"; // รหัสผ่านสำหรับเข้าใช้งาน และ รหัสลบบิล
 
     const THAI_MONTHS = [
       "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
@@ -831,7 +927,8 @@
     let currentPage = 1;
     const itemsPerPage = 20;
     let isProductsLoaded = false;
-    let isReStockMode = false; // ตัวแปรเช็คว่าเป็นโหมดเติมลอตใหม่จากหน้าเตือนสต็อกหรือไม่
+    let isReStockMode = false;
+    let pendingDeleteSaleObj = null;
 
     function focusScanInput() {
       const scanInput = document.getElementById('scanInput');
@@ -943,6 +1040,94 @@
       });
     }
 
+    // ⚡ ฟังก์ชันคิดเงินด่วนกล่องตรงด้านล่าง
+    function addQuickItemDirect() {
+      const nameInput = document.getElementById('quickNameInput');
+      const priceInput = document.getElementById('quickPriceInput');
+      
+      let customName = nameInput.value.trim();
+      const price = Number(priceInput.value);
+
+      if (isNaN(price) || price <= 0) {
+        return alert('กรุณาระบุราคาขายสินค้าด่วนให้ถูกต้องครับ');
+      }
+
+      if (!customName) {
+        customName = `สินค้าด่วน (${price.toFixed(2)} บาท)`;
+      }
+
+      const customId = 'custom_' + Date.now();
+
+      cart.push({
+        productId: customId,
+        name: customName,
+        price: price,
+        cost: 0,
+        qty: 1,
+        isCustom: true
+      });
+
+      renderCart();
+      nameInput.value = '';
+      priceInput.value = '';
+      focusScanInput();
+    }
+
+    // ⚡ ฟังก์ชันลบบิลขายและคืนสินค้าเข้าสต็อก
+    function openDeleteSaleModal(saleId) {
+      const s = sales.find(item => item.id === saleId);
+      if (!s) return;
+      
+      pendingDeleteSaleObj = s;
+      document.getElementById('deletePinInput').value = '';
+      document.getElementById('deletePinError').classList.add('hidden');
+      document.getElementById('deleteSaleModal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('deletePinInput').focus(), 100);
+    }
+
+    function closeDeleteSaleModal() {
+      document.getElementById('deleteSaleModal').classList.add('hidden');
+      pendingDeleteSaleObj = null;
+      focusScanInput();
+    }
+
+    function confirmDeleteSaleWithPin() {
+      const pin = document.getElementById('deletePinInput').value;
+      const errorEl = document.getElementById('deletePinError');
+
+      if (pin !== CORRECT_PIN) {
+        errorEl.classList.remove('hidden');
+        document.getElementById('deletePinInput').value = '';
+        return;
+      }
+
+      if (!pendingDeleteSaleObj) return;
+
+      const saleToDelete = pendingDeleteSaleObj;
+      const batch = db.batch();
+
+      if (saleToDelete.items && saleToDelete.items.length > 0) {
+        saleToDelete.items.forEach(item => {
+          if (!item.isCustom && item.productId) {
+            const pRef = db.collection("products").doc(item.productId);
+            batch.update(pRef, {
+              stock: firebase.firestore.FieldValue.increment(item.qty)
+            });
+          }
+        });
+      }
+
+      const saleRef = db.collection("sales").doc(saleToDelete.id);
+      batch.delete(saleRef);
+
+      batch.commit().then(() => {
+        closeDeleteSaleModal();
+        alert('ลบบิลเรียบร้อยแล้ว คืนสินค้าเข้าสต็อกให้อัตโนมัติแล้วครับ');
+      }).catch(err => {
+        alert('เกิดข้อผิดพลาดในการลบ: ' + err.message);
+      });
+    }
+
     // ⚡ ระบบดักจับรหัสปุ่มกดคีย์บอร์ดโดยตรง (Direct KeyCode Listener)
     let barcodeBuffer = '';
     let lastKeyTime = Date.now();
@@ -957,6 +1142,7 @@
 
     document.addEventListener('keydown', function(e) {
       const activeEl = document.activeElement;
+      if (activeEl && (activeEl.id === 'quickNameInput' || activeEl.id === 'quickPriceInput' || activeEl.id === 'cartDiscount' || activeEl.id === 'deletePinInput')) return;
       if (activeEl && activeEl.id !== 'scanInput') return;
 
       const currentTime = Date.now();
@@ -1058,7 +1244,7 @@
 
       if (p) {
         input.value = '';
-        openEditProductModal(p.id, true); // เปิดโหมดเติมลอต
+        openEditProductModal(p.id, true);
       } else {
         alert('ไม่พบสินค้ารหัส: ' + (code || rawCode));
         input.value = '';
@@ -1607,7 +1793,13 @@
       }
       container.innerHTML = cart.map((c, i) => `
         <div class="flex justify-between items-center py-3 text-base">
-          <div><div class="font-normal text-lg">${c.name}</div><div class="text-sm text-[#0284C7] font-semibold">฿${c.price} x ${c.qty}</div></div>
+          <div>
+            <div class="font-normal text-lg flex items-center gap-1.5">
+              ${c.isCustom ? '<span class="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-bold">ด่วน</span>' : ''}
+              ${c.name}
+            </div>
+            <div class="text-sm text-[#0284C7] font-semibold">฿${c.price.toFixed(2)} x ${c.qty}</div>
+          </div>
           <div class="flex items-center gap-2">
             <div class="flex items-center gap-1">
               <button onclick="changeQty(${i}, -1)" class="px-3 py-1 bg-gray-200 rounded-xl font-bold text-lg hover:bg-gray-300 transition">-</button>
@@ -1662,6 +1854,11 @@
       let totalCostSum = 0;
 
       cartList.forEach(c => {
+        if (c.isCustom) {
+          totalCostSum += (c.qty * (c.cost || 0));
+          return;
+        }
+
         const p = products.find(prod => prod.id === c.productId);
         if (p) {
           let neededQty = c.qty;
@@ -1698,7 +1895,7 @@
       
       const staffName = currentSelectedStaff || "ไม่ระบุพนักงาน";
 
-      if (confirm(`ยืนยันการนำสินค้าในตะกร้าไปกิน/ใช้เองในบ้านใช่หรือไม่?\n\nระบบจะตัดสต็อกและบันทึกต้นทุนสินค้าแยกตามลอตให้อัตโนมัติ`)) {
+      if (confirm(`ยืนยันการนำสินค้าในตะกร้าไปกิน/ใช้เองในบ้านใช่หรือไม่?\n\nระบบจะตัดสต็อกและบันทึกต้นทุนสินค้าให้อัตโนมัติ`)) {
         const totalCost = calculateTotalCostAndDeductStock(cart);
 
         const homeUseDoc = {
@@ -1714,7 +1911,7 @@
           document.getElementById('hasDiscountCheck').checked = false;
           toggleDiscountInput();
           renderCart();
-          alert('บันทึกการใช้ในบ้านและตัดสต็อกเรียบร้อยแล้ว');
+          alert('บันทึกการใช้ในบ้านเรียบร้อยแล้ว');
           focusScanInput();
         });
       }
@@ -1898,6 +2095,7 @@
       });
     }
 
+    // ⚡ ฟังก์ชันแสดงสลิปใบเสร็จ (ปรับป้องอาการชื่อสินค้ายาวเบียดราคา)
     function showReceipt(s) {
       document.getElementById('r-date').innerText = new Date(s.ts).toLocaleString('th-TH');
       document.getElementById('r-staff').innerText = 'พนักงาน: ' + (s.cashierName || 'ไม่ระบุพนักงาน');
@@ -1931,7 +2129,14 @@
           <div class="flex justify-between text-gray-600"><span>เงินทอน:</span><span class="font-bold font-display text-[#0F5C52]">฿${(s.change || 0).toFixed(2)}</span></div>
         `;
       } else {
-        document.getElementById('r-items').innerHTML = s.items.map(i => `<div class="flex justify-between"><span>${i.name} x${i.qty}</span><span>฿${(i.price*i.qty).toFixed(2)}</span></div>`).join('');
+        // ใช้ Grid ล็อกฝั่งชื่อสินค้าและฝั่งราคาแยกออกจากกัน ป้องกันการเบียด
+        document.getElementById('r-items').innerHTML = s.items.map(i => `
+          <div class="grid grid-cols-[1fr_auto] gap-3 items-start border-b border-dashed border-gray-200 pb-1.5">
+            <div class="break-words font-medium text-base text-gray-900 leading-snug">${i.name} <span class="font-bold text-black ml-1">x${i.qty}</span></div>
+            <div class="font-bold text-lg font-display text-black text-right whitespace-nowrap pl-2">฿${(i.price*i.qty).toFixed(2)}</div>
+          </div>
+        `).join('');
+
         document.getElementById('r-total').innerText = '฿' + s.total.toFixed(2);
 
         const isCreditOnly = (s.creditPart > 0 && s.cashPart === 0 && s.transferPart === 0);
@@ -2005,7 +2210,6 @@
       document.getElementById('p-price').value = p.price || '';
       
       if (isReStock) {
-        // โหมดเติมลอตใหม่จากหน้าเตือนสต็อก
         document.getElementById('pModalTitle').innerText = '⚡ เติมสต็อกสินค้าลอตใหม่';
         document.getElementById('batchTitleText').innerText = "⚡ เติมสต็อกลอตใหม่ (สร้างลอตต้นทุนเพิ่ม)";
         document.getElementById('lblStockQty').innerText = "จำนวนที่นำมาเติมเพิ่ม";
@@ -2014,7 +2218,6 @@
         document.getElementById('p-addCost').value = p.cost || '';
         document.getElementById('currentStockBadgeText').innerText = `ของเดิมเหลือ ${p.stock} ชิ้น`;
       } else {
-        // โหมดแก้ไขข้อมูลในคลังปกติ
         document.getElementById('pModalTitle').innerText = '✏️ แก้ไขข้อมูลสินค้า';
         document.getElementById('batchTitleText').innerText = "📦 จัดการสต็อกและต้นทุน";
         document.getElementById('lblStockQty').innerText = "จำนวนสต็อกคงเหลือ";
@@ -2068,7 +2271,6 @@
         let batches = activeEditingProductObj.batches ? [...activeEditingProductObj.batches] : [];
 
         if (isReStockMode) {
-          // ถ้าเติมลอตใหม่ ให้เอาจำนวนไปบวกเพิ่มเป็นลอตใหม่
           if (addQty > 0) {
             batches.push({
               qty: addQty,
@@ -2077,7 +2279,6 @@
             });
           }
         } else {
-          // ถ้าแก้ไขในหน้าสต็อกปกติ ให้ปรับยอดสต็อกของลอตแรกหรือปรับรวมตรงๆ
           if (batches.length > 0) {
             batches[0].qty = addQty;
             batches[0].cost = addCost;
@@ -2549,7 +2750,7 @@
       list.innerHTML = staff.map(s => `
         <div class="flex justify-between items-center bg-[#F5F3EE] px-5 py-4 rounded-2xl border-2 border-[#DEDACB] hover:border-[#0F5C52] transition">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-[#0F5C52] text-white flex items-center justify-center font-bold text-sm">
+            <div class="w-10 h-10 rounded-full bg-[#0F5C52] text-[#FFFFFF] flex items-center justify-center font-bold text-sm">
               <i data-lucide="user" class="w-5 h-5"></i>
             </div>
             <span class="font-bold text-[#1C2321] text-lg">${s.name}</span>
@@ -2656,7 +2857,7 @@
         const sVal = document.getElementById('startDateInput').value;
         const eVal = document.getElementById('endDateInput').value;
         const sDate = sVal ? new Date(sVal) : now;
-        const eDate = eVal ? new Date(eVal) : now;
+        const eDate = eVal ? new Date(eDate) : now;
         periodText = `ระหว่างวันที่ ${formatThaiDateFull(sDate)} ถึงวันที่ ${formatThaiDateFull(eDate)}`;
       }
 
@@ -2675,7 +2876,7 @@
 
       const totalNetBorrowed = filteredMovements.reduce((sum, cm) => sum + cm.amount, 0);
 
-      const netCashInDrawer = (currentReportRange === 'today' ? todayFloatVal : 0) + totalNetBorrowed + totalCashSales - totalExp;
+      const netCashInDrawer = (currentReportRange === 'today' ? todayFloatObj ? todayFloatVal : 0 : 0) + totalNetBorrowed + totalCashSales - totalExp;
 
       document.getElementById('p-sales-cash-in').innerText = "฿" + totalSalesVal.toFixed(2);
       document.getElementById('p-sales-total-cost').innerText = "฿" + totalCostVal.toFixed(2);
@@ -2793,7 +2994,7 @@
       const totalExp = filteredExpenses.reduce((a, b) => a + b.amount, 0);
       const netProfitVal = (totalSalesVal - totalCostVal) - totalExp;
       
-      const netCashInDrawer = (currentReportRange === 'today' ? todayFloatVal : 0) + totalNetBorrowed + totalCashInDrawer - totalExp;
+      const netCashInDrawer = (currentReportRange === 'today' ? todayFloatObj ? todayFloatVal : 0 : 0) + totalNetBorrowed + totalCashInDrawer - totalExp;
 
       document.getElementById('reportSummary').innerHTML = `
         <div class="p-4 bg-[#F5F3EE] rounded-2xl border-2 border-[#DEDACB]">
@@ -2858,6 +3059,13 @@
           itemsText = `<div class="text-xs text-[#6B6A61] font-medium mt-1 truncate max-w-md">📦 รายการ: <span class="text-[#1C2321] font-semibold">${namesStr}</span></div>`;
         }
 
+        // ปุ่มลบบิลเฉพาะรายการขาย (Sale)
+        const deleteBtnHtml = (item.type === 'sale') 
+          ? `<button onclick="openDeleteSaleModal('${item.id}')" class="text-gray-400 hover:text-[#B3432B] p-1 transition" title="ยกเลิก/ลบบิลนี้">
+              <i data-lucide="trash-2" class="w-5 h-5"></i>
+             </button>` 
+          : '';
+
         return `
           <div class="flex justify-between items-center py-4 text-base">
             <div>
@@ -2868,10 +3076,12 @@
             <div class="flex items-center gap-4">
               ${badge}
               <span class="font-bold font-display text-xl">${amtDisplay}</span>
+              ${deleteBtnHtml}
             </div>
           </div>
         `;
       }).join('');
+      lucide.createIcons();
     }
 
     function showTab(name) {

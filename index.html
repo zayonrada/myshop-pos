@@ -280,6 +280,9 @@
           <tbody id="stockTableBody"></tbody>
         </table>
       </div>
+
+      <!-- ปุ่มเปลี่ยนหน้าสำหรับตารางสต็อกสินค้า -->
+      <div id="stockPaginationControls" class="flex justify-between items-center pt-4 border-t border-[#DEDACB]"></div>
     </div>
 
     <!-- แท็บ 2.5: เตือนสต็อก & สแกนเติมสต็อกด่วน -->
@@ -327,6 +330,9 @@
           <tbody id="lowStockTableBody"></tbody>
         </table>
       </div>
+
+      <!-- ⚡ ปุ่มเปลี่ยนหน้าสำหรับตารางเตือนสต็อก -->
+      <div id="lowStockPaginationControls" class="flex justify-between items-center pt-4 border-t border-[#DEDACB]"></div>
     </div>
 
     <!-- แท็บ 3: สมุดติดหนี้ -->
@@ -935,6 +941,15 @@
     let currentSelectedStaff = "";
     let currentPage = 1;
     const itemsPerPage = 20;
+    
+    // ตัวแปรควบคุมการเปลี่ยนหน้าสำหรับสต็อกสินค้า
+    let currentStockPage = 1;
+    const stockItemsPerPage = 15;
+
+    // ⚡ ตัวแปรควบคุมการเปลี่ยนหน้าสำหรับเตือนสต็อก
+    let currentLowStockPage = 1;
+    const lowStockItemsPerPage = 10;
+
     let isProductsLoaded = false;
     let isReStockMode = false;
     let pendingDeleteSaleObj = null;
@@ -991,7 +1006,6 @@
 
     firebase.initializeApp(firebaseConfig);
     
-    // ⚡ เปิดใช้ Offline Persistence และ Auto-Reconnection
     firebase.firestore().enablePersistence({ synchronizeTabs: true }).catch(err => {
       console.log("Persistence status:", err.code);
     });
@@ -1050,7 +1064,6 @@
       });
     }
 
-    // ⚡ ฟังก์ชันคิดเงินด่วนกล่องตรงด้านล่าง
     function addQuickItemDirect() {
       const nameInput = document.getElementById('quickNameInput');
       const priceInput = document.getElementById('quickPriceInput');
@@ -1083,7 +1096,6 @@
       focusScanInput();
     }
 
-    // ⚡ ฟังก์ชันลบบิลขายและคืนสินค้าเข้าสต็อก
     function openDeleteSaleModal(saleId) {
       const s = sales.find(item => item.id === saleId);
       if (!s) return;
@@ -1138,7 +1150,6 @@
       });
     }
 
-    // ⚡ ระบบดักจับรหัสปุ่มกดคีย์บอร์ดโดยตรง (Direct KeyCode Listener)
     let barcodeBuffer = '';
     let lastKeyTime = Date.now();
 
@@ -1446,7 +1457,7 @@
       }
     }
 
-    // ⚡ Realtime Subscriptions (อัปเดตข้อมูลข้ามเครื่องทันทีโดยไม่ต้องรีหน้าต่าง)
+    // Realtime Subscriptions
     let unsubscribeProducts = null;
     let unsubscribeStaff = null;
     let unsubscribeSales = null;
@@ -1456,7 +1467,6 @@
     let unsubscribeCashMovements = null;
 
     function initRealtimeListeners() {
-      // 1. สินค้า & สต็อก
       if(unsubscribeProducts) unsubscribeProducts();
       unsubscribeProducts = db.collection("products").onSnapshot(s => {
         products = []; 
@@ -1491,7 +1501,6 @@
         console.error("Products listener error:", err);
       });
 
-      // 2. พนักงาน
       if(unsubscribeStaff) unsubscribeStaff();
       unsubscribeStaff = db.collection("staff").onSnapshot(s => {
         staff = []; s.forEach(doc => staff.push({ id: doc.id, ...doc.data() }));
@@ -1499,7 +1508,6 @@
         renderStaffShiftModal();
       });
 
-      // 3. ยอดขาย & สมุดหนี้
       if(unsubscribeSales) unsubscribeSales();
       unsubscribeSales = db.collection("sales").onSnapshot(s => {
         sales = []; s.forEach(doc => sales.push({ id: doc.id, ...doc.data() }));
@@ -1509,7 +1517,6 @@
         if(activeDebtorName) renderDebtItemsForPerson(activeDebtorName);
       });
 
-      // 4. รายจ่าย
       if(unsubscribeExpenses) unsubscribeExpenses();
       unsubscribeExpenses = db.collection("expenses").onSnapshot(s => {
         expenses = []; s.forEach(doc => expenses.push({ id: doc.id, ...doc.data() }));
@@ -1517,21 +1524,18 @@
         renderReports();
       });
 
-      // 5. ชำระหนี้
       if(unsubscribeDebtPayments) unsubscribeDebtPayments();
       unsubscribeDebtPayments = db.collection("debt_payments").onSnapshot(s => {
         debtPayments = []; s.forEach(doc => debtPayments.push({ id: doc.id, ...doc.data() }));
         renderReports();
       });
 
-      // 6. เงินทอนประจำวัน
       if(unsubscribeDailyFloats) unsubscribeDailyFloats();
       unsubscribeDailyFloats = db.collection("daily_floats").onSnapshot(s => {
         dailyFloats = []; s.forEach(doc => dailyFloats.push({ id: doc.id, ...doc.data() }));
         renderReports();
       });
 
-      // 7. เติม/คืนเงินส่วนตัว
       if(unsubscribeCashMovements) unsubscribeCashMovements();
       unsubscribeCashMovements = db.collection("cash_movements").onSnapshot(s => {
         cashMovements = []; s.forEach(doc => cashMovements.push({ id: doc.id, ...doc.data() }));
@@ -1539,10 +1543,8 @@
       });
     }
 
-    // เรียกทำงานระบบ Realtime ซิงค์ข้อมูลข้ามเครื่อง
     initRealtimeListeners();
 
-    // ⚡ ดักจับเมื่อแท็บถูกสลับกลับมาใช้งาน ให้ทำการ Re-connect ซิงค์ข้อมูลล่าสุดเสมอ
     document.addEventListener("visibilitychange", function() {
       if (document.visibilityState === "visible") {
         initRealtimeListeners();
@@ -1649,6 +1651,27 @@
       focusScanInput();
     }
 
+    function changeStockPage(delta) {
+      currentStockPage += delta;
+      renderStockTable();
+    }
+
+    function goToStockPage(page) {
+      currentStockPage = page;
+      renderStockTable();
+    }
+
+    // ⚡ ฟังก์ชันเปลี่ยนหน้าสำหรับเตือนสต็อก
+    function changeLowStockPage(delta) {
+      currentLowStockPage += delta;
+      renderLowStockTable();
+    }
+
+    function goToLowStockPage(page) {
+      currentLowStockPage = page;
+      renderLowStockTable();
+    }
+
     function renderProducts() {
       const grid = document.getElementById('productGrid');
       
@@ -1739,13 +1762,22 @@
 
       document.getElementById('stockCountBadge').innerText = displayProducts.length + ' รายการ';
       const body = document.getElementById('stockTableBody');
+      const paginationEl = document.getElementById('stockPaginationControls');
 
       if (displayProducts.length === 0) {
         body.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-[#6B6A61] font-bold">ไม่พบรายการสินค้า</td></tr>`;
+        paginationEl.innerHTML = '';
         return;
       }
 
-      body.innerHTML = displayProducts.map(p => {
+      const totalPages = Math.ceil(displayProducts.length / stockItemsPerPage);
+      if (currentStockPage > totalPages) currentStockPage = totalPages;
+      if (currentStockPage < 1) currentStockPage = 1;
+
+      const startIndex = (currentStockPage - 1) * stockItemsPerPage;
+      const paginatedItems = displayProducts.slice(startIndex, startIndex + stockItemsPerPage);
+
+      body.innerHTML = paginatedItems.map(p => {
         const batches = p.batches || [];
         const batchInfoHtml = batches.length > 0 
           ? batches.map((b, idx) => `<div class="text-xs text-gray-600 font-medium">ลอต ${idx+1}: เหลือ <span class="font-bold text-black">${b.qty}</span> ชิ้น (@฿${b.cost.toFixed(2)})</div>`).join('')
@@ -1776,9 +1808,37 @@
           </tr>
         `;
       }).join('');
+
+      let pageButtonsHtml = '';
+      for (let i = 1; i <= totalPages; i++) {
+        pageButtonsHtml += `
+          <button onclick="goToStockPage(${i})" 
+            class="w-9 h-9 rounded-xl font-bold text-sm transition flex items-center justify-center font-display ${i === currentStockPage ? 'bg-[#0F5C52] text-white shadow-sm' : 'bg-[#F5F3EE] text-[#6B6A61] hover:bg-[#DEDACB]'}">
+            ${i}
+          </button>
+        `;
+      }
+
+      paginationEl.innerHTML = `
+        <button onclick="changeStockPage(-1)" ${currentStockPage === 1 ? 'disabled' : ''} 
+          class="px-3.5 py-1.5 rounded-xl font-semibold text-sm text-[#6B6A61] hover:text-[#0F5C52] transition disabled:opacity-20 flex items-center gap-1 font-display">
+          ‹ ถอย
+        </button>
+
+        <div class="flex items-center gap-1.5 overflow-x-auto max-w-[280px] sm:max-w-none py-1">
+          ${pageButtonsHtml}
+        </div>
+
+        <button onclick="changeStockPage(1)" ${currentStockPage === totalPages ? 'disabled' : ''} 
+          class="px-3.5 py-1.5 rounded-xl font-semibold text-sm text-[#6B6A61] hover:text-[#0F5C52] transition disabled:opacity-20 flex items-center gap-1 font-display">
+          ถัดไป ›
+        </button>
+      `;
+
       lucide.createIcons();
     }
 
+    // ⚡ ฟังก์ชันแสดงผลตารางเตือนสต็อกแบบแบ่งหน้า
     function renderLowStockTable() {
       let lowItems = products.filter(p => p.stock <= 5);
       document.getElementById('lowStockBadge').innerText = lowItems.length;
@@ -1789,12 +1849,22 @@
       }
 
       const body = document.getElementById('lowStockTableBody');
+      const paginationEl = document.getElementById('lowStockPaginationControls');
+
       if (lowItems.length === 0) {
         body.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-[#6B6A61] font-bold text-lg">🎉 ไม่มีสินค้าใกล้หมดในหมวดหมู่นี้!</td></tr>`;
+        paginationEl.innerHTML = '';
         return;
       }
 
-      body.innerHTML = lowItems.map(p => `
+      const totalPages = Math.ceil(lowItems.length / lowStockItemsPerPage);
+      if (currentLowStockPage > totalPages) currentLowStockPage = totalPages;
+      if (currentLowStockPage < 1) currentLowStockPage = 1;
+
+      const startIndex = (currentLowStockPage - 1) * lowStockItemsPerPage;
+      const paginatedItems = lowItems.slice(startIndex, startIndex + lowStockItemsPerPage);
+
+      body.innerHTML = paginatedItems.map(p => `
         <tr class="border-t-2 border-[#DEDACB]">
           <td class="py-3">
             <div class="w-12 h-12 bg-gray-100 rounded-xl overflow-hidden border-2 flex items-center justify-center">
@@ -1811,6 +1881,33 @@
           </td>
         </tr>
       `).join('');
+
+      let pageButtonsHtml = '';
+      for (let i = 1; i <= totalPages; i++) {
+        pageButtonsHtml += `
+          <button onclick="goToLowStockPage(${i})" 
+            class="w-9 h-9 rounded-xl font-bold text-sm transition flex items-center justify-center font-display ${i === currentLowStockPage ? 'bg-[#0F5C52] text-white shadow-sm' : 'bg-[#F5F3EE] text-[#6B6A61] hover:bg-[#DEDACB]'}">
+            ${i}
+          </button>
+        `;
+      }
+
+      paginationEl.innerHTML = `
+        <button onclick="changeLowStockPage(-1)" ${currentLowStockPage === 1 ? 'disabled' : ''} 
+          class="px-3.5 py-1.5 rounded-xl font-semibold text-sm text-[#6B6A61] hover:text-[#0F5C52] transition disabled:opacity-20 flex items-center gap-1 font-display">
+          ‹ ถอย
+        </button>
+
+        <div class="flex items-center gap-1.5 overflow-x-auto max-w-[280px] sm:max-w-none py-1">
+          ${pageButtonsHtml}
+        </div>
+
+        <button onclick="changeLowStockPage(1)" ${currentLowStockPage === totalPages ? 'disabled' : ''} 
+          class="px-3.5 py-1.5 rounded-xl font-semibold text-sm text-[#6B6A61] hover:text-[#0F5C52] transition disabled:opacity-20 flex items-center gap-1 font-display">
+          ถัดไป ›
+        </button>
+      `;
+
       lucide.createIcons();
     }
 
@@ -2140,7 +2237,6 @@
       });
     }
 
-    // ⚡ ฟังก์ชันแสดงสลิปใบเสร็จ (ปรับป้องอาการชื่อสินค้ายาวเบียดราคา)
     function showReceipt(s) {
       document.getElementById('r-date').innerText = new Date(s.ts).toLocaleString('th-TH');
       document.getElementById('r-staff').innerText = 'พนักงาน: ' + (s.cashierName || 'ไม่ระบุพนักงาน');
@@ -2174,7 +2270,6 @@
           <div class="flex justify-between text-gray-600"><span>เงินทอน:</span><span class="font-bold font-display text-[#0F5C52]">฿${(s.change || 0).toFixed(2)}</span></div>
         `;
       } else {
-        // ใช้ Grid ล็อกฝั่งชื่อสินค้าและฝั่งราคาแยกออกจากกัน ป้องกันการเบียด
         document.getElementById('r-items').innerHTML = s.items.map(i => `
           <div class="grid grid-cols-[1fr_auto] gap-3 items-start border-b border-dashed border-gray-200 pb-1.5">
             <div class="break-words font-medium text-base text-gray-900 leading-snug">${i.name} <span class="font-bold text-black ml-1">x${i.qty}</span></div>
@@ -2222,7 +2317,6 @@
       focusScanInput();
     }
 
-    // Stock Functions
     function openAddProductModal() {
       editingProductId = null;
       activeEditingProductObj = null;
@@ -2375,7 +2469,6 @@
       if (confirm('ต้องการลบสินค้าใช่หรือไม่?')) db.collection("products").doc(id).delete();
     }
 
-    // Expenses Functions
     function addExpense(e) {
       e.preventDefault();
       const title = document.getElementById('exp-title').value.trim();
@@ -2566,7 +2659,6 @@
       }, 1000);
     }
 
-    // Debts Functions
     function renderDebts() {
       const list = document.getElementById('debtList');
       const unpaidSales = sales.filter(s => (s.creditPart > 0 || s.method === 'credit') && !s.settled);
@@ -3104,7 +3196,6 @@
           itemsText = `<div class="text-xs text-[#6B6A61] font-medium mt-1 truncate max-w-md">📦 รายการ: <span class="text-[#1C2321] font-semibold">${namesStr}</span></div>`;
         }
 
-        // ปุ่มลบบิลเฉพาะรายการขาย (Sale)
         const deleteBtnHtml = (item.type === 'sale') 
           ? `<button onclick="openDeleteSaleModal('${item.id}')" class="text-gray-400 hover:text-[#B3432B] p-1 transition" title="ยกเลิก/ลบบิลนี้">
               <i data-lucide="trash-2" class="w-5 h-5"></i>

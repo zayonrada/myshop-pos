@@ -31,7 +31,6 @@
     body { background-color: var(--paper); font-family: var(--font-body); color: var(--ink); font-size: 18px; }
     h1, h2, h3, .font-display { font-family: var(--font-display); }
 
-    /* 📱 💻 จัดการระยะห่างในตารางให้สวยงาม ไม่เบียด ไม่ดันชิดขวาเกินไป */
     #stockTableBody tr td, 
     #lowStockTableBody tr td {
       vertical-align: middle;
@@ -633,7 +632,7 @@
     <div class="grid grid-cols-2 gap-4 border border-black p-4 rounded-xl">
       <div><b>ยอดขายรวมสุทธิ:</b> <span id="p-sales-cash-in" class="font-bold font-display"></span></div>
       <div><b>ต้นทุนสินค้าขาย:</b> <span id="p-sales-total-cost" class="font-bold font-display"></span></div>
-      <div><b>รายจ่ายออกรวม:</b> <span id="p-sales-exp-out" class="font-bold font-display text-red-600"></span></div>
+      <div><b>รายจ่ายออกรวม:</b> <span id="p-sales-exp-out" class="font-bold font-display text-[#B3432B]"></span></div>
       <div><b>กำไรสุทธิจริง:</b> <span id="p-sales-net-profit" class="font-bold font-display text-blue-600"></span></div>
       <div class="col-span-2 pt-2 border-t"><b>เงินสดคงเหลือจริงในเก๊ะ:</b> <span id="p-sales-drawer-cash" class="font-bold font-display text-emerald-700"></span></div>
     </div>
@@ -992,6 +991,7 @@
 
     firebase.initializeApp(firebaseConfig);
     
+    // ⚡ เปิดใช้ Offline Persistence และ Auto-Reconnection
     firebase.firestore().enablePersistence({ synchronizeTabs: true }).catch(err => {
       console.log("Persistence status:", err.code);
     });
@@ -1446,72 +1446,107 @@
       }
     }
 
-    db.collection("products").onSnapshot(s => {
-      products = []; 
-      s.forEach(doc => {
-        const d = doc.data();
-        let cat = d.category || 'ทั่วไป';
-        
-        let batches = d.batches || [];
-        if (!batches.length && d.stock > 0) {
-          batches = [{ qty: Number(d.stock) || 0, cost: Number(d.cost) || 0, ts: d.ts || Date.now() }];
-        }
+    // ⚡ Realtime Subscriptions (อัปเดตข้อมูลข้ามเครื่องทันทีโดยไม่ต้องรีหน้าต่าง)
+    let unsubscribeProducts = null;
+    let unsubscribeStaff = null;
+    let unsubscribeSales = null;
+    let unsubscribeExpenses = null;
+    let unsubscribeDebtPayments = null;
+    let unsubscribeDailyFloats = null;
+    let unsubscribeCashMovements = null;
 
-        const totalStock = batches.reduce((sum, b) => sum + b.qty, 0);
-        const displayCost = batches.length > 0 ? batches[0].cost : (Number(d.cost) || 0);
+    function initRealtimeListeners() {
+      // 1. สินค้า & สต็อก
+      if(unsubscribeProducts) unsubscribeProducts();
+      unsubscribeProducts = db.collection("products").onSnapshot(s => {
+        products = []; 
+        s.forEach(doc => {
+          const d = doc.data();
+          let cat = d.category || 'ทั่วไป';
+          let batches = d.batches || [];
+          if (!batches.length && d.stock > 0) {
+            batches = [{ qty: Number(d.stock) || 0, cost: Number(d.cost) || 0, ts: d.ts || Date.now() }];
+          }
+          const totalStock = batches.reduce((sum, b) => sum + b.qty, 0);
+          const displayCost = batches.length > 0 ? batches[0].cost : (Number(d.cost) || 0);
 
-        products.push({ 
-          id: doc.id, 
-          ...d, 
-          category: cat,
-          batches: batches,
-          cost: displayCost,
-          stock: totalStock
+          products.push({ 
+            id: doc.id, 
+            ...d, 
+            category: cat,
+            batches: batches,
+            cost: displayCost,
+            stock: totalStock
+          });
         });
+
+        isProductsLoaded = true;
+        document.getElementById('db-status').innerText = "● เชื่อมต่อ Firebase สำเร็จ (Real-time)";
+        document.getElementById('db-status').className = "text-sm text-emerald-400 font-medium";
+        updateCategoryDropdowns();
+        renderProducts(); 
+        renderStockTable(); 
+        renderLowStockTable();
+      }, err => {
+        console.error("Products listener error:", err);
       });
 
-      isProductsLoaded = true;
-      document.getElementById('db-status').innerText = "● เชื่อมต่อ Firebase สำเร็จ";
-      document.getElementById('db-status').className = "text-sm text-emerald-400 font-medium";
-      updateCategoryDropdowns();
-      renderProducts(); 
-      renderStockTable(); 
-      renderLowStockTable();
-    });
+      // 2. พนักงาน
+      if(unsubscribeStaff) unsubscribeStaff();
+      unsubscribeStaff = db.collection("staff").onSnapshot(s => {
+        staff = []; s.forEach(doc => staff.push({ id: doc.id, ...doc.data() }));
+        renderStaff();
+        renderStaffShiftModal();
+      });
 
-    db.collection("staff").onSnapshot(s => {
-      staff = []; s.forEach(doc => staff.push({ id: doc.id, ...doc.data() }));
-      renderStaff();
-      renderStaffShiftModal();
-    });
+      // 3. ยอดขาย & สมุดหนี้
+      if(unsubscribeSales) unsubscribeSales();
+      unsubscribeSales = db.collection("sales").onSnapshot(s => {
+        sales = []; s.forEach(doc => sales.push({ id: doc.id, ...doc.data() }));
+        renderDebts(); 
+        renderReports();
+        populateRegularDebtorsDropdown();
+        if(activeDebtorName) renderDebtItemsForPerson(activeDebtorName);
+      });
 
-    db.collection("sales").onSnapshot(s => {
-      sales = []; s.forEach(doc => sales.push({ id: doc.id, ...doc.data() }));
-      renderDebts(); 
-      renderReports();
-      populateRegularDebtorsDropdown();
-      if(activeDebtorName) renderDebtItemsForPerson(activeDebtorName);
-    });
+      // 4. รายจ่าย
+      if(unsubscribeExpenses) unsubscribeExpenses();
+      unsubscribeExpenses = db.collection("expenses").onSnapshot(s => {
+        expenses = []; s.forEach(doc => expenses.push({ id: doc.id, ...doc.data() }));
+        renderExpenses(); 
+        renderReports();
+      });
 
-    db.collection("expenses").onSnapshot(s => {
-      expenses = []; s.forEach(doc => expenses.push({ id: doc.id, ...doc.data() }));
-      renderExpenses(); 
-      renderReports();
-    });
+      // 5. ชำระหนี้
+      if(unsubscribeDebtPayments) unsubscribeDebtPayments();
+      unsubscribeDebtPayments = db.collection("debt_payments").onSnapshot(s => {
+        debtPayments = []; s.forEach(doc => debtPayments.push({ id: doc.id, ...doc.data() }));
+        renderReports();
+      });
 
-    db.collection("debt_payments").onSnapshot(s => {
-      debtPayments = []; s.forEach(doc => debtPayments.push({ id: doc.id, ...doc.data() }));
-      renderReports();
-    });
+      // 6. เงินทอนประจำวัน
+      if(unsubscribeDailyFloats) unsubscribeDailyFloats();
+      unsubscribeDailyFloats = db.collection("daily_floats").onSnapshot(s => {
+        dailyFloats = []; s.forEach(doc => dailyFloats.push({ id: doc.id, ...doc.data() }));
+        renderReports();
+      });
 
-    db.collection("daily_floats").onSnapshot(s => {
-      dailyFloats = []; s.forEach(doc => dailyFloats.push({ id: doc.id, ...doc.data() }));
-      renderReports();
-    });
+      // 7. เติม/คืนเงินส่วนตัว
+      if(unsubscribeCashMovements) unsubscribeCashMovements();
+      unsubscribeCashMovements = db.collection("cash_movements").onSnapshot(s => {
+        cashMovements = []; s.forEach(doc => cashMovements.push({ id: doc.id, ...doc.data() }));
+        renderReports();
+      });
+    }
 
-    db.collection("cash_movements").onSnapshot(s => {
-      cashMovements = []; s.forEach(doc => cashMovements.push({ id: doc.id, ...doc.data() }));
-      renderReports();
+    // เรียกทำงานระบบ Realtime ซิงค์ข้อมูลข้ามเครื่อง
+    initRealtimeListeners();
+
+    // ⚡ ดักจับเมื่อแท็บถูกสลับกลับมาใช้งาน ให้ทำการ Re-connect ซิงค์ข้อมูลล่าสุดเสมอ
+    document.addEventListener("visibilitychange", function() {
+      if (document.visibilityState === "visible") {
+        initRealtimeListeners();
+      }
     });
 
     function openStaffShiftModal() {

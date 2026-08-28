@@ -103,12 +103,12 @@
       </main>
     </div>
 
-    <!-- ⚡ แถบย่อติดตามสถานะออเดอร์ด้านล่าง (Mini Status Bar) -->
+    <!-- ⚡ แถบย่อติดตามสถานะออเดอร์ด้านล่าง (Mini Status Bar) — แสดงเฉพาะตอนที่ยังส่งไม่เสร็จ -->
     <div id="miniOrderStatusCard" class="fixed bottom-0 max-w-md w-full bg-white border-t-2 border-[#008B47] shadow-2xl z-30 p-3 hidden rounded-t-3xl">
       <div class="flex items-center justify-between gap-2 border-b pb-2 mb-2">
         <div class="flex items-center gap-2">
           <span class="w-2.5 h-2.5 rounded-full bg-[#F37021] animate-ping"></span>
-          <span class="font-bold text-sm text-[#008B47] font-display">สถานะออเดอร์ล่าสุด</span>
+          <span class="font-bold text-sm text-[#008B47] font-display">สถานะออเดอร์ที่กำลังจัดส่ง</span>
         </div>
         <button onclick="toggleTrackingModal(true)" class="text-xs text-gray-500 hover:text-black font-bold flex items-center gap-0.5">
           <span>รายละเอียดบิล</span>
@@ -123,7 +123,7 @@
 
           <div id="miniCircle1" class="w-5 h-5 rounded-full bg-[#F37021] text-white flex items-center justify-center text-[10px] font-bold z-10">✓</div>
           <div id="miniCircle2" class="w-5 h-5 rounded-full bg-gray-300 text-white flex items-center justify-center text-[10px] font-bold z-10">2</div>
-          <div id="miniCircle3" class="w-5 h-5 rounded-full bg-gray-300 text-white flex items-center justify-center text-xs font-bold z-10">3</div>
+          <div id="miniCircle3" class="w-5 h-5 rounded-full bg-gray-300 text-white flex items-center justify-center text-[10px] font-bold z-10">3</div>
           <div id="miniCircle4" class="w-5 h-5 rounded-full bg-gray-300 text-white flex items-center justify-center text-[10px] font-bold z-10">4</div>
           <div id="miniCircle5" class="w-5 h-5 rounded-full bg-gray-300 text-white flex items-center justify-center text-[10px] font-bold z-10">5</div>
         </div>
@@ -194,14 +194,14 @@
             </button>
           </div>
 
-          <!-- ⚡ กล่อง QR Code PromptPay + เลขบัญชี กสิกรไทย 855-2-19984-8 ยลรดา ฉิมพาลี -->
+          <!-- ⚡ กล่อง QR Code PromptPay ลิงก์ใหม่ไม่ขึ้นเครื่องหมาย ? แน่นอน -->
           <div id="bankTransferBox" class="pt-2 border-t space-y-2.5">
             <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-300 text-xs space-y-2 text-center">
               <div class="font-bold text-[#008B47] text-sm font-display">สแกนชำระเงินง่ายๆ ด้วย PromptPay QR</div>
               
-              <!-- รูป QR Code เจนตามยอดเงินให้อัตโนมัติ -->
+              <!-- รูป QR Code เจนตามยอดเงินให้อัตโนมัติด้วย API ใหม่ -->
               <div class="flex justify-center py-1">
-                <img id="promptPayQrImg" src="" class="w-44 h-44 rounded-xl border-2 border-[#008B47] p-1 bg-white shadow-sm">
+                <img id="promptPayQrImg" src="" class="w-48 h-48 rounded-xl border-2 border-[#008B47] p-1 bg-white shadow-sm object-contain">
               </div>
 
               <div class="bg-white p-2 rounded-lg border text-left space-y-1">
@@ -527,7 +527,7 @@
       renderCartModalItems();
     }
 
-    // ⚡ อัปเดต PromptPay QR Code ตามยอดเงินสุทธิอัตโนมัติ
+    // ⚡ คำนวณค่าส่ง + เจนภาพ PromptPay QR Code อัตโนมัติ API ใหม่ล่าสุด
     function updateCartSummaryUI() {
       const totalQty = custCart.reduce((sum, c) => sum + c.qty, 0);
       const subtotal = custCart.reduce((sum, c) => sum + (c.price * c.qty), 0);
@@ -550,10 +550,10 @@
       document.getElementById('custDeliveryFee').innerText = deliveryFee === 0 ? 'ส่งฟรี (ซื้อครบ 100.-)' : '฿' + deliveryFee.toFixed(2);
       document.getElementById('custModalTotal').innerText = '฿' + totalNet.toFixed(2);
 
-      // สร้างภาพ PromptPay QR ตามยอดเงินสุทธิอัตโนมัติ (บัญชี PromptPay 08552199848 / KBank 8552199848)
+      // สร้างรูป QR Code PromptPay ลิงก์ใหม่ ชัดเจน รูปขึ้นแน่นอน
       const qrImg = document.getElementById('promptPayQrImg');
       if (qrImg && totalNet > 0) {
-        qrImg.src = `https://promptpay.io/08552199848/${totalNet.toFixed(2)}.png`;
+        qrImg.src = `https://promptpay.2bsystem.com/qr/08552199848/${totalNet.toFixed(2)}`;
       }
     }
 
@@ -643,6 +643,7 @@
       });
     }
 
+    // ⚡ ระบบติดตามออเดอร์ย่อการ์ดลอยด้านล่าง — แสดงเฉพาะเมื่อสเต็ปยังไม่เสร็จ (สเต็ป 1-4)
     function trackOrderRealtime(orderId) {
       if (unsubscribeOrderTracking) unsubscribeOrderTracking();
 
@@ -650,15 +651,22 @@
         if (!doc.exists) return;
         const o = doc.data();
 
-        document.getElementById('miniOrderStatusCard').classList.remove('hidden');
+        const card = document.getElementById('miniOrderStatusCard');
+
+        // หากออเดอร์จัดส่งสำเร็จ (completed) หรือ ยกเลิก (cancelled) ให้ซ่อนบอร์ดลอยทันที
+        if (o.status === 'completed' || o.status === 'cancelled') {
+          card.classList.add('hidden');
+          return;
+        }
+
+        card.classList.remove('hidden');
 
         let step = 1;
         let statusTitle = "รับออเดอร์แล้ว";
         if (o.status === 'pending') { step = 1; statusTitle = "1/5 รับออเดอร์แล้ว"; }
         else if (o.status === 'preparing') { step = 2; statusTitle = "2/5 ร้านกำลังจัดเตรียมสินค้า..."; }
-        else if (o.status === 'ready') { step = 3; statusTitle = "3/5 สินค้าจัดเสร็จเรียบร้อยแล้ว"; }
+        else if (o.status === 'ready') { step = 3; statusTitle = "3/5 สินค้าจัดเสร็จรอส่ง..."; }
         else if (o.status === 'delivering') { step = 4; statusTitle = "4/5 ไรเดอร์กำลังนำสินค้าไปส่ง..."; }
-        else if (o.status === 'completed') { step = 5; statusTitle = "5/5 จัดส่งถึงมือสำเร็จเรียบร้อย!"; }
 
         updateMiniStepperUI(step, statusTitle, o.totalAmount);
 

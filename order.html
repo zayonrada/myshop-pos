@@ -28,9 +28,9 @@
 </head>
 <body class="min-h-screen flex justify-center">
 
-  <div class="w-full max-w-md bg-[#F8F9FA] min-h-screen flex flex-col relative pb-28 shadow-2xl">
+  <div class="w-full max-w-md bg-[#F8F9FA] min-h-screen flex flex-col relative pb-36 shadow-2xl">
 
-    <!-- Header สไตล์ 7-11 -->
+    <!-- Top Header -->
     <header class="bg-white px-4 py-2.5 sticky top-0 z-40 shadow-sm flex items-center justify-between border-b">
       <div class="w-9 h-9"></div>
 
@@ -73,13 +73,13 @@
         </div>
       </div>
 
-      <!-- แบนเนอร์โปรโมชัน -->
+      <!-- แบนเนอร์ -->
       <div class="p-3 pb-1">
         <div class="bg-gradient-to-r from-[#008B47] to-[#147A6F] rounded-2xl p-3.5 text-white flex items-center justify-between shadow-sm relative overflow-hidden">
           <div class="space-y-0.5 z-10">
             <span class="bg-[#F37021] text-white text-[10px] font-bold px-2 py-0.5 rounded-full font-display">โปรโมชันพิเศษ</span>
             <div class="font-bold text-base font-display">สั่งซื้อครบ 100.- ส่งฟรี!</div>
-            <div class="text-xs text-emerald-100">บริการส่งฟรีในระยะทางไม่เกิน 5 กม.</div>
+            <div class="text-xs text-emerald-100">ต่ำกว่า 100.- มีค่าส่ง 20 บาท (ไม่เกิน 5 กม.)</div>
           </div>
           <div class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center z-10">
             <i data-lucide="truck" class="w-10 h-10 text-amber-300"></i>
@@ -87,7 +87,7 @@
         </div>
       </div>
 
-      <!-- หมวดหมู่สินค้า -->
+      <!-- หมวดหมู่ -->
       <div class="p-3">
         <div class="text-xs font-bold text-gray-500 mb-2 font-display">หมวดหมู่สินค้า</div>
         <div class="flex items-center gap-3 overflow-x-auto no-scrollbar pb-1" id="custCatFilter"></div>
@@ -103,57 +103,35 @@
       </main>
     </div>
 
-    <!-- 🟠 หน้าติดตามสถานะออเดอร์ -->
-    <div id="orderStatusView" class="hidden p-3 space-y-4 flex-1">
-      <div class="bg-white rounded-3xl p-4 border border-gray-100 shadow-sm space-y-4">
-        
-        <div class="flex items-center justify-between border-b pb-3">
-          <div class="flex items-center gap-2.5">
-            <div class="w-9 h-9 rounded-full bg-emerald-100 text-[#008B47] flex items-center justify-center">
-              <i data-lucide="bike" class="w-5 h-5"></i>
-            </div>
-            <span class="font-bold text-lg font-display text-gray-800">สถานะจัดส่งสินค้า</span>
-          </div>
-          <button onclick="backToShop()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full font-bold">
-            + เลือกซื้อเพิ่ม
-          </button>
+    <!-- ⚡ แถบย่อติดตามสถานะออเดอร์ด้านล่าง (Mini Status Bar) -->
+    <div id="miniOrderStatusCard" class="fixed bottom-0 max-w-md w-full bg-white border-t-2 border-[#008B47] shadow-2xl z-30 p-3 hidden rounded-t-3xl">
+      <div class="flex items-center justify-between gap-2 border-b pb-2 mb-2">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-[#F37021] animate-ping"></span>
+          <span class="font-bold text-sm text-[#008B47] font-display">สถานะออเดอร์ล่าสุด</span>
+        </div>
+        <button onclick="toggleTrackingModal(true)" class="text-xs text-gray-500 hover:text-black font-bold flex items-center gap-0.5">
+          <span>รายละเอียดบิล</span>
+          <i data-lucide="chevron-up" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-1">
+        <div class="flex items-center justify-between relative px-2">
+          <div class="absolute inset-x-4 top-1/2 -translate-y-1/2 h-1 bg-gray-200 z-0"></div>
+          <div id="miniStepProgress" class="absolute left-4 top-1/2 -translate-y-1/2 h-1 bg-[#F37021] z-0 transition-all duration-300" style="width: 0%;"></div>
+
+          <div id="miniCircle1" class="w-5 h-5 rounded-full bg-[#F37021] text-white flex items-center justify-center text-[10px] font-bold z-10">✓</div>
+          <div id="miniCircle2" class="w-5 h-5 rounded-full bg-gray-300 text-white flex items-center justify-center text-[10px] font-bold z-10">2</div>
+          <div id="miniCircle3" class="w-5 h-5 rounded-full bg-gray-300 text-white flex items-center justify-center text-xs font-bold z-10">3</div>
+          <div id="miniCircle4" class="w-5 h-5 rounded-full bg-gray-300 text-white flex items-center justify-center text-[10px] font-bold z-10">4</div>
+          <div id="miniCircle5" class="w-5 h-5 rounded-full bg-gray-300 text-white flex items-center justify-center text-[10px] font-bold z-10">5</div>
         </div>
 
-        <!-- Stepper -->
-        <div class="py-2 px-1 space-y-2">
-          <div class="flex items-center justify-between relative">
-            <div class="absolute inset-x-4 top-1/2 -translate-y-1/2 h-1 bg-gray-200 z-0"></div>
-            <div id="stepLineProgress" class="absolute left-4 top-1/2 -translate-y-1/2 h-1 bg-[#F37021] z-0 transition-all duration-300" style="width: 0%;"></div>
-
-            <div id="stepCircle1" class="w-6 h-6 rounded-full bg-[#F37021] text-white flex items-center justify-center text-xs font-bold z-10 shadow">✓</div>
-            <div id="stepCircle2" class="w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center text-xs font-bold z-10 shadow">2</div>
-            <div id="stepCircle3" class="w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center text-xs font-bold z-10 shadow">3</div>
-            <div id="stepCircle4" class="w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center text-xs font-bold z-10 shadow">4</div>
-            <div id="stepCircle5" class="w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center text-xs font-bold z-10 shadow">5</div>
-          </div>
-
-          <div class="grid grid-cols-5 text-[10px] font-bold text-center text-gray-400 pt-1">
-            <span id="stepLabel1" class="text-[#F37021]">รับออเดอร์แล้ว</span>
-            <span id="stepLabel2">จัดเตรียมสินค้า</span>
-            <span id="stepLabel3">จัดเสร็จรอส่ง</span>
-            <span id="stepLabel4">กำลังจัดส่ง</span>
-            <span id="stepLabel5">รับสินค้าแล้ว</span>
-          </div>
+        <div class="flex justify-between items-center text-[11px] font-bold text-[#F37021] px-1 pt-1">
+          <span id="miniStatusText">กำลังดำเนินการ...</span>
+          <span id="miniTotalText" class="text-gray-800"></span>
         </div>
-
-        <div id="trackingItemList" class="divide-y divide-gray-100 pt-1"></div>
-
-        <div class="bg-gray-50 p-3.5 rounded-2xl border space-y-1.5 text-xs text-gray-600 font-medium">
-          <div class="flex justify-between"><span>การรับสินค้า:</span><span id="trackDeliveryType" class="font-bold text-[#008B47]"></span></div>
-          <div class="flex justify-between"><span>ผู้สั่งซื้อ:</span><span id="trackCustName" class="font-bold text-gray-900"></span></div>
-          <div class="flex justify-between"><span>เบอร์โทร:</span><span id="trackCustPhone" class="font-bold text-gray-900"></span></div>
-          <div class="flex justify-between"><span>ที่อยู่/หมายเหตุ:</span><span id="trackCustAddress" class="font-bold text-gray-900 text-right max-w-[180px] truncate"></span></div>
-          <div class="flex justify-between border-t pt-2 text-sm font-bold text-[#008B47]">
-            <span>ยอดรวมสุทธิ:</span>
-            <span id="trackTotalAmt" class="text-lg font-display text-[#F37021]">฿0.00</span>
-          </div>
-        </div>
-
       </div>
     </div>
 
@@ -178,9 +156,9 @@
       </div>
     </div>
 
-    <!-- Modal ตะกร้าสินค้า & ตัวเลือกจัดส่ง -->
+    <!-- Modal ตะกร้าสินค้า & ชำระเงิน (สแกน PromptPay + โอนง่าย) -->
     <div id="custCartModal" class="hidden fixed inset-0 bg-black/60 flex items-end justify-center z-50">
-      <div class="bg-white p-5 rounded-t-3xl max-w-md w-full max-h-[90vh] overflow-y-auto space-y-4 shadow-2xl animate-in slide-in-from-bottom duration-200">
+      <div class="bg-white p-5 rounded-t-3xl max-w-md w-full max-h-[92vh] overflow-y-auto space-y-4 shadow-2xl animate-in slide-in-from-bottom duration-200">
         
         <div class="flex justify-between items-center border-b pb-3">
           <h3 class="font-bold text-xl font-display flex items-center gap-2 text-[#008B47]">
@@ -189,9 +167,9 @@
           <button onclick="closeCustomerCartModal()" class="p-1 rounded-full bg-gray-100"><i data-lucide="x" class="w-5 h-5 text-gray-500"></i></button>
         </div>
 
-        <div id="custCartItems" class="bg-gray-50 p-3 rounded-2xl border divide-y divide-gray-200 space-y-2 max-h-48 overflow-y-auto"></div>
+        <div id="custCartItems" class="bg-gray-50 p-3 rounded-2xl border divide-y divide-gray-200 space-y-2 max-h-40 overflow-y-auto"></div>
 
-        <!-- ⚡ ตัวเลือกประเภทการรับสินค้า (ส่งบ้าน / รับที่ร้าน) -->
+        <!-- ตัวเลือกการรับสินค้า -->
         <div class="bg-gray-50 p-3 rounded-2xl border space-y-2">
           <div class="text-xs font-bold text-gray-700 font-display">รูปแบบการรับสินค้า</div>
           <div class="grid grid-cols-2 gap-2">
@@ -204,7 +182,54 @@
           </div>
         </div>
 
-        <!-- ยอดรวมคำนวณค่าส่ง -->
+        <!-- ตัวเลือกการชำระเงิน -->
+        <div class="bg-gray-50 p-3 rounded-2xl border space-y-2">
+          <div class="text-xs font-bold text-gray-700 font-display">วิธีการชำระเงิน</div>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="setPayOption('transfer')" id="btnPayTransfer" class="py-2.5 px-3 rounded-xl font-bold text-xs border-2 border-[#008B47] bg-[#008B47] text-white flex items-center justify-center gap-1.5 transition">
+              <i data-lucide="qr-code" class="w-4 h-4"></i> 📱 โอนเงินผ่านบัญชี / QR
+            </button>
+            <button type="button" onclick="setPayOption('cash')" id="btnPayCash" class="py-2.5 px-3 rounded-xl font-bold text-xs border-2 border-gray-200 bg-white text-gray-700 flex items-center justify-center gap-1.5 transition">
+              <i data-lucide="coins" class="w-4 h-4"></i> 💵 เงินสดปลายทาง
+            </button>
+          </div>
+
+          <!-- ⚡ กล่อง QR Code PromptPay + เลขบัญชี กสิกรไทย 855-2-19984-8 ยลรดา ฉิมพาลี -->
+          <div id="bankTransferBox" class="pt-2 border-t space-y-2.5">
+            <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-300 text-xs space-y-2 text-center">
+              <div class="font-bold text-[#008B47] text-sm font-display">สแกนชำระเงินง่ายๆ ด้วย PromptPay QR</div>
+              
+              <!-- รูป QR Code เจนตามยอดเงินให้อัตโนมัติ -->
+              <div class="flex justify-center py-1">
+                <img id="promptPayQrImg" src="" class="w-44 h-44 rounded-xl border-2 border-[#008B47] p-1 bg-white shadow-sm">
+              </div>
+
+              <div class="bg-white p-2 rounded-lg border text-left space-y-1">
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-500 font-bold">ธนาคารกสิกรไทย (K-Bank)</span>
+                  <span class="text-[10px] bg-[#008B47] text-white px-2 py-0.5 rounded-full font-bold">กสิกร</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-900 font-bold text-base font-display tracking-wider">855-2-19984-8</span>
+                  <button type="button" onclick="copyBankAcc()" class="bg-[#008B47] text-white px-2.5 py-1 rounded-lg text-[10px] font-bold shadow-sm active:scale-95">
+                    📋 ก๊อปปี้เลขบัญชี
+                  </button>
+                </div>
+                <div class="text-gray-700 text-xs font-bold">ชื่อบัญชี: ยลรดา Chimphali / ฉิมพาลี</div>
+              </div>
+            </div>
+
+            <div>
+              <label class="text-[11px] font-bold text-gray-600 block mb-1">แนบรูปสลิปการโอนเงิน *</label>
+              <input type="file" id="paySlipFile" accept="image/*" onchange="previewPaySlip(event)" class="w-full text-xs p-2 bg-white rounded-xl border">
+              <div id="slipPreviewBlock" class="mt-2 hidden flex justify-center">
+                <img id="slipPreview" src="" class="w-32 h-auto rounded-lg border">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ยอดรวมคำนวณ -->
         <div class="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-200 space-y-1">
           <div class="flex justify-between text-xs text-gray-600">
             <span>ค่าสินค้า</span>
@@ -253,6 +278,30 @@
       </div>
     </div>
 
+    <!-- Modal รายละเอียดออเดอร์ฉบับเต็ม -->
+    <div id="trackingDetailModal" class="hidden fixed inset-0 bg-black/60 flex items-end justify-center z-50">
+      <div class="bg-white p-5 rounded-t-3xl max-w-md w-full max-h-[85vh] overflow-y-auto space-y-4 shadow-2xl">
+        <div class="flex justify-between items-center border-b pb-3">
+          <h3 class="font-bold text-lg font-display text-[#008B47]">รายละเอียดคำสั่งซื้อ</h3>
+          <button onclick="toggleTrackingModal(false)"><i data-lucide="x" class="w-6 h-6 text-gray-500"></i></button>
+        </div>
+
+        <div id="trackingItemList" class="divide-y divide-gray-100"></div>
+
+        <div class="bg-gray-50 p-3.5 rounded-2xl border space-y-1.5 text-xs text-gray-600 font-medium">
+          <div class="flex justify-between"><span>การรับสินค้า:</span><span id="trackDeliveryType" class="font-bold text-[#008B47]"></span></div>
+          <div class="flex justify-between"><span>ช่องทางชำระ:</span><span id="trackPayType" class="font-bold text-[#F37021]"></span></div>
+          <div class="flex justify-between"><span>ผู้สั่งซื้อ:</span><span id="trackCustName" class="font-bold text-gray-900"></span></div>
+          <div class="flex justify-between"><span>เบอร์โทร:</span><span id="trackCustPhone" class="font-bold text-gray-900"></span></div>
+          <div class="flex justify-between"><span>ที่อยู่/หมายเหตุ:</span><span id="trackCustAddress" class="font-bold text-gray-900 text-right max-w-[180px] truncate"></span></div>
+          <div class="flex justify-between border-t pt-2 text-sm font-bold text-[#008B47]">
+            <span>ยอดรวมทั้งสิ้น:</span>
+            <span id="trackTotalAmt" class="text-lg font-display text-[#F37021]">฿0.00</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <script>
@@ -280,7 +329,9 @@
     let currentOrderId = localStorage.getItem('lastOrderId') || null;
     let unsubscribeOrderTracking = null;
     let userLocation = null;
-    let deliveryType = 'delivery'; // 'delivery' หรือ 'pickup'
+    let deliveryType = 'delivery';
+    let payOption = 'transfer';
+    let slipBase64 = "";
 
     db.collection("products").onSnapshot(s => {
       products = [];
@@ -296,6 +347,41 @@
 
     if (currentOrderId) {
       trackOrderRealtime(currentOrderId);
+    }
+
+    function setPayOption(opt) {
+      payOption = opt;
+      const btnTransfer = document.getElementById('btnPayTransfer');
+      const btnCash = document.getElementById('btnPayCash');
+      const transferBox = document.getElementById('bankTransferBox');
+
+      if (opt === 'transfer') {
+        btnTransfer.className = "py-2.5 px-3 rounded-xl font-bold text-xs border-2 border-[#008B47] bg-[#008B47] text-white flex items-center justify-center gap-1.5 transition";
+        btnCash.className = "py-2.5 px-3 rounded-xl font-bold text-xs border-2 border-gray-200 bg-white text-gray-700 flex items-center justify-center gap-1.5 transition";
+        transferBox.classList.remove('hidden');
+      } else {
+        btnCash.className = "py-2.5 px-3 rounded-xl font-bold text-xs border-2 border-[#008B47] bg-[#008B47] text-white flex items-center justify-center gap-1.5 transition";
+        btnTransfer.className = "py-2.5 px-3 rounded-xl font-bold text-xs border-2 border-gray-200 bg-white text-gray-700 flex items-center justify-center gap-1.5 transition";
+        transferBox.classList.add('hidden');
+      }
+    }
+
+    function copyBankAcc() {
+      navigator.clipboard.writeText('8552199848');
+      alert('คัดลอกเลขบัญชี 855-2-19984-8 (ยลรดา Chimphali / ฉิมพาลี) เรียบร้อยแล้วครับ');
+    }
+
+    function previewPaySlip(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          slipBase64 = evt.target.result;
+          document.getElementById('slipPreview').src = slipBase64;
+          document.getElementById('slipPreviewBlock').classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
     }
 
     function setDeliveryType(type) {
@@ -441,7 +527,7 @@
       renderCartModalItems();
     }
 
-    // ⚡ คำนวณค่าส่ง: ครบ 100 บาทส่งฟรี / ต่ำกว่า 100 คิด 20 บาท
+    // ⚡ อัปเดต PromptPay QR Code ตามยอดเงินสุทธิอัตโนมัติ
     function updateCartSummaryUI() {
       const totalQty = custCart.reduce((sum, c) => sum + c.qty, 0);
       const subtotal = custCart.reduce((sum, c) => sum + (c.price * c.qty), 0);
@@ -463,6 +549,12 @@
       document.getElementById('custCartSubtotal').innerText = '฿' + subtotal.toFixed(2);
       document.getElementById('custDeliveryFee').innerText = deliveryFee === 0 ? 'ส่งฟรี (ซื้อครบ 100.-)' : '฿' + deliveryFee.toFixed(2);
       document.getElementById('custModalTotal').innerText = '฿' + totalNet.toFixed(2);
+
+      // สร้างภาพ PromptPay QR ตามยอดเงินสุทธิอัตโนมัติ (บัญชี PromptPay 08552199848 / KBank 8552199848)
+      const qrImg = document.getElementById('promptPayQrImg');
+      if (qrImg && totalNet > 0) {
+        qrImg.src = `https://promptpay.io/08552199848/${totalNet.toFixed(2)}.png`;
+      }
     }
 
     function openCustomerCartModal() {
@@ -511,6 +603,10 @@
         return alert('กรุณากรอกชื่อ เบอร์โทร และที่อยู่จัดส่งให้ครบถ้วนครับ');
       }
 
+      if (payOption === 'transfer' && !slipBase64) {
+        if(!confirm('คุณยังไม่ได้แนบหลักฐานสลิปโอนเงิน ยืนยันที่จะส่งออเดอร์โดยไม่แนบสลิปใช่หรือไม่?')) return;
+      }
+
       const subtotal = custCart.reduce((sum, c) => sum + (c.price * c.qty), 0);
       const deliveryFee = deliveryType === 'delivery' ? (subtotal >= 100 ? 0 : 20) : 0;
       const totalNet = subtotal + deliveryFee;
@@ -522,6 +618,8 @@
         customerAddress: address,
         deliveryType: deliveryType,
         deliveryFee: deliveryFee,
+        payOption: payOption,
+        slipUrl: slipBase64,
         location: userLocation,
         items: custCart,
         subtotal: subtotal,
@@ -535,6 +633,7 @@
         currentOrderId = docRef.id;
         
         custCart = [];
+        slipBase64 = "";
         updateCartSummaryUI();
         closeCustomerCartModal();
 
@@ -551,39 +650,40 @@
         if (!doc.exists) return;
         const o = doc.data();
 
-        document.getElementById('shopMainView').classList.add('hidden');
-        document.getElementById('orderStatusView').classList.remove('hidden');
+        document.getElementById('miniOrderStatusCard').classList.remove('hidden');
+
+        let step = 1;
+        let statusTitle = "รับออเดอร์แล้ว";
+        if (o.status === 'pending') { step = 1; statusTitle = "1/5 รับออเดอร์แล้ว"; }
+        else if (o.status === 'preparing') { step = 2; statusTitle = "2/5 ร้านกำลังจัดเตรียมสินค้า..."; }
+        else if (o.status === 'ready') { step = 3; statusTitle = "3/5 สินค้าจัดเสร็จเรียบร้อยแล้ว"; }
+        else if (o.status === 'delivering') { step = 4; statusTitle = "4/5 ไรเดอร์กำลังนำสินค้าไปส่ง..."; }
+        else if (o.status === 'completed') { step = 5; statusTitle = "5/5 จัดส่งถึงมือสำเร็จเรียบร้อย!"; }
+
+        updateMiniStepperUI(step, statusTitle, o.totalAmount);
 
         document.getElementById('trackDeliveryType').innerText = o.deliveryType === 'pickup' ? '🏪 มารับเองที่ร้าน' : '🛵 ให้ไปส่งที่บ้าน';
+        document.getElementById('trackPayType').innerText = o.payOption === 'transfer' ? '📱 โอนเงินผ่านบัญชี' : '💵 เงินสดปลายทาง';
         document.getElementById('trackCustName').innerText = o.customerName;
         document.getElementById('trackCustPhone').innerText = o.customerPhone;
         document.getElementById('trackCustAddress').innerText = o.customerAddress;
         document.getElementById('trackTotalAmt').innerText = '฿' + o.totalAmount.toFixed(2);
 
-        let step = 1;
-        if (o.status === 'pending') step = 1;
-        else if (o.status === 'preparing') step = 2;
-        else if (o.status === 'ready') step = 3;
-        else if (o.status === 'delivering') step = 4;
-        else if (o.status === 'completed') step = 5;
-
-        updateStepperUI(step);
-
         const itemList = document.getElementById('trackingItemList');
         itemList.innerHTML = o.items.map(i => `
-          <div class="py-2.5 flex items-center justify-between gap-3">
-            <div class="flex items-center gap-2.5">
-              <div class="w-12 h-12 bg-gray-50 rounded-xl border flex items-center justify-center overflow-hidden flex-shrink-0">
-                ${i.imageUrl ? `<img src="${i.imageUrl}" class="w-full h-full object-cover">` : `<i data-lucide="package" class="w-5 h-5 text-gray-300"></i>`}
+          <div class="py-2 flex items-center justify-between gap-3 text-xs">
+            <div class="flex items-center gap-2">
+              <div class="w-10 h-10 bg-gray-50 rounded-lg border flex items-center justify-center overflow-hidden flex-shrink-0">
+                ${i.imageUrl ? `<img src="${i.imageUrl}" class="w-full h-full object-cover">` : `<i data-lucide="package" class="w-4 h-4 text-gray-300"></i>`}
               </div>
               <div>
-                <div class="font-bold text-xs text-gray-800 line-clamp-1">${i.name}</div>
-                <div class="text-[11px] text-gray-400 font-semibold mt-0.5">${i.price.toFixed(2)} บาท</div>
+                <div class="font-bold text-gray-800 line-clamp-1">${i.name}</div>
+                <div class="text-[10px] text-gray-400 font-semibold">฿${i.price.toFixed(2)}</div>
               </div>
             </div>
             <div class="text-right">
-              <div class="font-bold text-xs text-gray-800">${(i.price * i.qty).toFixed(2)} บาท</div>
-              <div class="text-[11px] font-bold text-gray-400 mt-0.5">X${i.qty}</div>
+              <div class="font-bold text-gray-800">${(i.price * i.qty).toFixed(2)} บาท</div>
+              <div class="text-[10px] font-bold text-gray-400">X${i.qty}</div>
             </div>
           </div>
         `).join('');
@@ -592,29 +692,28 @@
       });
     }
 
-    function updateStepperUI(step) {
+    function updateMiniStepperUI(step, title, total) {
       const stepWidths = ['0%', '25%', '50%', '75%', '100%'];
-      document.getElementById('stepLineProgress').style.width = stepWidths[step - 1];
+      document.getElementById('miniStepProgress').style.width = stepWidths[step - 1];
+      document.getElementById('miniStatusText').innerText = title;
+      document.getElementById('miniTotalText').innerText = `฿${total.toFixed(2)}`;
 
       for (let i = 1; i <= 5; i++) {
-        const circle = document.getElementById(`stepCircle${i}`);
-        const label = document.getElementById(`stepLabel${i}`);
-
+        const circle = document.getElementById(`miniCircle${i}`);
         if (i <= step) {
-          circle.className = "w-6 h-6 rounded-full bg-[#F37021] text-white flex items-center justify-center text-xs font-bold z-10 shadow";
+          circle.className = "w-5 h-5 rounded-full bg-[#F37021] text-white flex items-center justify-center text-[10px] font-bold z-10 shadow";
           circle.innerText = "✓";
-          label.className = "text-[#F37021] font-bold";
         } else {
-          circle.className = "w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center text-xs font-bold z-10 shadow";
+          circle.className = "w-5 h-5 rounded-full bg-gray-300 text-white flex items-center justify-center text-[10px] font-bold z-10";
           circle.innerText = i;
-          label.className = "text-gray-400";
         }
       }
     }
 
-    function backToShop() {
-      document.getElementById('orderStatusView').classList.add('hidden');
-      document.getElementById('shopMainView').classList.remove('hidden');
+    function toggleTrackingModal(isOpen) {
+      const modal = document.getElementById('trackingDetailModal');
+      if (isOpen) modal.classList.remove('hidden');
+      else modal.classList.add('hidden');
     }
 
     lucide.createIcons();

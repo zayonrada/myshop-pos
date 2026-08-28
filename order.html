@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>สั่งซื้อสินค้าออนไลน์ — ร้านค้าขวัญใจ</title>
+  <title>ร้านค้าขวัญใจ — Delivery</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -12,13 +12,14 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <style>
     :root {
-      --paper: #EFEFE9;
-      --teal: #0F5C52;
-      --orange: #E86424;
+      --7green: #008B47;
+      --7orange: #F37021;
+      --7red: #E31837;
+      --paper: #F8F9FA;
       --font-display: 'Kanit', sans-serif;
       --font-body: 'Sarabun', sans-serif;
     }
-    body { background-color: var(--paper); font-family: var(--font-body); color: #2B2B2B; }
+    body { background-color: #E5E7EB; font-family: var(--font-body); color: #1F2937; }
     h1, h2, h3, .font-display { font-family: var(--font-display); }
 
     .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -27,83 +28,122 @@
 </head>
 <body class="min-h-screen flex justify-center">
 
-  <!-- คอนเทนเนอร์ขนาดจำลองมือถือ (Mobile Container) -->
-  <div class="w-full max-w-md bg-[#EFEFE9] min-h-screen flex flex-col relative pb-28 shadow-2xl">
+  <!-- คอนเทนเนอร์มือถือ (Mobile Container) -->
+  <div class="w-full max-w-md bg-[#F8F9FA] min-h-screen flex flex-col relative pb-28 shadow-2xl">
 
-    <!-- Header สไตล์ 7-11 (ชื่อร้านอยู่ตรงกลาง) -->
-    <header class="bg-[#0F5C52] text-white px-4 py-3 sticky top-0 z-40 shadow-md flex flex-col items-center justify-center relative">
-      <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-full bg-amber-400 flex items-center justify-center text-[#0F5C52] shadow">
-          <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+    <!-- Top Header สีขาวพร้อมโลโก้ร้านค้าขวัญใจตรงกลาง -->
+    <header class="bg-white px-4 py-2.5 sticky top-0 z-40 shadow-sm flex items-center justify-between border-b">
+      <div class="w-9 h-9"></div> <!-- Spacer ช่องว่างรักษาสมดุล -->
+
+      <div class="flex items-center gap-1.5">
+        <div class="w-8 h-8 rounded-full bg-[#F37021] flex items-center justify-center text-white font-bold text-lg shadow-sm font-display">
+          K
         </div>
-        <h1 class="font-bold text-2xl font-display tracking-wide text-white text-center">ร้านค้าขวัญใจ</h1>
+        <div class="flex flex-col items-center">
+          <span class="font-bold text-xl font-display tracking-tight text-[#008B47] leading-none">ร้านค้าขวัญใจ</span>
+          <span class="text-[10px] font-bold text-[#F37021] font-display tracking-wider">Delivery</span>
+        </div>
       </div>
-      <p class="text-xs text-emerald-200 font-semibold mt-0.5 flex items-center gap-1">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-        เปิดรับออเดอร์จัดส่งด่วนออนไลน์
-      </p>
 
-      <button onclick="openCustomerCartModal()" class="absolute right-4 top-3.5 bg-white/10 p-2 rounded-full hover:bg-white/20 transition relative">
-        <i data-lucide="shopping-cart" class="w-6 h-6 text-white"></i>
-        <span id="badgeCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold border-2 border-[#0F5C52] hidden">0</span>
+      <!-- ปุ่มตะกร้าลอยมุมขวาบน -->
+      <button onclick="openCustomerCartModal()" class="w-9 h-9 rounded-full bg-emerald-50 flex items-center justify-center relative hover:bg-emerald-100 transition">
+        <i data-lucide="shopping-basket" class="w-5 h-5 text-[#008B47]"></i>
+        <span id="badgeCount" class="absolute -top-1 -right-1 bg-[#E31837] text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold border-2 border-white hidden">0</span>
       </button>
     </header>
 
-    <!-- 🟢 หน้าที่ 1: หน้าเลือกซื้อสินค้าหลัก -->
+    <!-- 🟢 หน้าเลือกซื้อสินค้าหลัก -->
     <div id="shopMainView" class="flex-1 flex flex-col">
-      <!-- ช่องค้นหา & แถบหมวดหมู่ด่วน -->
-      <div class="p-3 bg-white shadow-sm space-y-2 sticky top-[62px] z-30 border-b">
-        <div class="relative">
-          <i data-lucide="search" class="w-5 h-5 text-gray-400 absolute left-3 top-3"></i>
-          <input type="text" id="custSearchInput" oninput="renderCustomerProducts()" placeholder="ค้นหาสินค้าที่ต้องการสั่ง..." 
-            class="w-full text-base pl-10 pr-4 py-2.5 rounded-full bg-gray-100 border-none focus:outline-none focus:ring-2 focus:ring-[#0F5C52] font-semibold text-gray-800">
+      
+      <!-- แถบระบุตำแหน่งจัดส่ง (Location Bar สไตล์ 7-11) -->
+      <div class="bg-[#008B47] text-white p-3.5 space-y-2.5 shadow-md">
+        <div class="flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2 font-bold truncate pr-2">
+            <div class="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+              <i data-lucide="bike" class="w-4 h-4 text-white"></i>
+            </div>
+            <div class="truncate">
+              <div class="text-[10px] text-emerald-200 font-normal">จัดส่งที่อยู่ปัจจุบัน:</div>
+              <div id="topAddrDisplay" class="truncate text-sm font-display text-white">ยังไม่ได้เลือกตำแหน่งปักหมุด</div>
+            </div>
+          </div>
+          
+          <button onclick="openCustomerCartModal()" class="bg-white/20 hover:bg-white/30 text-white p-1.5 rounded-full flex-shrink-0 transition">
+            <i data-lucide="map-pin" class="w-4 h-4"></i>
+          </button>
         </div>
-        
-        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1" id="custCatFilter"></div>
+
+        <!-- กล่องค้นหาสินค้าลอยบนแถบเขียว -->
+        <div class="relative">
+          <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3.5 top-3"></i>
+          <input type="text" id="custSearchInput" oninput="renderCustomerProducts()" placeholder="ค้นหาสินค้า ของกิน ของใช้..." 
+            class="w-full text-sm pl-9 pr-8 py-2 rounded-full bg-white text-gray-800 placeholder-gray-400 focus:outline-none font-medium shadow-inner">
+          <i data-lucide="qr-code" class="w-4 h-4 text-gray-400 absolute right-3 top-3"></i>
+        </div>
       </div>
 
-      <!-- รายการสินค้า 2 คอลัมน์ -->
-      <main class="p-3 flex-1">
+      <!-- แบนเนอร์โปรโมชัน 7-11 สไตล์ -->
+      <div class="p-3 pb-1">
+        <div class="bg-gradient-to-r from-[#008B47] to-[#147A6F] rounded-2xl p-3.5 text-white flex items-center justify-between shadow-sm relative overflow-hidden">
+          <div class="space-y-0.5 z-10">
+            <span class="bg-[#F37021] text-white text-[10px] font-bold px-2 py-0.5 rounded-full font-display">จัดส่งด่วน</span>
+            <div class="font-bold text-base font-display">ส่งตรงถึงหน้าบ้านคุณ</div>
+            <div class="text-xs text-emerald-100">สั่งสดง่ายๆ ไม่ต้องออกไปตากแดด</div>
+          </div>
+          <div class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center z-10">
+            <i data-lucide="truck" class="w-10 h-10 text-amber-300"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- หมวดหมู่สินค้าแบบไอคอนวงกลมมินิมอล (7-11 Style) -->
+      <div class="p-3">
+        <div class="text-xs font-bold text-gray-500 mb-2 font-display">หมวดหมู่สินค้า</div>
+        <div class="flex items-center gap-3 overflow-x-auto no-scrollbar pb-1" id="custCatFilter"></div>
+      </div>
+
+      <!-- รายการสินค้าการ์ดคลีนๆ 2 คอลัมน์ -->
+      <main class="p-3 pt-1 flex-1">
+        <div class="flex justify-between items-center mb-2.5">
+          <div class="text-sm font-bold font-display text-gray-800" id="selectedCatTitle">สินค้าแนะนำทั้งหมด</div>
+        </div>
         <div id="custProductGrid" class="grid grid-cols-2 gap-3">
-          <p class="col-span-2 text-center py-12 text-[#0F5C52] font-bold animate-pulse font-display">⏳ กำลังดึงรายการสินค้าด่วน...</p>
+          <p class="col-span-2 text-center py-12 text-[#008B47] font-bold animate-pulse font-display">⏳ กำลังโหลดสินค้าสดใหม่...</p>
         </div>
       </main>
     </div>
 
-    <!-- 🟠 หน้าที่ 2: หน้าติดตามสถานะออเดอร์สวยๆ แบบ 7-11 (ถอดแบบจากรูปภาพที่คุณส่งมา) -->
+    <!-- 🟠 หน้าติดตามสถานะออเดอร์สวยๆ แบบ 7-11 (ถอดแบบจากแอปจริง) -->
     <div id="orderStatusView" class="hidden p-3 space-y-4 flex-1">
-      <div class="bg-white rounded-3xl p-4 border border-gray-200 shadow-sm space-y-4">
+      <div class="bg-white rounded-3xl p-4 border border-gray-100 shadow-sm space-y-4">
         
-        <!-- Header สินค้าจัดส่งทันที -->
         <div class="flex items-center justify-between border-b pb-3">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-emerald-100 text-[#0F5C52] flex items-center justify-center">
-              <i data-lucide="bike" class="w-6 h-6"></i>
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-full bg-emerald-100 text-[#008B47] flex items-center justify-center">
+              <i data-lucide="bike" class="w-5 h-5"></i>
             </div>
-            <span class="font-bold text-xl font-display text-gray-700">สินค้าจัดส่งทันที</span>
+            <span class="font-bold text-lg font-display text-gray-800">สินค้าจัดส่งทันที</span>
           </div>
-          <button onclick="backToShop()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1.5 rounded-full font-bold">
-            + ซื้อเพิ่ม
+          <button onclick="backToShop()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full font-bold">
+            + เลือกซื้อเพิ่ม
           </button>
         </div>
 
-        <!-- แถบสเต็ปสถานะจัดส่ง 5 ขั้นตอน (Stepper) -->
+        <!-- แถบสเต็ปสถานะจัดส่ง 5 ขั้นตอน -->
         <div class="py-2 px-1 space-y-2">
           <div class="flex items-center justify-between relative">
             <div class="absolute inset-x-4 top-1/2 -translate-y-1/2 h-1 bg-gray-200 z-0"></div>
-            <div id="stepLineProgress" class="absolute left-4 top-1/2 -translate-y-1/2 h-1 bg-[#E86424] z-0 transition-all duration-300" style="width: 0%;"></div>
+            <div id="stepLineProgress" class="absolute left-4 top-1/2 -translate-y-1/2 h-1 bg-[#F37021] z-0 transition-all duration-300" style="width: 0%;"></div>
 
-            <!-- Step Circles -->
-            <div id="stepCircle1" class="w-6 h-6 rounded-full bg-[#E86424] text-white flex items-center justify-center text-xs font-bold z-10 shadow">✓</div>
+            <div id="stepCircle1" class="w-6 h-6 rounded-full bg-[#F37021] text-white flex items-center justify-center text-xs font-bold z-10 shadow">✓</div>
             <div id="stepCircle2" class="w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center text-xs font-bold z-10 shadow">2</div>
             <div id="stepCircle3" class="w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center text-xs font-bold z-10 shadow">3</div>
             <div id="stepCircle4" class="w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center text-xs font-bold z-10 shadow">4</div>
             <div id="stepCircle5" class="w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center text-xs font-bold z-10 shadow">5</div>
           </div>
 
-          <!-- Labels -->
-          <div class="grid grid-cols-5 text-[10px] font-bold text-center text-gray-500 pt-1">
-            <span id="stepLabel1" class="text-[#E86424]">รับออเดอร์แล้ว</span>
+          <div class="grid grid-cols-5 text-[10px] font-bold text-center text-gray-400 pt-1">
+            <span id="stepLabel1" class="text-[#F37021]">รับออเดอร์แล้ว</span>
             <span id="stepLabel2">จัดเตรียมสินค้า</span>
             <span id="stepLabel3">จัดเสร็จรอส่ง</span>
             <span id="stepLabel4">กำลังจัดส่ง</span>
@@ -111,17 +151,17 @@
           </div>
         </div>
 
-        <!-- รายการสินค้าที่สั่งซื้อ สไตล์ตาราง 7-11 (รูป + ชื่อ + ราคา + จำนวน X) -->
-        <div id="trackingItemList" class="divide-y divide-gray-100 pt-2"></div>
+        <!-- รายการสินค้าที่สั่งซื้อ สไตล์ 7-11 (รูป + ชื่อ + ราคา + X) -->
+        <div id="trackingItemList" class="divide-y divide-gray-100 pt-1"></div>
 
-        <!-- สรุปที่อยู่ & ยอดรวม -->
-        <div class="bg-[#F8F8F5] p-3.5 rounded-2xl border space-y-1.5 text-xs text-gray-600 font-semibold">
-          <div class="flex justify-between"><span>ผู้สั่งซื้อ:</span><span id="trackCustName" class="font-bold text-black"></span></div>
-          <div class="flex justify-between"><span>เบอร์โทร:</span><span id="trackCustPhone" class="font-bold text-black"></span></div>
-          <div class="flex justify-between"><span>ที่อยู่จัดส่ง:</span><span id="trackCustAddress" class="font-bold text-black text-right max-w-[200px] truncate"></span></div>
-          <div class="flex justify-between border-t pt-1 text-sm font-bold text-[#0F5C52]">
+        <!-- สรุปข้อมูล -->
+        <div class="bg-gray-50 p-3.5 rounded-2xl border space-y-1.5 text-xs text-gray-600 font-medium">
+          <div class="flex justify-between"><span>ผู้สั่งซื้อ:</span><span id="trackCustName" class="font-bold text-gray-900"></span></div>
+          <div class="flex justify-between"><span>เบอร์โทร:</span><span id="trackCustPhone" class="font-bold text-gray-900"></span></div>
+          <div class="flex justify-between"><span>ที่อยู่จัดส่ง:</span><span id="trackCustAddress" class="font-bold text-gray-900 text-right max-w-[180px] truncate"></span></div>
+          <div class="flex justify-between border-t pt-2 text-sm font-bold text-[#008B47]">
             <span>ยอดรวมทั้งสิ้น:</span>
-            <span id="trackTotalAmt" class="text-base font-display text-[#E86424]">฿0.00</span>
+            <span id="trackTotalAmt" class="text-lg font-display text-[#F37021]">฿0.00</span>
           </div>
         </div>
 
@@ -129,21 +169,21 @@
     </div>
 
     <!-- แถบสรุปตะกร้าสินค้าลอยด้านล่าง (Bottom Delivery Bar) -->
-    <div id="bottomCartBar" class="fixed bottom-0 max-w-md w-full bg-[#1F2937] text-white p-3 shadow-2xl z-40 hidden border-t-2 border-amber-400 rounded-t-3xl">
+    <div id="bottomCartBar" class="fixed bottom-0 max-w-md w-full bg-[#1F2937] text-white p-3 shadow-2xl z-40 hidden border-t-2 border-[#F37021] rounded-t-3xl">
       <div class="flex justify-between items-center gap-3 px-1">
         <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-2xl bg-[#0F5C52] flex items-center justify-center text-amber-300 font-bold text-lg shadow relative">
-            <i data-lucide="shopping-basket" class="w-6 h-6"></i>
-            <span id="barTotalQty" class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">0</span>
+          <div class="w-11 h-11 rounded-2xl bg-[#008B47] flex items-center justify-center text-white font-bold text-lg shadow relative">
+            <i data-lucide="shopping-basket" class="w-5 h-5"></i>
+            <span id="barTotalQty" class="absolute -top-1.5 -right-1.5 bg-[#E31837] text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">0</span>
           </div>
           <div>
-            <div class="text-xs text-gray-300 font-medium">รวมมัดจำ/ยอดสินค้า</div>
+            <div class="text-[11px] text-gray-400">ยอดรวมสินค้า</div>
             <div class="text-2xl font-bold font-display text-amber-400 leading-tight" id="barTotalAmount">฿0.00</div>
           </div>
         </div>
 
-        <button onclick="openCustomerCartModal()" class="bg-amber-400 hover:bg-amber-500 text-[#0F5C52] px-5 py-3 rounded-2xl font-bold text-base font-display flex items-center gap-1.5 shadow-lg transition active:scale-95">
-          <span>ดูตะกร้า</span>
+        <button onclick="openCustomerCartModal()" class="bg-[#F37021] hover:bg-orange-600 text-white px-5 py-2.5 rounded-2xl font-bold text-base font-display flex items-center gap-1 shadow-md transition active:scale-95">
+          <span>ดำเนินการต่อ</span>
           <i data-lucide="chevron-right" class="w-5 h-5"></i>
         </button>
       </div>
@@ -154,42 +194,48 @@
       <div class="bg-white p-5 rounded-t-3xl max-w-md w-full max-h-[90vh] overflow-y-auto space-y-4 shadow-2xl animate-in slide-in-from-bottom duration-200">
         
         <div class="flex justify-between items-center border-b pb-3">
-          <h3 class="font-bold text-xl font-display flex items-center gap-2 text-[#0F5C52]">
-            <i data-lucide="shopping-cart"></i> สรุปรายการสั่งซื้อ
+          <h3 class="font-bold text-xl font-display flex items-center gap-2 text-[#008B47]">
+            <i data-lucide="shopping-bag"></i> ตรวจสอบรายการสั่งซื้อ
           </h3>
-          <button onclick="closeCustomerCartModal()" class="p-1 rounded-full bg-gray-100"><i data-lucide="x" class="w-6 h-6 text-gray-600"></i></button>
+          <button onclick="closeCustomerCartModal()" class="p-1 rounded-full bg-gray-100"><i data-lucide="x" class="w-5 h-5 text-gray-500"></i></button>
         </div>
 
-        <div id="custCartItems" class="bg-gray-50 p-3 rounded-2xl border divide-y divide-gray-200 space-y-2 max-h-52 overflow-y-auto"></div>
+        <div id="custCartItems" class="bg-gray-50 p-3 rounded-2xl border divide-y divide-gray-200 space-y-2 max-h-48 overflow-y-auto"></div>
 
-        <div class="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-200 flex justify-between items-center">
-          <span class="font-bold text-emerald-900 text-base">ยอดรวมสุทธิ</span>
-          <span id="custModalTotal" class="text-3xl font-bold font-display text-[#0F5C52]">฿0.00</span>
+        <div class="bg-emerald-50 p-3 rounded-2xl border border-emerald-200 flex justify-between items-center">
+          <span class="font-bold text-emerald-900 text-sm">ยอดรวมสินค้าทั้งหมด</span>
+          <span id="custModalTotal" class="text-2xl font-bold font-display text-[#008B47]">฿0.00</span>
         </div>
 
         <div class="space-y-2.5 bg-gray-50 p-3.5 rounded-2xl border">
-          <div class="text-xs font-bold text-[#0F5C52] font-display flex items-center gap-1">
-            <i data-lucide="map-pin" class="w-4 h-4"></i> ข้อมูลสำหรับจัดส่ง / ติดต่อ
+          <div class="text-xs font-bold text-[#008B47] font-display flex items-center gap-1">
+            <i data-lucide="map-pin" class="w-4 h-4"></i> ระบุข้อมูลจัดส่ง
           </div>
 
           <div>
-            <label class="text-xs font-bold text-gray-600 block mb-1">ชื่อผู้สั่งซื้อ *</label>
-            <input type="text" id="custName" placeholder="เช่น คุณสมชาย" class="w-full p-2.5 rounded-xl border bg-white font-bold text-sm focus:outline-none focus:border-[#0F5C52]">
+            <label class="text-[11px] font-bold text-gray-500 block mb-1">ชื่อผู้รับสินค้า *</label>
+            <input type="text" id="custName" placeholder="เช่น คุณสมชาย" class="w-full p-2 rounded-xl border bg-white font-bold text-sm focus:outline-none focus:border-[#008B47]">
           </div>
 
           <div>
-            <label class="text-xs font-bold text-gray-600 block mb-1">เบอร์โทรศัพท์ติดต่อ *</label>
-            <input type="tel" id="custPhone" placeholder="เช่น 0812345678" class="w-full p-2.5 rounded-xl border bg-white font-bold text-sm focus:outline-none focus:border-[#0F5C52]">
+            <label class="text-[11px] font-bold text-gray-500 block mb-1">เบอร์โทรศัพท์ติดต่อ *</label>
+            <input type="tel" id="custPhone" placeholder="เช่น 0812345678" class="w-full p-2 rounded-xl border bg-white font-bold text-sm focus:outline-none focus:border-[#008B47]">
           </div>
 
           <div>
-            <label class="text-xs font-bold text-gray-600 block mb-1">ที่อยู่จัดส่ง / บ้านเลขที่ / หมายเหตุ *</label>
-            <textarea id="custAddress" rows="2" placeholder="เช่น บ้านเลขที่ 12/3 ซอย 5 หรือ มารับเองหน้าเคาน์เตอร์" class="w-full p-2.5 rounded-xl border bg-white font-bold text-sm focus:outline-none focus:border-[#0F5C52]"></textarea>
+            <div class="flex justify-between items-center mb-1">
+              <label class="text-[11px] font-bold text-gray-500 block">ระบุที่อยู่ / ปักหมุด GPS *</label>
+              <button type="button" onclick="getCurrentLocation()" class="text-[11px] bg-[#F37021] text-white px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1 shadow-sm hover:opacity-90">
+                <i data-lucide="crosshair" class="w-3 h-3"></i> ปักหมุด GPS ปัจจุบัน
+              </button>
+            </div>
+            <textarea id="custAddress" rows="2" placeholder="ระบุบ้านเลขที่ / จุดสังเกตเพิ่มเติม..." class="w-full p-2 rounded-xl border bg-white font-bold text-sm focus:outline-none focus:border-[#008B47]"></textarea>
+            <div id="gpsStatusText" class="text-[10px] font-bold text-emerald-700 mt-1 hidden"></div>
           </div>
         </div>
 
-        <button onclick="submitOrderFromCustomer()" class="w-full bg-[#0F5C52] hover:bg-[#0d4d43] text-white py-3.5 rounded-2xl font-bold text-lg font-display shadow-lg transition active:scale-95">
-          🚀 ยืนยันการสั่งซื้อสินค้า
+        <button onclick="submitOrderFromCustomer()" class="w-full bg-[#008B47] hover:bg-[#007438] text-white py-3.5 rounded-2xl font-bold text-lg font-display shadow-lg transition active:scale-95">
+          🚀 ยืนยันการสั่งซื้อ
         </button>
       </div>
     </div>
@@ -220,6 +266,7 @@
     let selectedCategory = 'ทั้งหมด';
     let currentOrderId = localStorage.getItem('lastOrderId') || null;
     let unsubscribeOrderTracking = null;
+    let userLocation = null;
 
     db.collection("products").onSnapshot(s => {
       products = [];
@@ -233,23 +280,60 @@
       renderCustomerProducts();
     });
 
-    // หากมีออเดอร์เดิมค้างอยู่ ให้ดึงมาแสดงหน้าติดตามออเดอร์ทันที
     if (currentOrderId) {
       trackOrderRealtime(currentOrderId);
     }
 
+    function getCurrentLocation() {
+      const statusText = document.getElementById('gpsStatusText');
+      if (navigator.geolocation) {
+        statusText.innerText = "⏳ กำลังดึงพิกัดตำแหน่งของคุณ...";
+        statusText.className = "text-[10px] font-bold text-amber-600 mt-1 block animate-pulse";
+        
+        navigator.geolocation.getCurrentPosition(position => {
+          userLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          statusText.innerText = `✅ ปักหมุดตำแหน่งเรียบร้อยแล้ว`;
+          statusText.className = "text-[10px] font-bold text-emerald-700 mt-1 block";
+          document.getElementById('topAddrDisplay').innerText = "พิกัดปักหมุด GPS เรียบร้อยแล้ว";
+        }, err => {
+          statusText.innerText = "❌ ไม่สามารถดึงตำแหน่งได้ กรุณาเปิด GPS ในมือถือ";
+          statusText.className = "text-[10px] font-bold text-red-600 mt-1 block";
+        });
+      } else {
+        alert("อุปกรณ์ของคุณไม่รองรับการดึงตำแหน่ง GPS");
+      }
+    }
+
+    // สไตล์หมวดหมู่วงกลมน่ารักๆ แบบ 7-11
     function renderCategoryFilters() {
       const cats = ['ทั้งหมด', ...new Set(products.map(p => p.category || 'ทั่วไป'))];
       const container = document.getElementById('custCatFilter');
+      
       container.innerHTML = cats.map(c => `
-        <button onclick="selectCustCategory('${c}')" class="px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition ${selectedCategory === c ? 'bg-[#0F5C52] text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}">
-          ${c}
+        <button onclick="selectCustCategory('${c}')" class="flex flex-col items-center gap-1 flex-shrink-0 group">
+          <div class="w-12 h-12 rounded-full flex items-center justify-center border-2 transition ${selectedCategory === c ? 'bg-[#008B47] text-white border-[#008B47] shadow-md scale-105' : 'bg-white text-gray-600 border-gray-200 hover:border-[#008B47]'}">
+            <i data-lucide="${getCategoryIcon(c)}" class="w-5 h-5"></i>
+          </div>
+          <span class="text-[11px] font-bold ${selectedCategory === c ? 'text-[#008B47]' : 'text-gray-600'}">${c}</span>
         </button>
       `).join('');
+      lucide.createIcons();
+    }
+
+    function getCategoryIcon(cat) {
+      if (cat.includes('อาหาร') || cat.includes('เครื่องดื่ม')) return 'coffee';
+      if (cat.includes('ยา') || cat.includes('สุขภาพ')) return 'pill';
+      if (cat.includes('เครื่องสำอาง')) return 'sparkles';
+      if (cat.includes('ใช้')) return 'home';
+      return 'grid';
     }
 
     function selectCustCategory(cat) {
       selectedCategory = cat;
+      document.getElementById('selectedCatTitle').innerText = cat === 'ทั้งหมด' ? 'สินค้าแนะนำทั้งหมด' : `หมวดหมู่: ${cat}`;
       renderCategoryFilters();
       renderCustomerProducts();
     }
@@ -281,21 +365,21 @@
         }
 
         return `
-          <div class="bg-white p-2.5 rounded-2xl border border-gray-200 flex flex-col justify-between shadow-sm relative overflow-hidden">
+          <div class="bg-white p-2.5 rounded-2xl border border-gray-100 flex flex-col justify-between shadow-sm relative overflow-hidden">
             <div>
               <div class="w-full h-28 bg-gray-50 rounded-xl mb-2 overflow-hidden flex items-center justify-center border border-gray-100 relative">
                 ${p.imageUrl ? `<img src="${p.imageUrl}" class="w-full h-full object-cover">` : `<i data-lucide="package" class="w-10 h-10 text-gray-300"></i>`}
                 ${isOutOfStock ? `<div class="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-xs font-bold font-display">สินค้าหมด</div>` : ''}
               </div>
-              <div class="font-bold text-sm text-gray-900 line-clamp-2 leading-snug">${p.name}</div>
+              <div class="font-bold text-xs text-gray-800 line-clamp-2 leading-snug">${p.name}</div>
             </div>
             
-            <div class="mt-2 pt-2 border-t border-gray-100 flex items-center justify-between">
-              <div class="text-base font-bold font-display text-[#0F5C52]">฿${p.price.toFixed(2)}</div>
+            <div class="mt-2 pt-1.5 border-t border-gray-100 flex items-center justify-between">
+              <div class="text-base font-bold font-display text-[#008B47]">฿${p.price.toFixed(2)}</div>
               
               <button onclick="addCustCart('${p.id}')" ${isOutOfStock ? 'disabled' : ''} 
-                class="w-8 h-8 rounded-full bg-[#0F5C52] text-white flex items-center justify-center hover:bg-[#0d4d43] active:scale-95 disabled:bg-gray-300 shadow-sm transition">
-                <i data-lucide="plus" class="w-5 h-5"></i>
+                class="w-7 h-7 rounded-full bg-[#F37021] hover:bg-orange-600 text-white flex items-center justify-center active:scale-95 disabled:bg-gray-300 shadow transition">
+                <i data-lucide="plus" class="w-4 h-4"></i>
               </button>
             </div>
           </div>
@@ -355,18 +439,18 @@
       container.innerHTML = custCart.map((c, i) => `
         <div class="flex justify-between items-center py-1.5">
           <div class="flex items-center gap-2">
-            <div class="w-10 h-10 bg-gray-100 rounded-lg border overflow-hidden flex items-center justify-center">
+            <div class="w-10 h-10 bg-gray-100 rounded-lg border overflow-hidden flex items-center justify-center flex-shrink-0">
               ${c.imageUrl ? `<img src="${c.imageUrl}" class="w-full h-full object-cover">` : `<i data-lucide="package" class="w-5 h-5 text-gray-400"></i>`}
             </div>
             <div>
-              <div class="font-bold text-sm text-gray-800">${c.name}</div>
-              <div class="text-xs text-[#0F5C52] font-bold">฿${c.price.toFixed(2)} x ${c.qty}</div>
+              <div class="font-bold text-xs text-gray-800">${c.name}</div>
+              <div class="text-[11px] text-[#008B47] font-bold">฿${c.price.toFixed(2)} x ${c.qty}</div>
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <button onclick="changeCustQty(${i}, -1)" class="w-7 h-7 bg-gray-200 rounded-lg font-bold hover:bg-gray-300">-</button>
-            <span class="font-bold text-sm px-1">${c.qty}</span>
-            <button onclick="changeCustQty(${i}, 1)" class="w-7 h-7 bg-gray-200 rounded-lg font-bold hover:bg-gray-300">+</button>
+            <button onclick="changeCustQty(${i}, -1)" class="w-6 h-6 bg-gray-200 rounded font-bold hover:bg-gray-300 text-xs">-</button>
+            <span class="font-bold text-xs px-1">${c.qty}</span>
+            <button onclick="changeCustQty(${i}, 1)" class="w-6 h-6 bg-gray-200 rounded font-bold hover:bg-gray-300 text-xs">+</button>
           </div>
         </div>
       `).join('');
@@ -389,9 +473,10 @@
         customerName: name,
         customerPhone: phone,
         customerAddress: address,
+        location: userLocation,
         items: custCart,
         totalAmount: totalAmt,
-        status: 'pending', // pending -> preparing -> ready -> delivering -> completed
+        status: 'pending',
         stepLevel: 1
       };
 
@@ -409,7 +494,6 @@
       });
     }
 
-    // ⚡ ระบบติดตามออเดอร์ Real-time + แสดงการ์ดสรุปเหมือน 7-11
     function trackOrderRealtime(orderId) {
       if (unsubscribeOrderTracking) unsubscribeOrderTracking();
 
@@ -425,7 +509,6 @@
         document.getElementById('trackCustAddress').innerText = o.customerAddress;
         document.getElementById('trackTotalAmt').innerText = '฿' + o.totalAmount.toFixed(2);
 
-        // กำหนด Step ส้ม 7-11
         let step = 1;
         if (o.status === 'pending') step = 1;
         else if (o.status === 'preparing') step = 2;
@@ -435,22 +518,21 @@
 
         updateStepperUI(step);
 
-        // แสดงตารางสรุปรายการสินค้า (รูปภาพ + ชื่อ + ราคา + จำนวน X) สไตล์ 7-11
         const itemList = document.getElementById('trackingItemList');
         itemList.innerHTML = o.items.map(i => `
-          <div class="py-3 flex items-center justify-between gap-3">
-            <div class="flex items-center gap-3">
-              <div class="w-14 h-14 bg-gray-50 rounded-xl border flex items-center justify-center overflow-hidden flex-shrink-0">
-                ${i.imageUrl ? `<img src="${i.imageUrl}" class="w-full h-full object-cover">` : `<i data-lucide="package" class="w-6 h-6 text-gray-300"></i>`}
+          <div class="py-2.5 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-12 h-12 bg-gray-50 rounded-xl border flex items-center justify-center overflow-hidden flex-shrink-0">
+                ${i.imageUrl ? `<img src="${i.imageUrl}" class="w-full h-full object-cover">` : `<i data-lucide="package" class="w-5 h-5 text-gray-300"></i>`}
               </div>
               <div>
-                <div class="font-bold text-sm text-gray-800 line-clamp-1">${i.name}</div>
-                <div class="text-xs text-gray-400 font-semibold mt-0.5">฿${i.price.toFixed(2)} บาท</div>
+                <div class="font-bold text-xs text-gray-800 line-clamp-1">${i.name}</div>
+                <div class="text-[11px] text-gray-400 font-semibold mt-0.5">${i.price.toFixed(2)} บาท</div>
               </div>
             </div>
             <div class="text-right">
-              <div class="font-bold text-base text-gray-800">${(i.price * i.qty).toFixed(2)} บาท</div>
-              <div class="text-xs font-bold text-gray-400 mt-0.5">X${i.qty}</div>
+              <div class="font-bold text-xs text-gray-800">${(i.price * i.qty).toFixed(2)} บาท</div>
+              <div class="text-[11px] font-bold text-gray-400 mt-0.5">X${i.qty}</div>
             </div>
           </div>
         `).join('');
@@ -468,9 +550,9 @@
         const label = document.getElementById(`stepLabel${i}`);
 
         if (i <= step) {
-          circle.className = "w-6 h-6 rounded-full bg-[#E86424] text-white flex items-center justify-center text-xs font-bold z-10 shadow";
+          circle.className = "w-6 h-6 rounded-full bg-[#F37021] text-white flex items-center justify-center text-xs font-bold z-10 shadow";
           circle.innerText = "✓";
-          label.className = "text-[#E86424] font-bold";
+          label.className = "text-[#F37021] font-bold";
         } else {
           circle.className = "w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center text-xs font-bold z-10 shadow";
           circle.innerText = i;

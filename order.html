@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>สั่งซื้อสินค้าออนไลน์ — ร้านค้าขวัญใจ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <style>
+    :root {
+      --paper: #F5F3EE;
+      --ink: #1C2321;
+      --teal: #0F5C52;
+      --font-display: 'Kanit', sans-serif;
+      --font-body: 'Sarabun', sans-serif;
+    }
+    body { background-color: var(--paper); font-family: var(--font-body); color: var(--ink); font-size: 18px; }
+    h1, h2, h3, .font-display { font-family: var(--font-display); }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col pb-28">
+
+  <!-- Header หน้าสั่งซื้อสำหรับลูกค้า -->
+  <header class="bg-[#1C2321] text-white px-6 py-4 flex justify-between items-center sticky top-0 z-40 shadow-md">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-[#0F5C52] flex items-center justify-center text-white">
+        <i data-lucide="shopping-bag" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <h1 class="font-bold text-xl font-display leading-tight">ร้านค้าขวัญใจ</h1>
+        <p class="text-xs text-emerald-300 font-semibold">🛒 สั่งซื้อสินค้าออนไลน์</p>
+      </div>
+    </div>
+    <div id="cartBadgeBtn" onclick="openCustomerCartModal()" class="relative bg-[#0F5C52] p-2.5 rounded-2xl cursor-pointer hover:opacity-90 transition">
+      <i data-lucide="shopping-cart" class="w-6 h-6 text-white"></i>
+      <span id="badgeCount" class="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold hidden">0</span>
+    </div>
+  </header>
+
+  <!-- เนื้อหาหลัก -->
+  <main class="p-4 max-w-4xl w-full mx-auto space-y-4">
+    
+    <!-- ช่องค้นหา & กรองหมวดหมู่ -->
+    <div class="bg-white p-4 rounded-2xl border-2 border-[#DEDACB] space-y-3 shadow-sm">
+      <input type="text" id="custSearchInput" oninput="renderCustomerProducts()" placeholder="🔍 พิมพ์ค้นหาชื่อสินค้าที่ต้องการสั่ง..." 
+        class="w-full text-lg p-3 rounded-xl border-2 border-[#0F5C52] bg-[#F5F3EE] focus:outline-none font-bold">
+      
+      <div class="flex items-center gap-2 overflow-x-auto pb-1" id="custCatFilter"></div>
+    </div>
+
+    <!-- รายการสินค้าการ์ดใหญ่สำหรับลูกค้า -->
+    <div id="custProductGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+      <p class="col-span-4 text-center py-12 text-[#0F5C52] font-bold animate-pulse">⏳ กำลังโหลดรายการสินค้า...</p>
+    </div>
+
+  </main>
+
+  <!-- แถบตะกร้าสินค้าด้านล่าง (Sticky Bottom Bar) -->
+  <div id="bottomCartBar" class="fixed bottom-0 inset-x-0 bg-[#1C2321] text-white p-4 shadow-2xl z-30 hidden border-t-2 border-[#0F5C52]">
+    <div class="max-w-4xl mx-auto flex justify-between items-center gap-3">
+      <div>
+        <div class="text-xs text-gray-300">ตระกร้าของคุณ (<span id="barTotalQty" class="font-bold text-amber-300">0</span> ชิ้น)</div>
+        <div class="text-2xl font-bold font-display text-emerald-400" id="barTotalAmount">฿0.00</div>
+      </div>
+      <button onclick="openCustomerCartModal()" class="bg-[#0F5C52] hover:bg-[#0d4d43] text-white px-6 py-3 rounded-2xl font-bold text-lg font-display flex items-center gap-2 shadow-lg transition">
+        <span>ดูตะกร้า / สั่งซื้อ</span>
+        <i data-lucide="arrow-right" class="w-5 h-5"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal ตะกร้าสินค้า & กรอกข้อมูลจัดส่ง -->
+  <div id="custCartModal" class="hidden fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
+    <div class="bg-[#F5F3EE] p-6 rounded-t-3xl sm:rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b-2 border-[#DEDACB] pb-3">
+        <h3 class="font-bold text-2xl font-display flex items-center gap-2">
+          <i data-lucide="shopping-bag" class="text-[#0F5C52]"></i> ยืนยันคำสั่งซื้อ
+        </h3>
+        <button onclick="closeCustomerCartModal()"><i data-lucide="x" class="w-6 h-6"></i></button>
+      </div>
+
+      <!-- รายการในตะกร้า -->
+      <div id="custCartItems" class="bg-white p-4 rounded-2xl border-2 border-[#DEDACB] divide-y-2 divide-[#DEDACB] space-y-2 max-h-60 overflow-y-auto"></div>
+
+      <!-- สรุปยอดเงิน -->
+      <div class="bg-white p-4 rounded-2xl border-2 border-[#DEDACB] space-y-1">
+        <div class="flex justify-between items-center text-xl font-bold border-t pt-2">
+          <span>ยอดรวมทั้งหมด</span>
+          <span id="custModalTotal" class="text-2xl font-display text-[#B3432B]">฿0.00</span>
+        </div>
+      </div>
+
+      <!-- ฟอร์มกรอกข้อมูลลูกค้า -->
+      <div class="bg-white p-4 rounded-2xl border-2 border-[#DEDACB] space-y-3">
+        <div class="text-sm font-bold text-[#0F5C52] font-display flex items-center gap-1">
+          <i data-lucide="user" class="w-4 h-4"></i> ข้อมูลสำหรับการจัดส่ง / ติดต่อ
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-gray-600 block mb-1">ชื่อผู้สั่งซื้อ *</label>
+          <input type="text" id="custName" placeholder="เช่น คุณสมชาย" class="w-full p-2.5 rounded-xl border-2 font-bold text-base bg-[#F5F3EE]">
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-gray-600 block mb-1">เบอร์โทรศัพท์ติดต่อ *</label>
+          <input type="tel" id="custPhone" placeholder="เช่น 0812345678" class="w-full p-2.5 rounded-xl border-2 font-bold text-base bg-[#F5F3EE]">
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-gray-600 block mb-1">ที่อยู่จัดส่ง / เลขที่บ้าน / เลขโต๊ะ / หมายเหตุ *</label>
+          <textarea id="custAddress" rows="2" placeholder="เช่น บ้านเลขที่ 12/3 หรือ มารับเองที่ร้าน" class="w-full p-2.5 rounded-xl border-2 font-bold text-base bg-[#F5F3EE]"></textarea>
+        </div>
+      </div>
+
+      <button onclick="submitOrderFromCustomer()" class="w-full bg-[#0F5C52] text-white py-4 rounded-2xl font-bold text-xl font-display shadow-md hover:opacity-90 transition">
+        🚀 ยืนยันการสั่งซื้อ
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // Config สำหรับ Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyCGMxESjF8ZDAAm7xL_uDvz4hEa7EpZD6Y",
+      authDomain: "myshop-pos-19a95.firebaseapp.com",
+      projectId: "myshop-pos-19a95",
+      storageBucket: "myshop-pos-19a95.firebasestorage.app",
+      messagingSenderId: "716112798921",
+      appId: "1:716112798921:web:e7dfa1d888517392e45918",
+      measurementId: "G-JEXYPQ7WM8"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let products = [];
+    let custCart = [];
+    let selectedCategory = 'ทั้งหมด';
+
+    // ดึงข้อมูลสินค้าจากคอลเลกชันหลัก (อ่านได้อย่างเดียว)
+    db.collection("products").onSnapshot(s => {
+      products = [];
+      s.forEach(doc => {
+        const d = doc.data();
+        let batches = d.batches || [];
+        const totalStock = batches.reduce((sum, b) => sum + b.qty, 0);
+        products.push({ id: doc.id, ...d, stock: totalStock });
+      });
+      renderCategoryFilters();
+      renderCustomerProducts();
+    });
+
+    function renderCategoryFilters() {
+      const cats = ['ทั้งหมด', ...new Set(products.map(p => p.category || 'ทั่วไป'))];
+      const container = document.getElementById('custCatFilter');
+      container.innerHTML = cats.map(c => `
+        <button onclick="selectCustCategory('${c}')" class="px-4 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition ${selectedCategory === c ? 'bg-[#0F5C52] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}">
+          ${c}
+        </button>
+      `).join('');
+    }
+
+    function selectCustCategory(cat) {
+      selectedCategory = cat;
+      renderCategoryFilters();
+      renderCustomerProducts();
+    }
+
+    function renderCustomerProducts() {
+      const grid = document.getElementById('custProductGrid');
+      const searchVal = (document.getElementById('custSearchInput')?.value || '').trim().toLowerCase();
+
+      let displayList = products;
+      if (selectedCategory !== 'ทั้งหมด') {
+        displayList = displayList.filter(p => p.category === selectedCategory);
+      }
+      if (searchVal) {
+        displayList = displayList.filter(p => p.name.toLowerCase().includes(searchVal));
+      }
+
+      if (displayList.length === 0) {
+        grid.innerHTML = `<p class="col-span-4 text-center py-12 text-gray-500 font-bold">ไม่พบสินค้าที่คุณค้นหา</p>`;
+        return;
+      }
+
+      grid.innerHTML = displayList.map(p => {
+        const isOutOfStock = !p.isSubProduct && p.stock <= 0;
+        return `
+          <div class="bg-white p-3 rounded-2xl border-2 border-[#DEDACB] flex flex-col justify-between shadow-sm relative">
+            <div class="w-full h-28 bg-gray-100 rounded-xl mb-2 overflow-hidden flex items-center justify-center">
+              ${p.imageUrl ? `<img src="${p.imageUrl}" class="w-full h-full object-cover">` : `<i data-lucide="package" class="w-10 h-10 text-gray-400"></i>`}
+            </div>
+            <div class="font-bold text-base text-black truncate text-center">${p.name}</div>
+            <div class="text-xl font-bold font-display text-[#0284C7] text-center my-1">฿${p.price.toFixed(2)}</div>
+            
+            <button onclick="addCustCart('${p.id}')" ${isOutOfStock ? 'disabled' : ''} 
+              class="w-full py-2 bg-[#0F5C52] text-white rounded-xl font-bold text-sm hover:opacity-90 disabled:bg-gray-300 shadow-sm transition">
+              ${isOutOfStock ? 'สินค้าหมด' : '+ ใส่ตะกร้า'}
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function addCustCart(id) {
+      const p = products.find(prod => prod.id === id);
+      if (!p) return;
+
+      const idx = custCart.findIndex(c => c.productId === id);
+      if (idx >= 0) {
+        custCart[idx].qty++;
+      } else {
+        custCart.push({ productId: p.id, name: p.name, price: p.price, qty: 1 });
+      }
+
+      updateCartSummaryUI();
+    }
+
+    function changeCustQty(idx, delta) {
+      custCart[idx].qty += delta;
+      if (custCart[idx].qty <= 0) custCart.splice(idx, 1);
+      updateCartSummaryUI();
+      renderCartModalItems();
+    }
+
+    function updateCartSummaryUI() {
+      const totalQty = custCart.reduce((sum, c) => sum + c.qty, 0);
+      const totalAmt = custCart.reduce((sum, c) => sum + (c.price * c.qty), 0);
+
+      document.getElementById('badgeCount').innerText = totalQty;
+      document.getElementById('badgeCount').classList.toggle('hidden', totalQty === 0);
+
+      document.getElementById('barTotalQty').innerText = totalQty;
+      document.getElementById('barTotalAmount').innerText = '฿' + totalAmt.toFixed(2);
+      document.getElementById('bottomCartBar').classList.toggle('hidden', totalQty === 0);
+
+      document.getElementById('custModalTotal').innerText = '฿' + totalAmt.toFixed(2);
+    }
+
+    function openCustomerCartModal() {
+      if (custCart.length === 0) return alert('กรุณาเลือกสินค้าใส่ตะกร้าก่อนครับ');
+      renderCartModalItems();
+      document.getElementById('custCartModal').classList.remove('hidden');
+    }
+
+    function closeCustomerCartModal() {
+      document.getElementById('custCartModal').classList.add('hidden');
+    }
+
+    function renderCartModalItems() {
+      const container = document.getElementById('custCartItems');
+      container.innerHTML = custCart.map((c, i) => `
+        <div class="flex justify-between items-center py-2">
+          <div>
+            <div class="font-bold text-base">${c.name}</div>
+            <div class="text-xs text-[#0284C7] font-bold">฿${c.price.toFixed(2)} x ${c.qty}</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="changeCustQty(${i}, -1)" class="w-8 h-8 bg-gray-200 rounded-lg font-bold hover:bg-gray-300">-</button>
+            <span class="font-bold px-1">${c.qty}</span>
+            <button onclick="changeCustQty(${i}, 1)" class="w-8 h-8 bg-gray-200 rounded-lg font-bold hover:bg-gray-300">+</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ยิงออเดอร์เข้าคอลเลกชัน orders ใน Firebase
+    function submitOrderFromCustomer() {
+      const name = document.getElementById('custName').value.trim();
+      const phone = document.getElementById('custPhone').value.trim();
+      const address = document.getElementById('custAddress').value.trim();
+
+      if (!name || !phone || !address) {
+        return alert('กรุณากรอกชื่อ, เบอร์โทร และที่อยู่/หมายเหตุให้ครบถ้วนครับ');
+      }
+
+      const totalAmt = custCart.reduce((sum, c) => sum + (c.price * c.qty), 0);
+
+      const orderData = {
+        ts: Date.now(),
+        customerName: name,
+        customerPhone: phone,
+        customerAddress: address,
+        items: custCart,
+        totalAmount: totalAmt,
+        status: 'pending' // สถานะรอดำเนินการ
+      };
+
+      db.collection("orders").add(orderData).then(() => {
+        alert('🎉 ส่งคำสั่งซื้อเรียบร้อยแล้วครับ! ทางร้านจะติดต่อกลับโดยเร็วที่สุด');
+        custCart = [];
+        updateCartSummaryUI();
+        closeCustomerCartModal();
+        document.getElementById('custName').value = '';
+        document.getElementById('custPhone').value = '';
+        document.getElementById('custAddress').value = '';
+      }).catch(err => {
+        alert('เกิดข้อผิดพลาดในการสั่งซื้อ: ' + err.message);
+      });
+    }
+
+    lucide.createIcons();
+  </script>
+</body>
+</html>

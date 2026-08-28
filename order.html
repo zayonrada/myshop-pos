@@ -103,35 +103,24 @@
       </main>
     </div>
 
-    <!-- ⚡ แถบย่อติดตามสถานะออเดอร์ด้านล่าง -->
-    <div id="miniOrderStatusCard" class="fixed bottom-0 max-w-md w-full bg-white border-t-2 border-[#008B47] shadow-2xl z-30 p-3 hidden rounded-t-3xl">
-      <div class="flex items-center justify-between gap-2 border-b pb-2 mb-2">
+    <!-- ⚡ แถบย่อติดตามสถานะออเดอร์ด้านล่าง (Mini Status Bar) — ไม่เกะกะสายตา พร้อมเลขออเดอร์ -->
+    <div id="miniOrderStatusCard" class="fixed bottom-0 max-w-md w-full bg-white border-t-2 border-[#008B47] shadow-2xl z-30 p-2.5 hidden rounded-t-2xl">
+      <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-2">
           <span class="w-2.5 h-2.5 rounded-full bg-[#F37021] animate-ping"></span>
-          <span class="font-bold text-sm text-[#008B47] font-display">สถานะออเดอร์ที่กำลังจัดส่ง</span>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="font-bold text-xs text-[#008B47] font-display">สถานะออเดอร์</span>
+              <span id="miniOrderIdBadge" class="bg-gray-100 text-gray-700 text-[10px] px-1.5 py-0.2 rounded font-bold font-mono"></span>
+            </div>
+            <div id="miniStatusText" class="text-xs font-bold text-[#F37021]">กำลังดำเนินการ...</div>
+          </div>
         </div>
-        <button onclick="toggleTrackingModal(true)" class="text-xs text-gray-500 hover:text-black font-bold flex items-center gap-0.5">
-          <span>รายละเอียดบิล</span>
+
+        <button onclick="toggleTrackingModal(true)" class="bg-[#008B47] text-white px-3 py-1.5 rounded-xl text-xs font-bold font-display shadow-sm flex items-center gap-1 active:scale-95 transition">
+          <span>ดูรายละเอียด</span>
           <i data-lucide="chevron-up" class="w-4 h-4"></i>
         </button>
-      </div>
-
-      <div class="space-y-1">
-        <div class="flex items-center justify-between relative px-2">
-          <div class="absolute inset-x-4 top-1/2 -translate-y-1/2 h-1 bg-gray-200 z-0"></div>
-          <div id="miniStepProgress" class="absolute left-4 top-1/2 -translate-y-1/2 h-1 bg-[#F37021] z-0 transition-all duration-300" style="width: 0%;"></div>
-
-          <div id="miniCircle1" class="w-5 h-5 rounded-full bg-[#F37021] text-white flex items-center justify-center text-[10px] font-bold z-10">✓</div>
-          <div id="miniCircle2" class="w-5 h-5 rounded-full bg-gray-300 text-white flex items-center justify-center text-[10px] font-bold z-10">2</div>
-          <div id="miniCircle3" class="w-5 h-5 rounded-full bg-gray-300 text-white flex items-center justify-center text-[10px] font-bold z-10">3</div>
-          <div id="miniCircle4" class="w-5 h-5 rounded-full bg-gray-300 text-white flex items-center justify-center text-[10px] font-bold z-10">4</div>
-          <div id="miniCircle5" class="w-5 h-5 rounded-full bg-gray-300 text-white flex items-center justify-center text-[10px] font-bold z-10">5</div>
-        </div>
-
-        <div class="flex justify-between items-center text-[11px] font-bold text-[#F37021] px-1 pt-1">
-          <span id="miniStatusText">กำลังดำเนินการ...</span>
-          <span id="miniTotalText" class="text-gray-800"></span>
-        </div>
       </div>
     </div>
 
@@ -194,7 +183,7 @@
             </button>
           </div>
 
-          <!-- ⚡ กล่องเลขบัญชี กสิกรไทย 855-2-19984-8 ยลรดา ฉิมพาลี (ไม่มีรูป QR) -->
+          <!-- กล่องเลขบัญชี -->
           <div id="bankTransferBox" class="pt-2 border-t space-y-2.5">
             <div class="bg-emerald-50 p-3.5 rounded-xl border border-emerald-300 text-xs space-y-2">
               <div class="flex justify-between items-center border-b border-emerald-200 pb-2">
@@ -273,15 +262,41 @@
       </div>
     </div>
 
-    <!-- Modal รายละเอียดออเดอร์ฉบับเต็ม -->
+    <!-- Modal รายละเอียดออเดอร์ฉบับเต็ม + แสดง Stepper ขีดส้ม ไม่โดนบัง -->
     <div id="trackingDetailModal" class="hidden fixed inset-0 bg-black/60 flex items-end justify-center z-50">
-      <div class="bg-white p-5 rounded-t-3xl max-w-md w-full max-h-[85vh] overflow-y-auto space-y-4 shadow-2xl">
+      <div class="bg-white p-5 rounded-t-3xl max-w-md w-full max-h-[88vh] overflow-y-auto space-y-4 shadow-2xl">
         <div class="flex justify-between items-center border-b pb-3">
-          <h3 class="font-bold text-lg font-display text-[#008B47]">รายละเอียดคำสั่งซื้อ</h3>
-          <button onclick="toggleTrackingModal(false)"><i data-lucide="x" class="w-6 h-6 text-gray-500"></i></button>
+          <div>
+            <div class="text-[10px] text-gray-400 font-bold">หมายเลขออเดอร์</div>
+            <h3 class="font-bold text-lg font-display text-[#008B47]" id="modalOrderIdTitle">#ORD-XXXXXX</h3>
+          </div>
+          <button onclick="toggleTrackingModal(false)" class="p-1 rounded-full bg-gray-100"><i data-lucide="x" class="w-6 h-6 text-gray-500"></i></button>
         </div>
 
-        <div id="trackingItemList" class="divide-y divide-gray-100"></div>
+        <!-- ⚡ แถบสถานะขีดส้ม 5 สเต็ปภายในป๊อปอัป -->
+        <div class="bg-gray-50 p-3 rounded-2xl border space-y-2">
+          <div class="text-xs font-bold text-gray-700 text-center font-display" id="modalStepTitleText">รับออเดอร์แล้ว</div>
+          <div class="flex items-center justify-between relative px-2 py-1">
+            <div class="absolute inset-x-4 top-1/2 -translate-y-1/2 h-1 bg-gray-200 z-0"></div>
+            <div id="modalStepProgress" class="absolute left-4 top-1/2 -translate-y-1/2 h-1 bg-[#F37021] z-0 transition-all duration-300" style="width: 0%;"></div>
+
+            <div id="modalCircle1" class="w-6 h-6 rounded-full bg-[#F37021] text-white flex items-center justify-center text-xs font-bold z-10 shadow">✓</div>
+            <div id="modalCircle2" class="w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center text-xs font-bold z-10 shadow">2</div>
+            <div id="modalCircle3" class="w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center text-xs font-bold z-10 shadow">3</div>
+            <div id="modalCircle4" class="w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center text-xs font-bold z-10 shadow">4</div>
+            <div id="modalCircle5" class="w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center text-xs font-bold z-10 shadow">5</div>
+          </div>
+          <div class="grid grid-cols-5 text-[9px] font-bold text-center text-gray-400">
+            <span>รับออเดอร์</span>
+            <span>จัดเตรียม</span>
+            <span>รอจัดส่ง</span>
+            <span>กำลังส่ง</span>
+            <span>ส่งสำเร็จ</span>
+          </div>
+        </div>
+
+        <div class="text-xs font-bold text-gray-700 font-display">รายการสินค้าที่สั่งซื้อ</div>
+        <div id="trackingItemList" class="divide-y divide-gray-100 bg-gray-50 p-2.5 rounded-2xl border max-h-40 overflow-y-auto"></div>
 
         <div class="bg-gray-50 p-3.5 rounded-2xl border space-y-1.5 text-xs text-gray-600 font-medium">
           <div class="flex justify-between"><span>การรับสินค้า:</span><span id="trackDeliveryType" class="font-bold text-[#008B47]"></span></div>
@@ -599,8 +614,12 @@
       const deliveryFee = deliveryType === 'delivery' ? (subtotal >= 100 ? 0 : 20) : 0;
       const totalNet = subtotal + deliveryFee;
 
+      // สร้างหมายเลขออเดอร์ย่อ 6 หลัก
+      const shortOrderId = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
+
       const orderData = {
         ts: Date.now(),
+        orderCode: shortOrderId,
         customerName: name,
         customerPhone: phone,
         customerAddress: address,
@@ -631,6 +650,7 @@
       });
     }
 
+    // ⚡ ระบบติดตามออเดอร์พร้อมระบุหมายเลขออเดอร์ และ Stepper ชัดเจน
     function trackOrderRealtime(orderId) {
       if (unsubscribeOrderTracking) unsubscribeOrderTracking();
 
@@ -647,14 +667,21 @@
 
         card.classList.remove('hidden');
 
+        const orderCodeText = o.orderCode || ('#ORD-' + orderId.substring(0, 6).toUpperCase());
+        document.getElementById('miniOrderIdBadge').innerText = orderCodeText;
+        document.getElementById('modalOrderIdTitle').innerText = orderCodeText;
+
         let step = 1;
-        let statusTitle = "รับออเดอร์แล้ว";
+        let statusTitle = "1/5 รับออเดอร์แล้ว";
         if (o.status === 'pending') { step = 1; statusTitle = "1/5 รับออเดอร์แล้ว"; }
         else if (o.status === 'preparing') { step = 2; statusTitle = "2/5 ร้านกำลังจัดเตรียมสินค้า..."; }
         else if (o.status === 'ready') { step = 3; statusTitle = "3/5 สินค้าจัดเสร็จรอส่ง..."; }
         else if (o.status === 'delivering') { step = 4; statusTitle = "4/5 ไรเดอร์กำลังนำสินค้าไปส่ง..."; }
 
-        updateMiniStepperUI(step, statusTitle, o.totalAmount);
+        document.getElementById('miniStatusText').innerText = statusTitle;
+        document.getElementById('modalStepTitleText').innerText = statusTitle;
+
+        updateStepperUI(step);
 
         document.getElementById('trackDeliveryType').innerText = o.deliveryType === 'pickup' ? '🏪 มารับเองที่ร้าน' : '🛵 ให้ไปส่งที่บ้าน';
         document.getElementById('trackPayType').innerText = o.payOption === 'transfer' ? '📱 โอนเงินผ่านบัญชี' : '💵 เงินสดปลายทาง';
@@ -667,7 +694,7 @@
         itemList.innerHTML = o.items.map(i => `
           <div class="py-2 flex items-center justify-between gap-3 text-xs">
             <div class="flex items-center gap-2">
-              <div class="w-10 h-10 bg-gray-50 rounded-lg border flex items-center justify-center overflow-hidden flex-shrink-0">
+              <div class="w-10 h-10 bg-white rounded-lg border flex items-center justify-center overflow-hidden flex-shrink-0">
                 ${i.imageUrl ? `<img src="${i.imageUrl}" class="w-full h-full object-cover">` : `<i data-lucide="package" class="w-4 h-4 text-gray-300"></i>`}
               </div>
               <div>
@@ -686,19 +713,17 @@
       });
     }
 
-    function updateMiniStepperUI(step, title, total) {
+    function updateStepperUI(step) {
       const stepWidths = ['0%', '25%', '50%', '75%', '100%'];
-      document.getElementById('miniStepProgress').style.width = stepWidths[step - 1];
-      document.getElementById('miniStatusText').innerText = title;
-      document.getElementById('miniTotalText').innerText = `฿${total.toFixed(2)}`;
+      document.getElementById('modalStepProgress').style.width = stepWidths[step - 1];
 
       for (let i = 1; i <= 5; i++) {
-        const circle = document.getElementById(`miniCircle${i}`);
+        const circle = document.getElementById(`modalCircle${i}`);
         if (i <= step) {
-          circle.className = "w-5 h-5 rounded-full bg-[#F37021] text-white flex items-center justify-center text-[10px] font-bold z-10 shadow";
+          circle.className = "w-6 h-6 rounded-full bg-[#F37021] text-white flex items-center justify-center text-xs font-bold z-10 shadow";
           circle.innerText = "✓";
         } else {
-          circle.className = "w-5 h-5 rounded-full bg-gray-300 text-white flex items-center justify-center text-[10px] font-bold z-10";
+          circle.className = "w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center text-xs font-bold z-10 shadow";
           circle.innerText = i;
         }
       }

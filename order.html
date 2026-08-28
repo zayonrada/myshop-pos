@@ -28,12 +28,11 @@
 </head>
 <body class="min-h-screen flex justify-center">
 
-  <!-- คอนเทนเนอร์มือถือ (Mobile Container) -->
   <div class="w-full max-w-md bg-[#F8F9FA] min-h-screen flex flex-col relative pb-28 shadow-2xl">
 
-    <!-- Top Header สีขาวพร้อมโลโก้ร้านค้าขวัญใจตรงกลาง -->
+    <!-- Header สไตล์ 7-11 -->
     <header class="bg-white px-4 py-2.5 sticky top-0 z-40 shadow-sm flex items-center justify-between border-b">
-      <div class="w-9 h-9"></div> <!-- Spacer ช่องว่างรักษาสมดุล -->
+      <div class="w-9 h-9"></div>
 
       <div class="flex items-center gap-1.5">
         <div class="w-8 h-8 rounded-full bg-[#F37021] flex items-center justify-center text-white font-bold text-lg shadow-sm font-display">
@@ -45,7 +44,6 @@
         </div>
       </div>
 
-      <!-- ปุ่มตะกร้าลอยมุมขวาบน -->
       <button onclick="openCustomerCartModal()" class="w-9 h-9 rounded-full bg-emerald-50 flex items-center justify-center relative hover:bg-emerald-100 transition">
         <i data-lucide="shopping-basket" class="w-5 h-5 text-[#008B47]"></i>
         <span id="badgeCount" class="absolute -top-1 -right-1 bg-[#E31837] text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold border-2 border-white hidden">0</span>
@@ -54,8 +52,6 @@
 
     <!-- 🟢 หน้าเลือกซื้อสินค้าหลัก -->
     <div id="shopMainView" class="flex-1 flex flex-col">
-      
-      <!-- แถบระบุตำแหน่งจัดส่ง (Location Bar สไตล์ 7-11) -->
       <div class="bg-[#008B47] text-white p-3.5 space-y-2.5 shadow-md">
         <div class="flex items-center justify-between text-xs">
           <div class="flex items-center gap-2 font-bold truncate pr-2">
@@ -63,32 +59,27 @@
               <i data-lucide="bike" class="w-4 h-4 text-white"></i>
             </div>
             <div class="truncate">
-              <div class="text-[10px] text-emerald-200 font-normal">จัดส่งที่อยู่ปัจจุบัน:</div>
-              <div id="topAddrDisplay" class="truncate text-sm font-display text-white">ยังไม่ได้เลือกตำแหน่งปักหมุด</div>
+              <div class="text-[10px] text-emerald-200 font-normal">สั่งซื้อด่วน Delivery:</div>
+              <div id="topAddrDisplay" class="truncate text-sm font-display text-white">ซื้อครบ 100.- ส่งฟรี (ไม่เกิน 5 กม.)</div>
             </div>
           </div>
-          
-          <button onclick="openCustomerCartModal()" class="bg-white/20 hover:bg-white/30 text-white p-1.5 rounded-full flex-shrink-0 transition">
-            <i data-lucide="map-pin" class="w-4 h-4"></i>
-          </button>
         </div>
 
-        <!-- กล่องค้นหาสินค้าลอยบนแถบเขียว -->
         <div class="relative">
           <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3.5 top-3"></i>
-          <input type="text" id="custSearchInput" oninput="renderCustomerProducts()" placeholder="ค้นหาสินค้า ของกิน ของใช้..." 
+          <input type="text" id="custSearchInput" oninput="renderCustomerProducts()" placeholder="ค้นหาสินค้าที่ต้องการสั่ง..." 
             class="w-full text-sm pl-9 pr-8 py-2 rounded-full bg-white text-gray-800 placeholder-gray-400 focus:outline-none font-medium shadow-inner">
           <i data-lucide="qr-code" class="w-4 h-4 text-gray-400 absolute right-3 top-3"></i>
         </div>
       </div>
 
-      <!-- แบนเนอร์โปรโมชัน 7-11 สไตล์ -->
+      <!-- แบนเนอร์โปรโมชัน -->
       <div class="p-3 pb-1">
         <div class="bg-gradient-to-r from-[#008B47] to-[#147A6F] rounded-2xl p-3.5 text-white flex items-center justify-between shadow-sm relative overflow-hidden">
           <div class="space-y-0.5 z-10">
-            <span class="bg-[#F37021] text-white text-[10px] font-bold px-2 py-0.5 rounded-full font-display">จัดส่งด่วน</span>
-            <div class="font-bold text-base font-display">ส่งตรงถึงหน้าบ้านคุณ</div>
-            <div class="text-xs text-emerald-100">สั่งสดง่ายๆ ไม่ต้องออกไปตากแดด</div>
+            <span class="bg-[#F37021] text-white text-[10px] font-bold px-2 py-0.5 rounded-full font-display">โปรโมชันพิเศษ</span>
+            <div class="font-bold text-base font-display">สั่งซื้อครบ 100.- ส่งฟรี!</div>
+            <div class="text-xs text-emerald-100">บริการส่งฟรีในระยะทางไม่เกิน 5 กม.</div>
           </div>
           <div class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center z-10">
             <i data-lucide="truck" class="w-10 h-10 text-amber-300"></i>
@@ -96,13 +87,12 @@
         </div>
       </div>
 
-      <!-- หมวดหมู่สินค้าแบบไอคอนวงกลมมินิมอล (7-11 Style) -->
+      <!-- หมวดหมู่สินค้า -->
       <div class="p-3">
         <div class="text-xs font-bold text-gray-500 mb-2 font-display">หมวดหมู่สินค้า</div>
         <div class="flex items-center gap-3 overflow-x-auto no-scrollbar pb-1" id="custCatFilter"></div>
       </div>
 
-      <!-- รายการสินค้าการ์ดคลีนๆ 2 คอลัมน์ -->
       <main class="p-3 pt-1 flex-1">
         <div class="flex justify-between items-center mb-2.5">
           <div class="text-sm font-bold font-display text-gray-800" id="selectedCatTitle">สินค้าแนะนำทั้งหมด</div>
@@ -113,7 +103,7 @@
       </main>
     </div>
 
-    <!-- 🟠 หน้าติดตามสถานะออเดอร์สวยๆ แบบ 7-11 (ถอดแบบจากแอปจริง) -->
+    <!-- 🟠 หน้าติดตามสถานะออเดอร์ -->
     <div id="orderStatusView" class="hidden p-3 space-y-4 flex-1">
       <div class="bg-white rounded-3xl p-4 border border-gray-100 shadow-sm space-y-4">
         
@@ -122,14 +112,14 @@
             <div class="w-9 h-9 rounded-full bg-emerald-100 text-[#008B47] flex items-center justify-center">
               <i data-lucide="bike" class="w-5 h-5"></i>
             </div>
-            <span class="font-bold text-lg font-display text-gray-800">สินค้าจัดส่งทันที</span>
+            <span class="font-bold text-lg font-display text-gray-800">สถานะจัดส่งสินค้า</span>
           </div>
           <button onclick="backToShop()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full font-bold">
             + เลือกซื้อเพิ่ม
           </button>
         </div>
 
-        <!-- แถบสเต็ปสถานะจัดส่ง 5 ขั้นตอน -->
+        <!-- Stepper -->
         <div class="py-2 px-1 space-y-2">
           <div class="flex items-center justify-between relative">
             <div class="absolute inset-x-4 top-1/2 -translate-y-1/2 h-1 bg-gray-200 z-0"></div>
@@ -151,16 +141,15 @@
           </div>
         </div>
 
-        <!-- รายการสินค้าที่สั่งซื้อ สไตล์ 7-11 (รูป + ชื่อ + ราคา + X) -->
         <div id="trackingItemList" class="divide-y divide-gray-100 pt-1"></div>
 
-        <!-- สรุปข้อมูล -->
         <div class="bg-gray-50 p-3.5 rounded-2xl border space-y-1.5 text-xs text-gray-600 font-medium">
+          <div class="flex justify-between"><span>การรับสินค้า:</span><span id="trackDeliveryType" class="font-bold text-[#008B47]"></span></div>
           <div class="flex justify-between"><span>ผู้สั่งซื้อ:</span><span id="trackCustName" class="font-bold text-gray-900"></span></div>
           <div class="flex justify-between"><span>เบอร์โทร:</span><span id="trackCustPhone" class="font-bold text-gray-900"></span></div>
-          <div class="flex justify-between"><span>ที่อยู่จัดส่ง:</span><span id="trackCustAddress" class="font-bold text-gray-900 text-right max-w-[180px] truncate"></span></div>
+          <div class="flex justify-between"><span>ที่อยู่/หมายเหตุ:</span><span id="trackCustAddress" class="font-bold text-gray-900 text-right max-w-[180px] truncate"></span></div>
           <div class="flex justify-between border-t pt-2 text-sm font-bold text-[#008B47]">
-            <span>ยอดรวมทั้งสิ้น:</span>
+            <span>ยอดรวมสุทธิ:</span>
             <span id="trackTotalAmt" class="text-lg font-display text-[#F37021]">฿0.00</span>
           </div>
         </div>
@@ -168,7 +157,7 @@
       </div>
     </div>
 
-    <!-- แถบสรุปตะกร้าสินค้าลอยด้านล่าง (Bottom Delivery Bar) -->
+    <!-- แถบสรุปตะกร้าสินค้าลอยด้านล่าง -->
     <div id="bottomCartBar" class="fixed bottom-0 max-w-md w-full bg-[#1F2937] text-white p-3 shadow-2xl z-40 hidden border-t-2 border-[#F37021] rounded-t-3xl">
       <div class="flex justify-between items-center gap-3 px-1">
         <div class="flex items-center gap-3">
@@ -189,7 +178,7 @@
       </div>
     </div>
 
-    <!-- Modal ตะกร้าสินค้า & กรอกที่อยู่จัดส่ง -->
+    <!-- Modal ตะกร้าสินค้า & ตัวเลือกจัดส่ง -->
     <div id="custCartModal" class="hidden fixed inset-0 bg-black/60 flex items-end justify-center z-50">
       <div class="bg-white p-5 rounded-t-3xl max-w-md w-full max-h-[90vh] overflow-y-auto space-y-4 shadow-2xl animate-in slide-in-from-bottom duration-200">
         
@@ -202,9 +191,33 @@
 
         <div id="custCartItems" class="bg-gray-50 p-3 rounded-2xl border divide-y divide-gray-200 space-y-2 max-h-48 overflow-y-auto"></div>
 
-        <div class="bg-emerald-50 p-3 rounded-2xl border border-emerald-200 flex justify-between items-center">
-          <span class="font-bold text-emerald-900 text-sm">ยอดรวมสินค้าทั้งหมด</span>
-          <span id="custModalTotal" class="text-2xl font-bold font-display text-[#008B47]">฿0.00</span>
+        <!-- ⚡ ตัวเลือกประเภทการรับสินค้า (ส่งบ้าน / รับที่ร้าน) -->
+        <div class="bg-gray-50 p-3 rounded-2xl border space-y-2">
+          <div class="text-xs font-bold text-gray-700 font-display">รูปแบบการรับสินค้า</div>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="setDeliveryType('delivery')" id="btnTypeDelivery" class="py-2.5 px-3 rounded-xl font-bold text-xs border-2 border-[#008B47] bg-[#008B47] text-white flex items-center justify-center gap-1.5 transition">
+              <i data-lucide="bike" class="w-4 h-4"></i> ให้ไปส่งที่บ้าน
+            </button>
+            <button type="button" onclick="setDeliveryType('pickup')" id="btnTypePickup" class="py-2.5 px-3 rounded-xl font-bold text-xs border-2 border-gray-200 bg-white text-gray-700 flex items-center justify-center gap-1.5 transition">
+              <i data-lucide="store" class="w-4 h-4"></i> มารับเองที่ร้าน
+            </button>
+          </div>
+        </div>
+
+        <!-- ยอดรวมคำนวณค่าส่ง -->
+        <div class="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-200 space-y-1">
+          <div class="flex justify-between text-xs text-gray-600">
+            <span>ค่าสินค้า</span>
+            <span id="custCartSubtotal">฿0.00</span>
+          </div>
+          <div class="flex justify-between text-xs text-gray-600">
+            <span>ค่าจัดส่ง (ไม่เกิน 5 กม.)</span>
+            <span id="custDeliveryFee" class="font-bold text-[#F37021]">฿0.00</span>
+          </div>
+          <div class="flex justify-between items-center border-t border-emerald-200 pt-1.5 mt-1">
+            <span class="font-bold text-emerald-900 text-sm">ยอดรวมทั้งสิ้น</span>
+            <span id="custModalTotal" class="text-2xl font-bold font-display text-[#008B47]">฿0.00</span>
+          </div>
         </div>
 
         <div class="space-y-2.5 bg-gray-50 p-3.5 rounded-2xl border">
@@ -222,7 +235,7 @@
             <input type="tel" id="custPhone" placeholder="เช่น 0812345678" class="w-full p-2 rounded-xl border bg-white font-bold text-sm focus:outline-none focus:border-[#008B47]">
           </div>
 
-          <div>
+          <div id="addressInputBox">
             <div class="flex justify-between items-center mb-1">
               <label class="text-[11px] font-bold text-gray-500 block">ระบุที่อยู่ / ปักหมุด GPS *</label>
               <button type="button" onclick="getCurrentLocation()" class="text-[11px] bg-[#F37021] text-white px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1 shadow-sm hover:opacity-90">
@@ -267,6 +280,7 @@
     let currentOrderId = localStorage.getItem('lastOrderId') || null;
     let unsubscribeOrderTracking = null;
     let userLocation = null;
+    let deliveryType = 'delivery'; // 'delivery' หรือ 'pickup'
 
     db.collection("products").onSnapshot(s => {
       products = [];
@@ -282,6 +296,24 @@
 
     if (currentOrderId) {
       trackOrderRealtime(currentOrderId);
+    }
+
+    function setDeliveryType(type) {
+      deliveryType = type;
+      const btnDelivery = document.getElementById('btnTypeDelivery');
+      const btnPickup = document.getElementById('btnTypePickup');
+      const addrBox = document.getElementById('addressInputBox');
+
+      if (type === 'delivery') {
+        btnDelivery.className = "py-2.5 px-3 rounded-xl font-bold text-xs border-2 border-[#008B47] bg-[#008B47] text-white flex items-center justify-center gap-1.5 transition";
+        btnPickup.className = "py-2.5 px-3 rounded-xl font-bold text-xs border-2 border-gray-200 bg-white text-gray-700 flex items-center justify-center gap-1.5 transition";
+        addrBox.classList.remove('hidden');
+      } else {
+        btnPickup.className = "py-2.5 px-3 rounded-xl font-bold text-xs border-2 border-[#008B47] bg-[#008B47] text-white flex items-center justify-center gap-1.5 transition";
+        btnDelivery.className = "py-2.5 px-3 rounded-xl font-bold text-xs border-2 border-gray-200 bg-white text-gray-700 flex items-center justify-center gap-1.5 transition";
+        addrBox.classList.add('hidden');
+      }
+      updateCartSummaryUI();
     }
 
     function getCurrentLocation() {
@@ -307,7 +339,6 @@
       }
     }
 
-    // สไตล์หมวดหมู่วงกลมน่ารักๆ แบบ 7-11
     function renderCategoryFilters() {
       const cats = ['ทั้งหมด', ...new Set(products.map(p => p.category || 'ทั่วไป'))];
       const container = document.getElementById('custCatFilter');
@@ -410,18 +441,28 @@
       renderCartModalItems();
     }
 
+    // ⚡ คำนวณค่าส่ง: ครบ 100 บาทส่งฟรี / ต่ำกว่า 100 คิด 20 บาท
     function updateCartSummaryUI() {
       const totalQty = custCart.reduce((sum, c) => sum + c.qty, 0);
-      const totalAmt = custCart.reduce((sum, c) => sum + (c.price * c.qty), 0);
+      const subtotal = custCart.reduce((sum, c) => sum + (c.price * c.qty), 0);
+
+      let deliveryFee = 0;
+      if (deliveryType === 'delivery') {
+        deliveryFee = subtotal >= 100 ? 0 : 20;
+      }
+
+      const totalNet = subtotal + deliveryFee;
 
       document.getElementById('badgeCount').innerText = totalQty;
       document.getElementById('badgeCount').classList.toggle('hidden', totalQty === 0);
 
       document.getElementById('barTotalQty').innerText = totalQty;
-      document.getElementById('barTotalAmount').innerText = '฿' + totalAmt.toFixed(2);
+      document.getElementById('barTotalAmount').innerText = '฿' + totalNet.toFixed(2);
       document.getElementById('bottomCartBar').classList.toggle('hidden', totalQty === 0);
 
-      document.getElementById('custModalTotal').innerText = '฿' + totalAmt.toFixed(2);
+      document.getElementById('custCartSubtotal').innerText = '฿' + subtotal.toFixed(2);
+      document.getElementById('custDeliveryFee').innerText = deliveryFee === 0 ? 'ส่งฟรี (ซื้อครบ 100.-)' : '฿' + deliveryFee.toFixed(2);
+      document.getElementById('custModalTotal').innerText = '฿' + totalNet.toFixed(2);
     }
 
     function openCustomerCartModal() {
@@ -460,22 +501,31 @@
     function submitOrderFromCustomer() {
       const name = document.getElementById('custName').value.trim();
       const phone = document.getElementById('custPhone').value.trim();
-      const address = document.getElementById('custAddress').value.trim();
+      let address = document.getElementById('custAddress').value.trim();
 
-      if (!name || !phone || !address) {
-        return alert('กรุณากรอกชื่อ, เบอร์โทร และที่อยู่จัดส่งให้ครบถ้วนครับ');
+      if (deliveryType === 'pickup') {
+        address = "🏪 มารับสินค้าเองที่เคาน์เตอร์หน้าร้าน";
       }
 
-      const totalAmt = custCart.reduce((sum, c) => sum + (c.price * c.qty), 0);
+      if (!name || !phone || (!address && deliveryType === 'delivery')) {
+        return alert('กรุณากรอกชื่อ เบอร์โทร และที่อยู่จัดส่งให้ครบถ้วนครับ');
+      }
+
+      const subtotal = custCart.reduce((sum, c) => sum + (c.price * c.qty), 0);
+      const deliveryFee = deliveryType === 'delivery' ? (subtotal >= 100 ? 0 : 20) : 0;
+      const totalNet = subtotal + deliveryFee;
 
       const orderData = {
         ts: Date.now(),
         customerName: name,
         customerPhone: phone,
         customerAddress: address,
+        deliveryType: deliveryType,
+        deliveryFee: deliveryFee,
         location: userLocation,
         items: custCart,
-        totalAmount: totalAmt,
+        subtotal: subtotal,
+        totalAmount: totalNet,
         status: 'pending',
         stepLevel: 1
       };
@@ -504,6 +554,7 @@
         document.getElementById('shopMainView').classList.add('hidden');
         document.getElementById('orderStatusView').classList.remove('hidden');
 
+        document.getElementById('trackDeliveryType').innerText = o.deliveryType === 'pickup' ? '🏪 มารับเองที่ร้าน' : '🛵 ให้ไปส่งที่บ้าน';
         document.getElementById('trackCustName').innerText = o.customerName;
         document.getElementById('trackCustPhone').innerText = o.customerPhone;
         document.getElementById('trackCustAddress').innerText = o.customerAddress;

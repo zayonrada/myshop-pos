@@ -47,6 +47,15 @@
       -moz-appearance: textfield;
     }
 
+    /* Animation สำหรับป๊อปอัปเตือนออเดอร์ใหม่ */
+    @keyframes slideInPop {
+      0% { transform: translateY(-20px) scale(0.9); opacity: 0; }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
+    }
+    .animate-pop-in {
+      animation: slideInPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
     @media print {
       body * { visibility: hidden !important; }
       .print-area, .print-area * { visibility: visible !important; }
@@ -84,9 +93,32 @@
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col relative">
 
-  <!-- หน้าจอใส่รหัสผ่านก่อนเข้าใช้งาน (Pin Lock Screen) -->
+  <!-- 🔔 กล่องป๊อปอัปแจ้งเตือนออเดอร์เข้าใหม่ดุ๊กดิ๊ก (ลอยมุมขวาบน) -->
+  <div id="newOrderAlertToast" class="hidden fixed top-20 right-6 z-[999] max-w-sm w-full bg-white border-4 border-amber-400 p-4 rounded-3xl shadow-2xl animate-pop-in no-print">
+    <div class="flex items-start gap-3">
+      <div class="w-12 h-12 rounded-2xl bg-amber-400 text-[#0F5C52] flex items-center justify-center font-bold flex-shrink-0 shadow animate-bounce">
+        <i data-lucide="bell-ring" class="w-7 h-7"></i>
+      </div>
+      <div class="flex-1">
+        <div class="flex justify-between items-center">
+          <span class="bg-amber-100 text-amber-900 text-xs font-bold px-2.5 py-0.5 rounded-full font-display">🛒 มีออเดอร์ใหม่เข้า!</span>
+          <button onclick="dismissOrderToast()" class="text-gray-400 hover:text-black"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="font-bold text-lg text-[#0F5C52] font-display mt-1" id="toastCustName">คุณลูกค้า</div>
+        <div class="text-xs text-gray-600 font-semibold truncate" id="toastItemsSummary">กำลังโหลดรายการ...</div>
+        <div class="flex justify-between items-center mt-2 pt-2 border-t border-dashed">
+          <span class="text-xl font-bold font-display text-[#B3432B]" id="toastTotalAmount">฿0.00</span>
+          <button onclick="dismissOrderToast(); openOnlineOrdersModal();" class="bg-[#0F5C52] hover:bg-[#0d4d43] text-white px-4 py-1.5 rounded-xl font-bold text-xs font-display shadow transition">
+            เปิดดูออเดอร์
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- หน้าจอใส่รหัสผ่านก่อนเข้าใช้งาน -->
   <div id="pinLockOverlay" class="fixed inset-0 bg-[#1C2321] z-[9999] flex items-center justify-center p-4">
     <div class="bg-[#F5F3EE] p-8 rounded-3xl max-w-sm w-full text-center space-y-6 shadow-2xl border-4 border-[#0F5C52]">
       <div class="space-y-2">
@@ -124,10 +156,9 @@
     <nav class="flex items-center gap-1.5 bg-white/10 p-1.5 rounded-2xl text-base font-semibold flex-wrap">
       <button onclick="showTab('pos')" id="btn-pos" class="px-4 py-2 rounded-xl bg-[#F5F3EE] text-[#1C2321]">ขายสินค้า</button>
       
-      <!-- ⚡ เพิ่มปุ่มรับออเดอร์ออนไลน์ พร้อมป้ายเตือนออเดอร์ใหม่ -->
       <button onclick="openOnlineOrdersModal()" id="btn-online-orders" class="px-4 py-2 rounded-xl hover:bg-white/10 text-white flex items-center gap-1.5 relative">
         <span>🛒 ออเดอร์ออนไลน์</span>
-        <span id="onlineOrdersBadge" class="bg-amber-500 text-black text-xs px-2 py-0.5 rounded-full font-bold hidden">0</span>
+        <span id="onlineOrdersBadge" class="bg-amber-500 text-black text-xs px-2 py-0.5 rounded-full font-bold hidden animate-pulse">0</span>
       </button>
 
       <button onclick="showTab('stock')" id="btn-stock" class="px-4 py-2 rounded-xl hover:bg-white/10 text-white">สต็อกสินค้า</button>
@@ -141,7 +172,6 @@
       <button onclick="showTab('staff')" id="btn-staff" class="px-4 py-2 rounded-xl hover:bg-white/10 text-white">พนักงาน</button>
     </nav>
 
-    <!-- ปุ่มเลือกพนักงานเข้ากะ -->
     <div class="flex items-center gap-2">
       <button onclick="openStaffShiftModal()" class="bg-[#0F5C52] hover:bg-[#0D4B43] text-white px-3.5 py-1.5 rounded-xl font-semibold flex items-center gap-2 border border-emerald-500/30 transition shadow-sm">
         <i data-lucide="user-check" class="w-5 h-5 text-emerald-300"></i>
@@ -235,7 +265,6 @@
             </button>
           </div>
 
-          <!-- กล่องคิดเงินด่วน/สินค้าไม่มีในระบบ -->
           <div class="bg-white p-3.5 rounded-2xl border-2 border-amber-500 shadow-sm space-y-2 mt-2">
             <div class="text-xs font-bold text-amber-800 flex items-center gap-1 font-display">
               <i data-lucide="zap" class="w-4 h-4 text-amber-600"></i> สินค้าด่วน / ไม่มีในระบบ
@@ -300,7 +329,7 @@
       <div id="stockPaginationControls" class="flex justify-between items-center pt-4 border-t border-[#DEDACB]"></div>
     </div>
 
-    <!-- แท็บ 2.5: เติมสต็อกสินค้า & สแกนเติมสต็อกด่วน -->
+    <!-- แท็บ 2.5: เติมสต็อกสินค้า -->
     <div id="tab-lowstock" class="hidden bg-white p-6 rounded-2xl border-2 border-[#DEDACB] space-y-6">
       <div class="bg-[#F5F3EE] p-5 rounded-2xl border-2 border-[#0F5C52] space-y-3">
         <div class="flex items-center gap-2 text-[#0F5C52] font-bold font-display text-xl">
@@ -478,7 +507,6 @@
         </div>
       </div>
 
-      <!-- แถบเลือกช่วงวันที่กำหนดเอง -->
       <div id="customDateBox" class="hidden bg-[#F5F3EE] p-4 rounded-2xl border-2 border-[#0F5C52] flex items-center justify-between gap-4 flex-wrap">
         <div class="flex items-center gap-3 flex-wrap">
           <span class="font-bold text-[#0F5C52] text-sm flex items-center gap-1.5 font-display">
@@ -577,13 +605,17 @@
 
   </main>
 
-  <!-- ⚡ Modal ออเดอร์ออนไลน์เข้าใหม่ -->
+  <!-- Modal ออเดอร์ออนไลน์ -->
   <div id="onlineOrdersModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 no-print">
     <div class="bg-[#F5F3EE] p-6 rounded-3xl max-w-3xl w-full space-y-4 shadow-2xl max-h-[85vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b-2 border-[#DEDACB] pb-3">
-        <h3 class="font-bold text-2xl font-display flex items-center gap-2 text-[#0F5C52]">
-          <i data-lucide="shopping-bag" class="w-7 h-7"></i> รายการออเดอร์สั่งซื้อออนไลน์
-        </h3>
+        <div class="flex items-center gap-2">
+          <h3 class="font-bold text-2xl font-display text-[#0F5C52]">🛒 ออเดอร์ออนไลน์</h3>
+          <div class="flex bg-white rounded-full p-1 border">
+            <button onclick="filterOnlineOrders('pending')" id="btnOrdPending" class="px-3 py-1 rounded-full text-xs font-bold bg-[#0F5C52] text-white">รอรับออเดอร์</button>
+            <button onclick="filterOnlineOrders('history')" id="btnOrdHistory" class="px-3 py-1 rounded-full text-xs font-bold text-gray-600">ประวัติออเดอร์</button>
+          </div>
+        </div>
         <button onclick="closeOnlineOrdersModal()"><i data-lucide="x" class="w-6 h-6"></i></button>
       </div>
 
@@ -591,7 +623,7 @@
     </div>
   </div>
 
-  <!-- Modal หน้าต่างยืนยันรหัสลบบิลขาย -->
+  <!-- Modal ลบบิล -->
   <div id="deleteSaleModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 no-print">
     <div class="bg-[#F5F3EE] p-6 rounded-3xl max-w-sm w-full space-y-4 shadow-2xl text-center border-4 border-[#B3432B]">
       <div class="w-14 h-14 bg-red-100 text-[#B3432B] rounded-2xl flex items-center justify-center mx-auto">
@@ -619,7 +651,7 @@
     </div>
   </div>
 
-  <!-- Modal หน้าต่างเลือกพนักงานเข้ากะแบบการ์ดใหญ่ -->
+  <!-- Modal พนักงาน -->
   <div id="staffShiftModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 no-print">
     <div class="bg-[#F5F3EE] p-7 rounded-3xl max-w-lg w-full space-y-5 shadow-2xl">
       <div class="flex justify-between items-center border-b-2 border-[#DEDACB] pb-3">
@@ -639,7 +671,7 @@
     </div>
   </div>
 
-  <!-- Modal ดูบาร์โค้ด + ปุ่มเซฟเป็นรูป PNG -->
+  <!-- Modal ดูบาร์โค้ด -->
   <div id="barcodePrintModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
     <div class="bg-white p-7 rounded-3xl max-w-sm w-full space-y-4 text-center shadow-2xl">
       <div class="border-b pb-2">
@@ -671,7 +703,7 @@
     <div id="allBarcodesCategoryWrapper"></div>
   </div>
 
-  <!-- 🖨️ พื้นที่สั่งพิมพ์ใบสั่งซื้อ / เช็กสต็อกสินค้าที่จะเติม (A4) -->
+  <!-- พื้นที่สั่งพิมพ์ใบสั่งซื้อ -->
   <div id="printRestockArea" class="hidden print-area p-8 space-y-5 bg-white text-black">
     <div class="text-center border-b-2 border-black pb-4">
       <h1 class="text-3xl font-bold font-display">ร้านค้าขวัญใจ — ใบรายการสั่งซื้อ / ใบเช็กสต็อกสินค้า</h1>
@@ -697,7 +729,7 @@
     </div>
   </div>
 
-  <!-- 🖨️ พื้นที่สำหรับสั่งพิมพ์รายงานสรุปยอดขาย (A4 / สรุปประจำช่วงเวลา) -->
+  <!-- พื้นที่พิมพ์รายงานสรุปยอดขาย -->
   <div id="printSalesArea" class="hidden print-area p-8 space-y-6 bg-white text-black">
     <div class="text-center border-b-2 border-black pb-4">
       <h1 class="text-3xl font-bold font-display">ร้านค้าขวัญใจ — รายงานสรุปยอดขายและกำไร</h1>
@@ -736,7 +768,7 @@
     </div>
   </div>
 
-  <!-- Modal สำหรับตั้งเงินทอนเปิดเก๊ะประจำวัน -->
+  <!-- Modal สำหรับตั้งเงินทอนเปิดเก๊ะ -->
   <div id="floatModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 no-print">
     <div class="bg-[#F5F3EE] p-6 rounded-3xl max-w-md w-full space-y-4 shadow-2xl">
       <div class="flex justify-between items-center border-b-2 border-[#DEDACB] pb-3">
@@ -753,7 +785,7 @@
     </div>
   </div>
 
-  <!-- Modal สำหรับยืมเงินส่วนตัว / เติม / คืนเงินส่วนตัว -->
+  <!-- Modal สำหรับยืมเงินส่วนตัว -->
   <div id="borrowModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 no-print">
     <div class="bg-[#F5F3EE] p-6 rounded-3xl max-w-md w-full space-y-4 shadow-2xl">
       <div class="flex justify-between items-center border-b-2 border-[#DEDACB] pb-3">
@@ -967,7 +999,6 @@
         <input type="number" id="p-price" placeholder="0.00" class="w-full p-2.5 border-2 border-[#0284C7] rounded-xl bg-white text-xl font-bold font-display text-[#0284C7]">
       </div>
 
-      <!-- ส่วนเลือกเชื่อมโยงสินค้าแบ่งขาย -->
       <div class="bg-amber-50 p-4 rounded-2xl border-2 border-amber-300 space-y-3">
         <label class="flex items-center gap-2 cursor-pointer font-bold text-sm text-amber-900 font-display">
           <input type="checkbox" id="p-isSubProduct" onchange="toggleChildProductBox()" class="w-5 h-5 accent-amber-600 rounded cursor-pointer">
@@ -991,7 +1022,6 @@
         </div>
       </div>
 
-      <!-- ส่วนจัดการสต็อกและต้นทุน -->
       <div id="normalStockSection" class="bg-white p-4 rounded-2xl border-2 border-[#DEDACB] space-y-3">
         <div class="flex justify-between items-center">
           <span id="batchTitleText" class="text-sm font-bold text-[#0F5C52]">📦 จัดการสต็อกและต้นทุน</span>
@@ -1020,7 +1050,7 @@
   </div>
 
   <script>
-    const CORRECT_PIN = "141615"; // รหัสผ่านสำหรับเข้าใช้งาน และ รหัสลบบิล
+    const CORRECT_PIN = "141615";
 
     const THAI_MONTHS = [
       "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
@@ -1114,6 +1144,8 @@
     let isBorrowingMode = true;
     let currentBarcodeData = null;
     let activeEditingProductObj = null;
+    let currentOnlineOrdersFilter = 'pending';
+    let previousOrderIdsCount = 0; // ตัวแปรนับจำนวนออเดอร์สำหรับแจ้งเตือน
     
     let activeDebtorName = "";
     let selectedDebtDocIds = new Set();
@@ -1608,6 +1640,57 @@
       }
     }
 
+    // 🔊 ระบบส่งเสียงเตือน "ปิ๊งป่อง~" น่ารักๆ เมื่อมีออเดอร์ใหม่เข้า
+    function playOrderBellSound() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // เสียงโน้ตที่ 1 (E5)
+        const osc1 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(659.25, audioCtx.currentTime);
+        gain1.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain1.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+        osc1.connect(gain1);
+        gain1.connect(audioCtx.destination);
+        osc1.start(audioCtx.currentTime);
+        osc1.stop(audioCtx.currentTime + 0.4);
+
+        // เสียงโน้ตที่ 2 (B5 - เสียงกระดิ่งใสน่ารัก)
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(987.77, audioCtx.currentTime + 0.15);
+        gain2.gain.setValueAtTime(0.4, audioCtx.currentTime + 0.15);
+        gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+        osc2.connect(gain2);
+        gain2.connect(audioCtx.destination);
+        osc2.start(audioCtx.currentTime + 0.15);
+        osc2.stop(audioCtx.currentTime + 0.8);
+
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+      } catch (e) {
+        console.log("Audio alert playback error:", e);
+      }
+    }
+
+    function showNewOrderToast(orderObj) {
+      document.getElementById('toastCustName').innerText = orderObj.customerName + ' (' + orderObj.customerPhone + ')';
+      const itemsText = orderObj.items ? orderObj.items.map(i => `${i.name} x${i.qty}`).join(', ') : 'มีรายการสั่งซื้อใหม่';
+      document.getElementById('toastItemsSummary').innerText = itemsText;
+      document.getElementById('toastTotalAmount').innerText = '฿' + orderObj.totalAmount.toFixed(2);
+      
+      const toast = document.getElementById('newOrderAlertToast');
+      toast.classList.remove('hidden');
+
+      playOrderBellSound();
+    }
+
+    function dismissOrderToast() {
+      document.getElementById('newOrderAlertToast').classList.add('hidden');
+    }
+
     // Realtime Subscriptions
     let unsubscribeProducts = null;
     let unsubscribeStaff = null;
@@ -1695,13 +1778,25 @@
         renderReports();
       });
 
-      // ⚡ ดักฟังออเดอร์ออนไลน์จากลูกค้า Realtime
+      // ⚡ ดักฟังออเดอร์ใหม่ พร้อมยิงเสียงเตือน "ปิ๊งป่อง~" + แสดงป๊อปอัปทันที
       if(unsubscribeOrders) unsubscribeOrders();
       unsubscribeOrders = db.collection("orders").onSnapshot(s => {
-        onlineOrders = [];
-        s.forEach(doc => onlineOrders.push({ id: doc.id, ...doc.data() }));
+        const newOrdersList = [];
+        s.forEach(doc => newOrdersList.push({ id: doc.id, ...doc.data() }));
+
+        const pendingOrders = newOrdersList.filter(o => o.status === 'pending');
         
-        const pendingOrders = onlineOrders.filter(o => o.status === 'pending');
+        // หากมีออเดอร์เพิ่มขึ้นมาใหม่ ให้ยิงเสียงเตือนและแสดงป๊อปอัป
+        if (previousOrderIdsCount > 0 && pendingOrders.length > previousOrderIdsCount) {
+          const newestOrder = pendingOrders.sort((a,b) => b.ts - a.ts)[0];
+          if (newestOrder) {
+            showNewOrderToast(newestOrder);
+          }
+        }
+        previousOrderIdsCount = pendingOrders.length;
+
+        onlineOrders = newOrdersList;
+
         const badge = document.getElementById('onlineOrdersBadge');
         if (badge) {
           badge.innerText = pendingOrders.length;
@@ -1719,7 +1814,6 @@
       }
     });
 
-    // ⚡ ฟังก์ชันจัดการออเดอร์ออนไลน์
     function openOnlineOrdersModal() {
       renderOnlineOrdersList();
       document.getElementById('onlineOrdersModal').classList.remove('hidden');
@@ -1730,46 +1824,186 @@
       focusScanInput();
     }
 
+    function filterOnlineOrders(filterType) {
+      currentOnlineOrdersFilter = filterType;
+      const btnPending = document.getElementById('btnOrdPending');
+      const btnHistory = document.getElementById('btnOrdHistory');
+
+      if (filterType === 'pending') {
+        btnPending.className = "px-3 py-1 rounded-full text-xs font-bold bg-[#0F5C52] text-white";
+        btnHistory.className = "px-3 py-1 rounded-full text-xs font-bold text-gray-600";
+      } else {
+        btnHistory.className = "px-3 py-1 rounded-full text-xs font-bold bg-[#0F5C52] text-white";
+        btnPending.className = "px-3 py-1 rounded-full text-xs font-bold text-gray-600";
+      }
+      renderOnlineOrdersList();
+    }
+
+    function deleteOnlineOrder(orderId) {
+      if (confirm('คุณต้องการลบประวัติออเดอร์ออนไลน์รายการนี้ใช่หรือไม่? (การลบจะลบข้อมูลออกจากระบบทันที)')) {
+        db.collection("orders").doc(orderId).delete().then(() => {
+          alert('ลบประวัติออเดอร์เรียบร้อยแล้วครับ');
+        }).catch(err => {
+          alert('เกิดข้อผิดพลาดในการลบ: ' + err.message);
+        });
+      }
+    }
+
+    function cancelOnlineOrder(orderId) {
+      const o = onlineOrders.find(item => item.id === orderId);
+      if (!o) return;
+
+      if (confirm(`คุณต้องการยกเลิกออเดอร์ของ ${o.customerName} ใช่หรือไม่?\n\nหากเคยหักสต็อกไปแล้ว ระบบจะบวกสต็อกคืนเข้าคลังให้อัตโนมัติ`)) {
+        const batch = db.batch();
+
+        if (o.status === 'completed' && o.items && o.items.length > 0) {
+          o.items.forEach(item => {
+            if (!item.isCustom && item.productId) {
+              const p = products.find(prod => prod.id === item.productId);
+              const targetId = (p && p.isSubProduct && p.parentId) ? p.parentId : item.productId;
+              const refundQty = (p && p.isSubProduct && p.ratio) ? (item.qty / p.ratio) : item.qty;
+
+              const pRef = db.collection("products").doc(targetId);
+              batch.update(pRef, {
+                stock: firebase.firestore.FieldValue.increment(refundQty)
+              });
+            }
+          });
+        }
+
+        const orderRef = db.collection("orders").doc(orderId);
+        batch.update(orderRef, { status: 'cancelled' });
+
+        batch.commit().then(() => {
+          alert('ยกเลิกออเดอร์เรียบร้อย คืนสินค้าเข้าสต็อกให้เรียบร้อยแล้วครับ');
+        }).catch(err => {
+          alert('เกิดข้อผิดพลาด: ' + err.message);
+        });
+      }
+    }
+
     function renderOnlineOrdersList() {
       const list = document.getElementById('onlineOrdersList');
       if (!list) return;
 
-      const pendingList = onlineOrders.filter(o => o.status === 'pending').sort((a,b) => b.ts - a.ts);
+      let displayList = [];
+      if (currentOnlineOrdersFilter === 'pending') {
+        displayList = onlineOrders.filter(o => o.status !== 'completed' && o.status !== 'cancelled').sort((a,b) => b.ts - a.ts);
+      } else {
+        displayList = onlineOrders.filter(o => o.status === 'completed' || o.status === 'cancelled').sort((a,b) => b.ts - a.ts);
+      }
 
-      if (pendingList.length === 0) {
-        list.innerHTML = `<p class="py-12 text-center text-gray-500 font-bold">🎉 ไม่มีออเดอร์ออนไลน์ค้างอยู่เลยครับ</p>`;
+      if (displayList.length === 0) {
+        list.innerHTML = `<p class="py-12 text-center text-gray-500 font-bold">ไม่มีรายการออเดอร์ในหมวดหมู่นี้</p>`;
         return;
       }
 
-      list.innerHTML = pendingList.map(o => `
-        <div class="bg-white p-4 rounded-2xl border-2 border-[#0F5C52] space-y-3 shadow-sm">
-          <div class="flex justify-between items-start border-b pb-2">
-            <div>
-              <div class="font-bold text-lg text-[#0F5C52]">${o.customerName} (${o.customerPhone})</div>
-              <div class="text-xs text-gray-500 font-semibold">📍 ที่อยู่/หมายเหตุ: ${o.customerAddress}</div>
-              <div class="text-xs text-gray-400 mt-0.5">${new Date(o.ts).toLocaleString('th-TH')}</div>
-            </div>
-            <span class="bg-amber-100 text-amber-800 text-xs px-3 py-1 rounded-full font-bold">รอดำเนินการ</span>
-          </div>
+      list.innerHTML = displayList.map(o => {
+        const isDelivery = o.deliveryType !== 'pickup';
+        const hasGps = o.location && o.location.lat && o.location.lng;
+        const mapsUrl = hasGps ? `https://www.google.com/maps/search/?api=1&query=${o.location.lat},${o.location.lng}` : '';
+        const orderCodeText = o.orderCode || ('#ORD-' + o.id.substring(0, 6).toUpperCase());
 
-          <div class="space-y-1 text-sm bg-gray-50 p-2.5 rounded-xl border">
-            ${o.items.map(i => `<div class="flex justify-between font-semibold"><span>${i.name} x${i.qty}</span><span>฿${(i.price * i.qty).toFixed(2)}</span></div>`).join('')}
-            <div class="border-t pt-1 flex justify-between font-bold text-base text-[#B3432B]">
-              <span>ยอดรวมสุทธิ</span>
-              <span>฿${o.totalAmount.toFixed(2)}</span>
+        return `
+          <div class="bg-white p-4 rounded-2xl border-2 border-[#0F5C52] space-y-3 shadow-sm relative">
+            <div class="flex justify-between items-start border-b pb-2">
+              <div>
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="bg-[#0F5C52] text-white text-xs px-2.5 py-0.5 rounded-md font-bold font-mono">${orderCodeText}</span>
+                  <span class="text-xs ${isDelivery ? 'bg-amber-100 text-amber-900' : 'bg-blue-100 text-blue-900'} px-2 py-0.5 rounded-full font-bold">
+                    ${isDelivery ? '🛵 ส่งที่บ้าน' : '🏪 รับที่ร้าน'}
+                  </span>
+                  ${o.status === 'cancelled' ? '<span class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded-full font-bold">❌ ยกเลิกแล้ว</span>' : ''}
+                </div>
+                <div class="font-bold text-lg text-[#0F5C52]">${o.customerName} (${o.customerPhone})</div>
+                <div class="text-xs text-gray-600 font-semibold mt-0.5">📍 ที่อยู่/หมายเหตุ: ${o.customerAddress}</div>
+                <div class="text-xs text-gray-400 mt-0.5">${new Date(o.ts).toLocaleString('th-TH')}</div>
+              </div>
+
+              <div class="flex items-center gap-1">
+                ${hasGps ? `
+                  <a href="${mapsUrl}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2.5 py-1.5 rounded-xl font-bold flex items-center gap-1 shadow transition whitespace-nowrap">
+                    <i data-lucide="map-pin" class="w-3.5 h-3.5"></i> Maps
+                  </a>
+                ` : ''}
+                
+                <button onclick="deleteOnlineOrder('${o.id}')" class="text-gray-400 hover:text-[#B3432B] p-1.5 transition" title="ลบออเดอร์นี้ทิ้ง">
+                  <i data-lucide="trash-2" class="w-5 h-5"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="space-y-1 text-sm bg-gray-50 p-2.5 rounded-xl border">
+              ${o.items.map(i => `<div class="flex justify-between font-semibold"><span>${i.name} x${i.qty}</span><span>฿${(i.price * i.qty).toFixed(2)}</span></div>`).join('')}
+              ${o.deliveryFee > 0 ? `<div class="flex justify-between text-xs text-[#B3432B] font-bold"><span>ค่าจัดส่ง</span><span>฿${o.deliveryFee.toFixed(2)}</span></div>` : ''}
+              <div class="border-t pt-1 flex justify-between font-bold text-base text-[#B3432B]">
+                <span>ยอดรวมสุทธิ (${o.payOption === 'transfer' ? '📱 โอนเงิน' : '💵 เงินสด'})</span>
+                <span>฿${o.totalAmount.toFixed(2)}</span>
+              </div>
+            </div>
+
+            ${o.status !== 'cancelled' ? `
+              <div class="flex items-center justify-between gap-2 pt-1 border-t">
+                <span class="text-xs font-bold text-gray-500">อัปเดตสถานะให้ลูกค้า:</span>
+                <div class="flex gap-1 flex-wrap">
+                  <button onclick="updateOrderStatus('${o.id}', 'preparing')" class="text-xs ${o.status==='preparing'?'bg-amber-600 text-white':'bg-gray-100 text-gray-700'} px-2.5 py-1 rounded-lg font-bold">จัดเตรียมของ</button>
+                  <button onclick="updateOrderStatus('${o.id}', 'ready')" class="text-xs ${o.status==='ready'?'bg-blue-600 text-white':'bg-gray-100 text-gray-700'} px-2.5 py-1 rounded-lg font-bold">จัดเสร็จรอส่ง</button>
+                  <button onclick="updateOrderStatus('${o.id}', 'delivering')" class="text-xs ${o.status==='delivering'?'bg-purple-600 text-white':'bg-gray-100 text-gray-700'} px-2.5 py-1 rounded-lg font-bold">กำลังไปส่ง</button>
+                </div>
+              </div>
+            ` : ''}
+
+            <div class="grid grid-cols-3 gap-2 pt-1">
+              <button onclick="printOnlineOrderReceipt('${o.id}')" class="py-2 bg-gray-800 text-white hover:bg-black rounded-xl font-bold text-xs transition flex items-center justify-center gap-1 font-display shadow-sm">
+                <i data-lucide="printer" class="w-3.5 h-3.5"></i> พิมพ์สลิป
+              </button>
+
+              ${o.status !== 'completed' && o.status !== 'cancelled' ? `
+                <button onclick="acceptOnlineOrder('${o.id}')" class="py-2 bg-[#0F5C52] text-white hover:opacity-90 rounded-xl font-bold text-xs transition shadow-sm font-display">
+                  ✅ รับ & ตัดสต็อก
+                </button>
+              ` : `
+                <div class="py-2 bg-emerald-100 text-emerald-800 font-bold text-xs rounded-xl flex items-center justify-center">
+                  ${o.status === 'cancelled' ? '❌ ยกเลิกแล้ว' : '✅ สำเร็จแล้ว'}
+                </div>
+              `}
+
+              ${o.status !== 'cancelled' ? `
+                <button onclick="cancelOnlineOrder('${o.id}')" class="py-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-xl font-bold text-xs transition font-display">
+                  🚫 ยกเลิก/คืนสต็อก
+                </button>
+              ` : `
+                <button onclick="deleteOnlineOrder('${o.id}')" class="py-2 bg-gray-200 text-gray-700 hover:bg-red-600 hover:text-white rounded-xl font-bold text-xs transition font-display">
+                  🗑️ ลบทิ้ง
+                </button>
+              `}
             </div>
           </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
 
-          <div class="grid grid-cols-2 gap-2 pt-1">
-            <button onclick="rejectOnlineOrder('${o.id}')" class="py-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-xl font-bold text-sm transition">
-              ❌ ยกเลิกออเดอร์
-            </button>
-            <button onclick="acceptOnlineOrder('${o.id}')" class="py-2 bg-[#0F5C52] text-white hover:opacity-90 rounded-xl font-bold text-sm transition shadow-sm">
-              ✅ รับออเดอร์ & หักสต็อก
-            </button>
-          </div>
-        </div>
-      `).join('');
+    function updateOrderStatus(orderId, status) {
+      db.collection("orders").doc(orderId).update({ status: status });
+    }
+
+    function printOnlineOrderReceipt(orderId) {
+      const o = onlineOrders.find(item => item.id === orderId);
+      if (!o) return;
+
+      showReceipt({
+        ts: o.ts,
+        cashierName: 'สั่งซื้อออนไลน์ (' + o.customerName + ')',
+        items: o.items,
+        total: o.totalAmount,
+        subtotal: o.subtotal || o.totalAmount,
+        discount: 0,
+        method: 'online',
+        cashReceived: o.totalAmount,
+        change: 0,
+        debtorName: o.customerPhone
+      });
     }
 
     function acceptOnlineOrder(orderId) {
@@ -1777,7 +2011,6 @@
       if (!o) return;
 
       if (confirm(`ยืนยันการรับออเดอร์ของคุณ ${o.customerName} ยอด ฿${o.totalAmount.toFixed(2)} ใช่หรือไม่?\n\nระบบจะตัดสต็อกและบันทึกยอดขายให้อัตโนมัติ`)) {
-        // นำรายการเข้าตะกร้าชั่วคราวเพื่อใช้ฟังก์ชันคำนวณต้นทุนและตัดสต็อก
         const orderCartList = o.items.map(item => ({
           productId: item.productId,
           name: item.name,
@@ -1813,12 +2046,6 @@
             alert('รับออเดอร์ออนไลน์ ตัดสต็อก และบันทึกยอดขายเรียบร้อยครับ!');
           });
         });
-      }
-    }
-
-    function rejectOnlineOrder(orderId) {
-      if (confirm('ต้องการยกเลิกออเดอร์ออนไลน์รายการนี้ใช่หรือไม่?')) {
-        db.collection("orders").doc(orderId).update({ status: 'cancelled' });
       }
     }
 
@@ -2715,7 +2942,7 @@
         populateParentProductsDropdown();
       } else {
         subBox.classList.add('hidden');
-        normalStockSection.classList.remove('hidden');
+        normalStockSection.remove('hidden');
       }
     }
 

@@ -103,7 +103,7 @@
       </main>
     </div>
 
-    <!-- ⚡ แถบย่อติดตามสถานะออเดอร์ด้านล่าง (แสดงเฉพาะตอนออเดอร์ยังไม่เสร็จ) -->
+    <!-- ⚡ แถบย่อติดตามสถานะออเดอร์ด้านล่าง -->
     <div id="miniOrderStatusCard" class="fixed bottom-0 max-w-md w-full bg-white border-t-2 border-[#008B47] shadow-2xl z-30 p-3 hidden rounded-t-3xl">
       <div class="flex items-center justify-between gap-2 border-b pb-2 mb-2">
         <div class="flex items-center gap-2">
@@ -187,34 +187,30 @@
           <div class="text-xs font-bold text-gray-700 font-display">วิธีการชำระเงิน</div>
           <div class="grid grid-cols-2 gap-2">
             <button type="button" onclick="setPayOption('transfer')" id="btnPayTransfer" class="py-2.5 px-3 rounded-xl font-bold text-xs border-2 border-[#008B47] bg-[#008B47] text-white flex items-center justify-center gap-1.5 transition">
-              <i data-lucide="qr-code" class="w-4 h-4"></i> 📱 โอนเงินผ่านบัญชี / QR
+              <i data-lucide="credit-card" class="w-4 h-4"></i> 📱 โอนเงินผ่านบัญชี
             </button>
             <button type="button" onclick="setPayOption('cash')" id="btnPayCash" class="py-2.5 px-3 rounded-xl font-bold text-xs border-2 border-gray-200 bg-white text-gray-700 flex items-center justify-center gap-1.5 transition">
               <i data-lucide="coins" class="w-4 h-4"></i> 💵 เงินสดปลายทาง
             </button>
           </div>
 
-          <!-- ⚡ กล่อง QR Code ดึงไฟล์ qr.png ในเว็บชัวร์ 100% -->
+          <!-- ⚡ กล่องเลขบัญชี กสิกรไทย 855-2-19984-8 ยลรดา ฉิมพาลี (ไม่มีรูป QR) -->
           <div id="bankTransferBox" class="pt-2 border-t space-y-2.5">
-            <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-300 text-xs space-y-2 text-center">
-              <div class="font-bold text-[#008B47] text-sm font-display">สแกนชำระเงินด้วย QR Code พร้อมเพย์</div>
-              
-              <div class="flex justify-center py-1">
-                <img id="promptPayQrImg" src="qr.png" onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=08552199848'" class="w-48 h-48 rounded-xl border-2 border-[#008B47] p-1 bg-white shadow-sm object-contain">
+            <div class="bg-emerald-50 p-3.5 rounded-xl border border-emerald-300 text-xs space-y-2">
+              <div class="flex justify-between items-center border-b border-emerald-200 pb-2">
+                <span class="font-bold text-[#008B47] text-sm">ธนาคารกสิกรไทย (K-Bank)</span>
+                <span class="text-[10px] bg-[#008B47] text-white px-2 py-0.5 rounded-full font-bold">กสิกร</span>
               </div>
-
-              <div class="bg-white p-2 rounded-lg border text-left space-y-1">
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-500 font-bold">ธนาคารกสิกรไทย (K-Bank)</span>
-                  <span class="text-[10px] bg-[#008B47] text-white px-2 py-0.5 rounded-full font-bold">กสิกร</span>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-900 font-bold text-base font-display tracking-wider">855-2-19984-8</span>
-                  <button type="button" onclick="copyBankAcc()" class="bg-[#008B47] text-white px-2.5 py-1 rounded-lg text-[10px] font-bold shadow-sm active:scale-95">
-                    📋 ก๊อปปี้เลขบัญชี
+              
+              <div class="space-y-1">
+                <div class="text-gray-500 text-[11px]">เลขที่บัญชี:</div>
+                <div class="flex justify-between items-center bg-white p-2.5 rounded-lg border">
+                  <span class="text-gray-900 font-bold text-lg font-display tracking-wider">855-2-19984-8</span>
+                  <button type="button" onclick="copyBankAcc()" class="bg-[#008B47] text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm active:scale-95 flex items-center gap-1">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i> ก๊อปปี้เลขบัญชี
                   </button>
                 </div>
-                <div class="text-gray-700 text-xs font-bold">ชื่อบัญชี: ยลรดา ฉิมพาลี</div>
+                <div class="text-gray-700 text-xs font-bold pt-1">ชื่อบัญชี: ยลรดา Chimphali / ฉิมพาลี</div>
               </div>
             </div>
 
@@ -635,7 +631,6 @@
       });
     }
 
-    // ⚡ ระบบติดตามออเดอร์ — ซ่อนเก็บอัตโนมัติเมื่อส่งสำเร็จ (completed)
     function trackOrderRealtime(orderId) {
       if (unsubscribeOrderTracking) unsubscribeOrderTracking();
 

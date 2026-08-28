@@ -386,6 +386,7 @@
     let payOption = 'transfer';
     let slipBase64 = "";
     let currentMember = JSON.parse(localStorage.getItem('memberProfile')) || null;
+    let notifiedCancelledMap = {}; // ตัวแประบุการแจ้งเตือนยกเลิกแล้ว
 
     db.collection("products").onSnapshot(s => {
       products = [];
@@ -777,7 +778,7 @@
       });
     }
 
-    // ⚡ ติดตามสถานะออเดอร์เรียลไทม์ — ดักจับการยกเลิก/ส่งสำเร็จเพื่อเคลียร์หน้าจอฝั่งลูกค้าทันที
+    // ⚡ ติดตามออเดอร์ — ลบ ID ออกจากเครื่องทันทีเมื่อจบงานหรือยกเลิก ไม่ให้เด้งซ้ำ
     function trackOrderRealtime(orderId) {
       if (unsubscribeOrderTracking) unsubscribeOrderTracking();
 
@@ -787,19 +788,26 @@
         if (!doc.exists) {
           card.classList.add('hidden');
           toggleTrackingModal(false);
+          localStorage.removeItem('lastOrderId');
+          currentOrderId = null;
           return;
         }
 
         const o = doc.data();
 
-        // 🚨 หากร้านค้ายกเลิกออเดอร์ (cancelled) หรือ ส่งสำเร็จแล้ว (completed)
+        // 🚨 หากออเดอร์โดนยกเลิก (cancelled) หรือ ส่งสำเร็จแล้ว (completed)
         if (o.status === 'cancelled' || o.status === 'completed') {
           card.classList.add('hidden');
           toggleTrackingModal(false);
 
-          if (o.status === 'cancelled') {
+          // แจ้งเตือนแค่ครั้งเดียว แล้วลบ ID ค้างออกจากเครื่องทันที
+          if (o.status === 'cancelled' && !notifiedCancelledMap[orderId]) {
+            notifiedCancelledMap[orderId] = true;
             alert('❌ ออเดอร์ของคุณถูกยกเลิกแล้วครับ');
           }
+
+          localStorage.removeItem('lastOrderId');
+          currentOrderId = null;
           return;
         }
 

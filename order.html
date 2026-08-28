@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>สั่งซื้อสินค้าออนไลน์ — ร้านค้าขวัญใจ</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -12,118 +12,136 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <style>
     :root {
-      --paper: #F5F3EE;
-      --ink: #1C2321;
+      --paper: #F3F4F6;
       --teal: #0F5C52;
+      --teal-light: #147A6F;
+      --accent: #EAB308;
       --font-display: 'Kanit', sans-serif;
       --font-body: 'Sarabun', sans-serif;
     }
-    body { background-color: var(--paper); font-family: var(--font-body); color: var(--ink); font-size: 18px; }
+    body { background-color: #E5E7EB; font-family: var(--font-body); color: #1F2937; }
     h1, h2, h3, .font-display { font-family: var(--font-display); }
+
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body class="min-h-screen flex flex-col pb-28">
+<body class="min-h-screen flex justify-center">
 
-  <!-- Header หน้าสั่งซื้อสำหรับลูกค้า -->
-  <header class="bg-[#1C2321] text-white px-6 py-4 flex justify-between items-center sticky top-0 z-40 shadow-md">
-    <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-[#0F5C52] flex items-center justify-center text-white">
-        <i data-lucide="shopping-bag" class="w-6 h-6"></i>
-      </div>
-      <div>
-        <h1 class="font-bold text-xl font-display leading-tight">ร้านค้าขวัญใจ</h1>
-        <p class="text-xs text-emerald-300 font-semibold">🛒 สั่งซื้อสินค้าออนไลน์</p>
-      </div>
-    </div>
-    <div id="cartBadgeBtn" onclick="openCustomerCartModal()" class="relative bg-[#0F5C52] p-2.5 rounded-2xl cursor-pointer hover:opacity-90 transition">
-      <i data-lucide="shopping-cart" class="w-6 h-6 text-white"></i>
-      <span id="badgeCount" class="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold hidden">0</span>
-    </div>
-  </header>
+  <!-- คอนเทนเนอร์ขนาดจำลองมือถือ (Mobile Container) -->
+  <div class="w-full max-w-md bg-[#F3F4F6] min-h-screen flex flex-col relative pb-28 shadow-2xl border-x border-gray-200">
 
-  <!-- เนื้อหาหลัก -->
-  <main class="p-4 max-w-4xl w-full mx-auto space-y-4">
-    
-    <!-- ช่องค้นหา & กรองหมวดหมู่ -->
-    <div class="bg-white p-4 rounded-2xl border-2 border-[#DEDACB] space-y-3 shadow-sm">
-      <input type="text" id="custSearchInput" oninput="renderCustomerProducts()" placeholder="🔍 พิมพ์ค้นหาชื่อสินค้าที่ต้องการสั่ง..." 
-        class="w-full text-lg p-3 rounded-xl border-2 border-[#0F5C52] bg-[#F5F3EE] focus:outline-none font-bold">
+    <!-- Header สไตล์ 7-11 (ชื่อร้านอยู่ตรงกลาง) -->
+    <header class="bg-[#0F5C52] text-white px-4 py-3 sticky top-0 z-40 shadow-lg flex flex-col items-center justify-center relative">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-full bg-amber-400 flex items-center justify-center text-[#0F5C52] shadow">
+          <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+        </div>
+        <h1 class="font-bold text-2xl font-display tracking-wide text-white text-center">ร้านค้าขวัญใจ</h1>
+      </div>
+      <p class="text-xs text-emerald-200 font-semibold mt-0.5 flex items-center gap-1">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        เปิดรับออเดอร์จัดส่งด่วนออนไลน์
+      </p>
+
+      <!-- ปุ่มตะกร้าลอยมุมขวาบน -->
+      <button onclick="openCustomerCartModal()" class="absolute right-4 top-3.5 bg-white/10 p-2 rounded-full hover:bg-white/20 transition relative">
+        <i data-lucide="shopping-cart" class="w-6 h-6 text-white"></i>
+        <span id="badgeCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold border-2 border-[#0F5C52] hidden">0</span>
+      </button>
+    </header>
+
+    <!-- ช่องค้นหา & แถบหมวดหมู่ด่วน -->
+    <div class="p-3 bg-white shadow-sm space-y-2 sticky top-[62px] z-30 border-b">
+      <div class="relative">
+        <i data-lucide="search" class="w-5 h-5 text-gray-400 absolute left-3 top-3"></i>
+        <input type="text" id="custSearchInput" oninput="renderCustomerProducts()" placeholder="ค้นหาสินค้าที่ต้องการสั่ง..." 
+          class="w-full text-base pl-10 pr-4 py-2.5 rounded-full bg-gray-100 border-none focus:outline-none focus:ring-2 focus:ring-[#0F5C52] font-semibold text-gray-800">
+      </div>
       
-      <div class="flex items-center gap-2 overflow-x-auto pb-1" id="custCatFilter"></div>
+      <!-- หมวดหมู่แบบปัดซ้ายขวา -->
+      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1" id="custCatFilter"></div>
     </div>
 
-    <!-- รายการสินค้าการ์ดใหญ่สำหรับลูกค้า -->
-    <div id="custProductGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-      <p class="col-span-4 text-center py-12 text-[#0F5C52] font-bold animate-pulse">⏳ กำลังโหลดรายการสินค้า...</p>
+    <!-- รายการสินค้า 2 คอลัมน์ -->
+    <main class="p-3 flex-1">
+      <div id="custProductGrid" class="grid grid-cols-2 gap-3">
+        <p class="col-span-2 text-center py-12 text-[#0F5C52] font-bold animate-pulse font-display">⏳ กำลังดึงรายการสินค้าด่วน...</p>
+      </div>
+    </main>
+
+    <!-- แถบสรุปตะกร้าสินค้าลอยด้านล่าง (Bottom Delivery Bar) -->
+    <div id="bottomCartBar" class="fixed bottom-0 max-w-md w-full bg-[#1F2937] text-white p-3 shadow-2xl z-40 hidden border-t-2 border-amber-400 rounded-t-3xl">
+      <div class="flex justify-between items-center gap-3 px-1">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-[#0F5C52] flex items-center justify-center text-amber-300 font-bold text-lg shadow relative">
+            <i data-lucide="shopping-basket" class="w-6 h-6"></i>
+            <span id="barTotalQty" class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">0</span>
+          </div>
+          <div>
+            <div class="text-xs text-gray-300 font-medium">รวมมัดจำ/ยอดสินค้า</div>
+            <div class="text-2xl font-bold font-display text-amber-400 leading-tight" id="barTotalAmount">฿0.00</div>
+          </div>
+        </div>
+
+        <button onclick="openCustomerCartModal()" class="bg-amber-400 hover:bg-amber-500 text-[#0F5C52] px-5 py-3 rounded-2xl font-bold text-base font-display flex items-center gap-1.5 shadow-lg transition active:scale-95">
+          <span>ดูตะกร้า</span>
+          <i data-lucide="chevron-right" class="w-5 h-5"></i>
+        </button>
+      </div>
     </div>
 
-  </main>
+    <!-- Modal ตะกร้าสินค้า & กรอกที่อยู่จัดส่ง -->
+    <div id="custCartModal" class="hidden fixed inset-0 bg-black/60 flex items-end justify-center z-50">
+      <div class="bg-white p-5 rounded-t-3xl max-w-md w-full max-h-[90vh] overflow-y-auto space-y-4 shadow-2xl animate-in slide-in-from-bottom duration-200">
+        
+        <div class="flex justify-between items-center border-b pb-3">
+          <h3 class="font-bold text-xl font-display flex items-center gap-2 text-[#0F5C52]">
+            <i data-lucide="shopping-cart"></i> สรุปรายการสั่งซื้อ
+          </h3>
+          <button onclick="closeCustomerCartModal()" class="p-1 rounded-full bg-gray-100"><i data-lucide="x" class="w-6 h-6 text-gray-600"></i></button>
+        </div>
 
-  <!-- แถบตะกร้าสินค้าด้านล่าง (Sticky Bottom Bar) -->
-  <div id="bottomCartBar" class="fixed bottom-0 inset-x-0 bg-[#1C2321] text-white p-4 shadow-2xl z-30 hidden border-t-2 border-[#0F5C52]">
-    <div class="max-w-4xl mx-auto flex justify-between items-center gap-3">
-      <div>
-        <div class="text-xs text-gray-300">ตระกร้าของคุณ (<span id="barTotalQty" class="font-bold text-amber-300">0</span> ชิ้น)</div>
-        <div class="text-2xl font-bold font-display text-emerald-400" id="barTotalAmount">฿0.00</div>
+        <!-- รายการสินค้าในตะกร้า -->
+        <div id="custCartItems" class="bg-gray-50 p-3 rounded-2xl border divide-y divide-gray-200 space-y-2 max-h-52 overflow-y-auto"></div>
+
+        <!-- ยอดรวม -->
+        <div class="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-200 flex justify-between items-center">
+          <span class="font-bold text-emerald-900 text-base">ยอดรวมสุทธิ</span>
+          <span id="custModalTotal" class="text-3xl font-bold font-display text-[#0F5C52]">฿0.00</span>
+        </div>
+
+        <!-- กรอกข้อมูลจัดส่ง -->
+        <div class="space-y-2.5 bg-gray-50 p-3.5 rounded-2xl border">
+          <div class="text-xs font-bold text-[#0F5C52] font-display flex items-center gap-1">
+            <i data-lucide="map-pin" class="w-4 h-4"></i> ข้อมูลสำหรับจัดส่ง / ติดต่อ
+          </div>
+
+          <div>
+            <label class="text-xs font-bold text-gray-600 block mb-1">ชื่อผู้สั่งซื้อ *</label>
+            <input type="text" id="custName" placeholder="เช่น คุณสมชาย" class="w-full p-2.5 rounded-xl border bg-white font-bold text-sm focus:outline-none focus:border-[#0F5C52]">
+          </div>
+
+          <div>
+            <label class="text-xs font-bold text-gray-600 block mb-1">เบอร์โทรศัพท์ติดต่อ *</label>
+            <input type="tel" id="custPhone" placeholder="เช่น 0812345678" class="w-full p-2.5 rounded-xl border bg-white font-bold text-sm focus:outline-none focus:border-[#0F5C52]">
+          </div>
+
+          <div>
+            <label class="text-xs font-bold text-gray-600 block mb-1">ที่อยู่จัดส่ง / บ้านเลขที่ / หมายเหตุ *</label>
+            <textarea id="custAddress" rows="2" placeholder="เช่น บ้านเลขที่ 12/3 ซอย 5 หรือ มารับเองหน้าเคาน์เตอร์" class="w-full p-2.5 rounded-xl border bg-white font-bold text-sm focus:outline-none focus:border-[#0F5C52]"></textarea>
+          </div>
+        </div>
+
+        <button onclick="submitOrderFromCustomer()" class="w-full bg-[#0F5C52] hover:bg-[#0d4d43] text-white py-3.5 rounded-2xl font-bold text-lg font-display shadow-lg transition active:scale-95">
+          🚀 ยืนยันการสั่งซื้อสินค้า
+        </button>
       </div>
-      <button onclick="openCustomerCartModal()" class="bg-[#0F5C52] hover:bg-[#0d4d43] text-white px-6 py-3 rounded-2xl font-bold text-lg font-display flex items-center gap-2 shadow-lg transition">
-        <span>ดูตะกร้า / สั่งซื้อ</span>
-        <i data-lucide="arrow-right" class="w-5 h-5"></i>
-      </button>
     </div>
-  </div>
 
-  <!-- Modal ตะกร้าสินค้า & กรอกข้อมูลจัดส่ง -->
-  <div id="custCartModal" class="hidden fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
-    <div class="bg-[#F5F3EE] p-6 rounded-t-3xl sm:rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto space-y-4 shadow-2xl">
-      <div class="flex justify-between items-center border-b-2 border-[#DEDACB] pb-3">
-        <h3 class="font-bold text-2xl font-display flex items-center gap-2">
-          <i data-lucide="shopping-bag" class="text-[#0F5C52]"></i> ยืนยันคำสั่งซื้อ
-        </h3>
-        <button onclick="closeCustomerCartModal()"><i data-lucide="x" class="w-6 h-6"></i></button>
-      </div>
-
-      <!-- รายการในตะกร้า -->
-      <div id="custCartItems" class="bg-white p-4 rounded-2xl border-2 border-[#DEDACB] divide-y-2 divide-[#DEDACB] space-y-2 max-h-60 overflow-y-auto"></div>
-
-      <!-- สรุปยอดเงิน -->
-      <div class="bg-white p-4 rounded-2xl border-2 border-[#DEDACB] space-y-1">
-        <div class="flex justify-between items-center text-xl font-bold border-t pt-2">
-          <span>ยอดรวมทั้งหมด</span>
-          <span id="custModalTotal" class="text-2xl font-display text-[#B3432B]">฿0.00</span>
-        </div>
-      </div>
-
-      <!-- ฟอร์มกรอกข้อมูลลูกค้า -->
-      <div class="bg-white p-4 rounded-2xl border-2 border-[#DEDACB] space-y-3">
-        <div class="text-sm font-bold text-[#0F5C52] font-display flex items-center gap-1">
-          <i data-lucide="user" class="w-4 h-4"></i> ข้อมูลสำหรับการจัดส่ง / ติดต่อ
-        </div>
-
-        <div>
-          <label class="text-xs font-bold text-gray-600 block mb-1">ชื่อผู้สั่งซื้อ *</label>
-          <input type="text" id="custName" placeholder="เช่น คุณสมชาย" class="w-full p-2.5 rounded-xl border-2 font-bold text-base bg-[#F5F3EE]">
-        </div>
-
-        <div>
-          <label class="text-xs font-bold text-gray-600 block mb-1">เบอร์โทรศัพท์ติดต่อ *</label>
-          <input type="tel" id="custPhone" placeholder="เช่น 0812345678" class="w-full p-2.5 rounded-xl border-2 font-bold text-base bg-[#F5F3EE]">
-        </div>
-
-        <div>
-          <label class="text-xs font-bold text-gray-600 block mb-1">ที่อยู่จัดส่ง / เลขที่บ้าน / เลขโต๊ะ / หมายเหตุ *</label>
-          <textarea id="custAddress" rows="2" placeholder="เช่น บ้านเลขที่ 12/3 หรือ มารับเองที่ร้าน" class="w-full p-2.5 rounded-xl border-2 font-bold text-base bg-[#F5F3EE]"></textarea>
-        </div>
-      </div>
-
-      <button onclick="submitOrderFromCustomer()" class="w-full bg-[#0F5C52] text-white py-4 rounded-2xl font-bold text-xl font-display shadow-md hover:opacity-90 transition">
-        🚀 ยืนยันการสั่งซื้อ
-      </button>
-    </div>
   </div>
 
   <script>
-    // Config สำหรับ Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyCGMxESjF8ZDAAm7xL_uDvz4hEa7EpZD6Y",
       authDomain: "myshop-pos-19a95.firebaseapp.com",
@@ -135,20 +153,24 @@
     };
 
     firebase.initializeApp(firebaseConfig);
+    
+    firebase.firestore().enablePersistence({ synchronizeTabs: true }).catch(err => {
+      console.log("Persistence status:", err.code);
+    });
+
     const db = firebase.firestore();
 
     let products = [];
     let custCart = [];
     let selectedCategory = 'ทั้งหมด';
 
-    // ดึงข้อมูลสินค้าจากคอลเลกชันหลัก (อ่านได้อย่างเดียว)
     db.collection("products").onSnapshot(s => {
       products = [];
       s.forEach(doc => {
         const d = doc.data();
         let batches = d.batches || [];
         const totalStock = batches.reduce((sum, b) => sum + b.qty, 0);
-        products.push({ id: doc.id, ...d, stock: totalStock });
+        products.push({ id: doc.id, ...d, stock: d.stock !== undefined ? d.stock : totalStock });
       });
       renderCategoryFilters();
       renderCustomerProducts();
@@ -158,7 +180,7 @@
       const cats = ['ทั้งหมด', ...new Set(products.map(p => p.category || 'ทั่วไป'))];
       const container = document.getElementById('custCatFilter');
       container.innerHTML = cats.map(c => `
-        <button onclick="selectCustCategory('${c}')" class="px-4 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition ${selectedCategory === c ? 'bg-[#0F5C52] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}">
+        <button onclick="selectCustCategory('${c}')" class="px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition ${selectedCategory === c ? 'bg-[#0F5C52] text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}">
           ${c}
         </button>
       `).join('');
@@ -170,6 +192,7 @@
       renderCustomerProducts();
     }
 
+    // ⚡ ปรับปรุงการตรวจสอบสต็อกสินค้าแม่นยำ (คำนึงถึงสินค้าแบ่งขายและสต็อกลอต)
     function renderCustomerProducts() {
       const grid = document.getElementById('custProductGrid');
       const searchVal = (document.getElementById('custSearchInput')?.value || '').trim().toLowerCase();
@@ -183,24 +206,38 @@
       }
 
       if (displayList.length === 0) {
-        grid.innerHTML = `<p class="col-span-4 text-center py-12 text-gray-500 font-bold">ไม่พบสินค้าที่คุณค้นหา</p>`;
+        grid.innerHTML = `<p class="col-span-2 text-center py-12 text-gray-400 font-bold">ไม่พบสินค้าที่คุณค้นหา</p>`;
         return;
       }
 
       grid.innerHTML = displayList.map(p => {
-        const isOutOfStock = !p.isSubProduct && p.stock <= 0;
+        let isOutOfStock = false;
+
+        if (p.isSubProduct && p.parentId) {
+          const parent = products.find(prod => prod.id === p.parentId);
+          isOutOfStock = !parent || parent.stock <= 0;
+        } else {
+          isOutOfStock = p.stock <= 0;
+        }
+
         return `
-          <div class="bg-white p-3 rounded-2xl border-2 border-[#DEDACB] flex flex-col justify-between shadow-sm relative">
-            <div class="w-full h-28 bg-gray-100 rounded-xl mb-2 overflow-hidden flex items-center justify-center">
-              ${p.imageUrl ? `<img src="${p.imageUrl}" class="w-full h-full object-cover">` : `<i data-lucide="package" class="w-10 h-10 text-gray-400"></i>`}
+          <div class="bg-white p-2.5 rounded-2xl border border-gray-200 flex flex-col justify-between shadow-sm relative overflow-hidden">
+            <div>
+              <div class="w-full h-28 bg-gray-50 rounded-xl mb-2 overflow-hidden flex items-center justify-center border border-gray-100 relative">
+                ${p.imageUrl ? `<img src="${p.imageUrl}" class="w-full h-full object-cover">` : `<i data-lucide="package" class="w-10 h-10 text-gray-300"></i>`}
+                ${isOutOfStock ? `<div class="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-xs font-bold font-display">สินค้าหมด</div>` : ''}
+              </div>
+              <div class="font-bold text-sm text-gray-900 line-clamp-2 leading-snug">${p.name}</div>
             </div>
-            <div class="font-bold text-base text-black truncate text-center">${p.name}</div>
-            <div class="text-xl font-bold font-display text-[#0284C7] text-center my-1">฿${p.price.toFixed(2)}</div>
             
-            <button onclick="addCustCart('${p.id}')" ${isOutOfStock ? 'disabled' : ''} 
-              class="w-full py-2 bg-[#0F5C52] text-white rounded-xl font-bold text-sm hover:opacity-90 disabled:bg-gray-300 shadow-sm transition">
-              ${isOutOfStock ? 'สินค้าหมด' : '+ ใส่ตะกร้า'}
-            </button>
+            <div class="mt-2 pt-2 border-t border-gray-100 flex items-center justify-between">
+              <div class="text-base font-bold font-display text-[#0F5C52]">฿${p.price.toFixed(2)}</div>
+              
+              <button onclick="addCustCart('${p.id}')" ${isOutOfStock ? 'disabled' : ''} 
+                class="w-8 h-8 rounded-full bg-[#0F5C52] text-white flex items-center justify-center hover:bg-[#0d4d43] active:scale-95 disabled:bg-gray-300 shadow-sm transition">
+                <i data-lucide="plus" class="w-5 h-5"></i>
+              </button>
+            </div>
           </div>
         `;
       }).join('');
@@ -256,28 +293,27 @@
     function renderCartModalItems() {
       const container = document.getElementById('custCartItems');
       container.innerHTML = custCart.map((c, i) => `
-        <div class="flex justify-between items-center py-2">
+        <div class="flex justify-between items-center py-1.5">
           <div>
-            <div class="font-bold text-base">${c.name}</div>
-            <div class="text-xs text-[#0284C7] font-bold">฿${c.price.toFixed(2)} x ${c.qty}</div>
+            <div class="font-bold text-sm text-gray-800">${c.name}</div>
+            <div class="text-xs text-[#0F5C52] font-bold">฿${c.price.toFixed(2)} x ${c.qty}</div>
           </div>
           <div class="flex items-center gap-2">
-            <button onclick="changeCustQty(${i}, -1)" class="w-8 h-8 bg-gray-200 rounded-lg font-bold hover:bg-gray-300">-</button>
-            <span class="font-bold px-1">${c.qty}</span>
-            <button onclick="changeCustQty(${i}, 1)" class="w-8 h-8 bg-gray-200 rounded-lg font-bold hover:bg-gray-300">+</button>
+            <button onclick="changeCustQty(${i}, -1)" class="w-7 h-7 bg-gray-200 rounded-lg font-bold hover:bg-gray-300">-</button>
+            <span class="font-bold text-sm px-1">${c.qty}</span>
+            <button onclick="changeCustQty(${i}, 1)" class="w-7 h-7 bg-gray-200 rounded-lg font-bold hover:bg-gray-300">+</button>
           </div>
         </div>
       `).join('');
     }
 
-    // ยิงออเดอร์เข้าคอลเลกชัน orders ใน Firebase
     function submitOrderFromCustomer() {
       const name = document.getElementById('custName').value.trim();
       const phone = document.getElementById('custPhone').value.trim();
       const address = document.getElementById('custAddress').value.trim();
 
       if (!name || !phone || !address) {
-        return alert('กรุณากรอกชื่อ, เบอร์โทร และที่อยู่/หมายเหตุให้ครบถ้วนครับ');
+        return alert('กรุณากรอกชื่อ, เบอร์โทร และที่อยู่จัดส่งให้ครบถ้วนครับ');
       }
 
       const totalAmt = custCart.reduce((sum, c) => sum + (c.price * c.qty), 0);
@@ -289,7 +325,7 @@
         customerAddress: address,
         items: custCart,
         totalAmount: totalAmt,
-        status: 'pending' // สถานะรอดำเนินการ
+        status: 'pending'
       };
 
       db.collection("orders").add(orderData).then(() => {

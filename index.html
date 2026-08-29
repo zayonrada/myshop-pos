@@ -872,6 +872,50 @@
     </div>
   </div>
 
+  <!-- 🖨️ พื้นที่พิมพ์รายงานสรุปรายจ่าย -->
+  <div id="printExpenseArea" class="hidden print-area a4-print-page space-y-6 bg-white text-black">
+    <div class="text-center border-b-2 border-black pb-4">
+      <h1 class="text-3xl font-bold font-display">ร้านค้าขวัญใจ — รายงานสรุปบัญชีรายจ่าย</h1>
+      <div id="p-exp-period" class="text-lg font-bold font-display text-gray-700 mt-1"></div>
+      <div class="text-xs text-gray-500 mt-1">วันที่พิมพ์รายงาน: <span id="p-exp-print-date"></span></div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 border border-black p-4 rounded-xl">
+      <div><b>รวมรายจ่ายออกทั้งหมด:</b> <span id="p-exp-total" class="font-bold font-display text-[#B3432B] text-xl"></span></div>
+      <div><b>จำนวนรายการทั้งหมด:</b> <span id="p-exp-count" class="font-bold font-display text-xl"></span></div>
+    </div>
+
+    <div>
+      <h3 class="font-bold text-lg font-display mb-2">สรุปรายจ่ายแยกตามหมวดหมู่</h3>
+      <table class="w-full border-collapse border border-black text-sm">
+        <thead>
+          <tr class="bg-gray-100 font-bold border-b border-black">
+            <th class="border border-black p-2 text-left">หมวดหมู่รายจ่าย</th>
+            <th class="border border-black p-2 text-right">จำนวนเงินรวม</th>
+            <th class="border border-black p-2 text-right">สัดส่วน (%)</th>
+          </tr>
+        </thead>
+        <tbody id="p-exp-cat-table"></tbody>
+      </table>
+    </div>
+
+    <div>
+      <h3 class="font-bold text-lg font-display mb-2">รายการบิลรายจ่ายย่อยทั้งหมด</h3>
+      <table class="w-full border-collapse border border-black text-xs text-left">
+        <thead>
+          <tr class="bg-gray-100 border-b border-black font-bold">
+            <th class="p-2 border border-black w-36">วัน-เวลา</th>
+            <th class="p-2 border border-black">รายการรายจ่าย (พร้อมรายการย่อย)</th>
+            <th class="p-2 border border-black w-32">หมวดหมู่</th>
+            <th class="p-2 border border-black w-24">พนักงาน</th>
+            <th class="p-2 border border-black text-right w-28">จำนวนเงิน</th>
+          </tr>
+        </thead>
+        <tbody id="p-exp-list-table"></tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- พื้นที่พิมพ์รายงานสรุปยอดขาย -->
   <div id="printSalesArea" class="hidden print-area a4-print-page space-y-6 bg-white text-black">
     <div class="text-center border-b-2 border-black pb-4">
@@ -966,6 +1010,19 @@
           <span class="text-2xl text-black">ยอดต้องชำระ</span>
           <span id="modalCartTotal" class="font-display text-5xl text-[#B3432B]">฿0.00</span>
         </div>
+      </div>
+
+      <!-- 🎁 เพิ่มส่วนใส่เบอร์โทรสะสมแต้มสมาชิกหน้าร้าน -->
+      <div class="bg-amber-50 p-3.5 rounded-2xl border-2 border-amber-300 space-y-1.5">
+        <div class="flex justify-between items-center">
+          <label class="text-xs font-bold text-amber-900 font-display flex items-center gap-1">
+            <i data-lucide="gift" class="w-4 h-4 text-amber-600"></i> สะสมแต้มสมาชิก (ใส่เบอร์โทรศัพท์ลูกค้า)
+          </label>
+          <span id="posMemberPointsBadge" class="text-xs font-bold text-amber-700"></span>
+        </div>
+        <input type="tel" id="posCustomerPhone" oninput="fetchPosMemberInfo(this.value)" placeholder="เช่น 0812345678 (เว้นได้ถ้าไม่สะสม)" 
+          class="w-full p-2.5 rounded-xl border-2 border-amber-300 bg-white font-bold text-base focus:outline-none focus:border-amber-500">
+        <div id="posMemberNameDisplay" class="text-xs font-bold text-emerald-700 hidden"></div>
       </div>
 
       <div class="grid grid-cols-3 gap-2">
@@ -1230,7 +1287,6 @@
       }
     }
 
-    // ⚡ ฟังก์ชันทำความสะอาดข้อความสระภาษาไทยให้เป็นมาตรฐานเดียวกัน
     function normalizeThaiText(str) {
       if (!str) return '';
       return String(str).normalize('NFC').toLowerCase().trim();
@@ -1312,10 +1368,38 @@
     
     let activeDebtorName = "";
     let selectedDebtDocIds = new Set();
+    let currentPosMemberObj = null;
 
     function getTodayString() {
       const d = new Date();
       return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+    }
+
+    // 📱 ดึงข้อมูลสมาชิกหน้าร้านจากเบอร์โทรศัพท์
+    function fetchPosMemberInfo(phoneVal) {
+      const cleanPhone = phoneVal.trim();
+      const nameDisplay = document.getElementById('posMemberNameDisplay');
+      const ptsBadge = document.getElementById('posMemberPointsBadge');
+
+      if (cleanPhone.length === 10) {
+        db.collection("members").doc(cleanPhone).get().then(doc => {
+          if (doc.exists) {
+            currentPosMemberObj = doc.data();
+            nameDisplay.innerText = `👤 สมาชิก: คุณ${currentPosMemberObj.name}`;
+            nameDisplay.classList.remove('hidden');
+            ptsBadge.innerText = `แต้มเดิม: ${currentPosMemberObj.points || 0} แต้ม`;
+          } else {
+            currentPosMemberObj = { phone: cleanPhone, name: 'ลูกค้าหน้าร้าน', points: 0 };
+            nameDisplay.innerText = `✨ สมัครสมาชิกใหม่ให้เบอร์นี้อัตโนมัติ`;
+            nameDisplay.classList.remove('hidden');
+            ptsBadge.innerText = `แต้มเดิม: 0 แต้ม`;
+          }
+        });
+      } else {
+        currentPosMemberObj = null;
+        nameDisplay.classList.add('hidden');
+        ptsBadge.innerText = '';
+      }
     }
 
     function generateAutoBarcode() {
@@ -1454,7 +1538,7 @@
 
     document.addEventListener('keydown', function(e) {
       const activeEl = document.activeElement;
-      if (activeEl && (activeEl.id === 'quickNameInput' || activeEl.id === 'quickPriceInput' || activeEl.id === 'cartDiscount' || activeEl.id === 'deletePinInput' || activeEl.classList.contains('cart-qty-input') || activeEl.classList.contains('exp-sub-input'))) return;
+      if (activeEl && (activeEl.id === 'quickNameInput' || activeEl.id === 'quickPriceInput' || activeEl.id === 'cartDiscount' || activeEl.id === 'deletePinInput' || activeEl.id === 'posCustomerPhone' || activeEl.classList.contains('cart-qty-input') || activeEl.classList.contains('exp-sub-input'))) return;
       if (activeEl && activeEl.id !== 'scanInput') return;
 
       const currentTime = Date.now();
@@ -2335,7 +2419,7 @@
         const totalCostSum = calculateTotalCostAndDeductStock(orderCartList);
         const staffName = currentSelectedStaff || "รับผ่านเว็บออนไลน์";
 
-        const earnedPoints = Math.floor((o.subtotal || o.totalAmount) / 50);
+        const earnedPoints = Math.floor((o.subtotal || o.totalAmount) / 100);
 
         if (o.customerPhone && earnedPoints > 0) {
           db.collection("members").doc(o.customerPhone).get().then(mDoc => {
@@ -2546,7 +2630,6 @@
       renderLowStockTable();
     }
 
-    // ⚡ ฟังก์ชันแสดงรายการสินค้าฝั่งร้านค้า (แก้ไขค้นหาภาษาไทยสระไม่ตรงกัน)
     function renderProducts() {
       const grid = document.getElementById('productGrid');
       
@@ -3035,6 +3118,11 @@
       document.getElementById('debtorName').value = '';
       document.getElementById('regularDebtorSelect').value = '';
       
+      document.getElementById('posCustomerPhone').value = '';
+      document.getElementById('posMemberNameDisplay').classList.add('hidden');
+      document.getElementById('posMemberPointsBadge').innerText = '';
+      currentPosMemberObj = null;
+
       document.getElementById('splitCash').value = '';
       document.getElementById('splitTransfer').value = '';
       document.getElementById('splitDebtorName').value = '';
@@ -3165,6 +3253,26 @@
         }
       }
 
+      const posPhoneVal = document.getElementById('posCustomerPhone').value.trim();
+      const earnedPoints = Math.floor(netTotal / 100); // 100 บาท = 1 แต้ม
+
+      if (posPhoneVal.length === 10 && earnedPoints > 0) {
+        db.collection("members").doc(posPhoneVal).get().then(mDoc => {
+          if (mDoc.exists) {
+            db.collection("members").doc(posPhoneVal).update({
+              points: firebase.firestore.FieldValue.increment(earnedPoints)
+            });
+          } else {
+            db.collection("members").doc(posPhoneVal).set({
+              phone: posPhoneVal,
+              name: 'ลูกค้าหน้าร้าน',
+              points: earnedPoints,
+              ts: Date.now()
+            });
+          }
+        });
+      }
+
       const totalCartCost = calculateTotalCostAndDeductStock(cart);
       const staffName = currentSelectedStaff || "ไม่ระบุพนักงาน";
       
@@ -3183,7 +3291,9 @@
         change: changeVal,
         debtorName: creditPart > 0 ? debtor : null,
         settled: creditPart === 0,
-        cashierName: staffName
+        cashierName: staffName,
+        customerPhone: posPhoneVal || null,
+        earnedPoints: earnedPoints
       };
 
       db.collection("sales").add(sale).then(() => {
@@ -3262,6 +3372,10 @@
           if (s.transferPart > 0 && s.cashPart > 0) {
             detailsHtml += `<div class="flex justify-between text-blue-800"><span>ส่วนของโอนเงิน:</span><span class="font-bold font-display">฿${s.transferPart.toFixed(2)}</span></div>`;
           }
+        }
+
+        if (s.earnedPoints > 0) {
+          detailsHtml += `<div class="flex justify-between text-amber-800 pt-1 font-bold border-t border-dashed"><span>แต้มสะสมได้รับรอบนี้:</span><span class="font-display text-amber-600">+${s.earnedPoints} แต้ม</span></div>`;
         }
 
         document.getElementById('r-method').innerText = methodText;
@@ -3830,7 +3944,6 @@
       document.getElementById('debtSelectedCount').innerText = `เลือก ${selectedDebtDocIds.size} รายการ`;
     }
 
-    // ⚡ ฟังก์ชันชำระหนี้แบบยืดหยุ่น (รองรับตัดบิลเต็ม และ ผ่อนชำระ/ตัดหนี้บางส่วน)
     function confirmSettleSelectedDebts() {
       const personBills = sales.filter(s => (s.creditPart > 0 || s.method === 'credit') && !s.settled && (s.debtorName || "ไม่ระบุชื่อ") === activeDebtorName).sort((a,b) => a.ts - b.ts);
 
@@ -4063,7 +4176,7 @@
         const sVal = document.getElementById('startDateInput').value;
         const eVal = document.getElementById('endDateInput').value;
         const sDate = sVal ? new Date(sVal) : now;
-        const eDate = eVal ? new Date(eVal) : now;
+        const eDate = eVal ? new Date(eDate) : now;
         periodText = `ระหว่างวันที่ ${formatThaiDateFull(sDate)} ถึงวันที่ ${formatThaiDateFull(eDate)}`;
       }
 

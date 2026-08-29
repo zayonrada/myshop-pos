@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ร้านค้าขวัญใจ — Delivery & Rewards</title>
+
+  <!-- 🖼️ Favicon แสดงโลโก้ร้านบนแท็บเบราว์เซอร์ -->
+  <link rel="icon" type="image/png" href="logo.jpg.png">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -49,9 +53,8 @@
       </button>
 
       <div class="flex items-center gap-2">
-        <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#F37021] flex items-center justify-center text-white font-bold text-lg md:text-xl shadow-sm font-display">
-          K
-        </div>
+        <!-- 🖼️ โลโก้ร้านค้าส่วน Header -->
+        <img src="logo.jpg.png" alt="โลโก้ร้านค้าขวัญใจ" class="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover shadow-sm border border-orange-200">
         <div class="flex flex-col items-center">
           <span class="font-bold text-xl md:text-2xl font-display tracking-tight text-[#008B47] leading-none">ร้านค้าขวัญใจ</span>
           <span class="text-[10px] md:text-xs font-bold text-[#F37021] font-display tracking-wider">Delivery</span>
@@ -487,7 +490,7 @@
     function initLeafletMap(defaultLat, defaultLng) {
       const redPinIcon = L.divIcon({
         className: 'custom-leaflet-marker',
-        html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#E31837" width="36" height="36" style="filter:drop-shadow(0px 3px 3px rgba(0,0,0,0.4));"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5-2.5z"/></svg>`,
+        html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#E31837" width="36" height="36" style="filter:drop-shadow(0px 3px 3px rgba(0,0,0,0.4));"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`,
         iconSize: [36, 36],
         iconAnchor: [18, 36]
       });
@@ -751,7 +754,6 @@
       if (window.lucide) lucide.createIcons();
     }
 
-    // 🎨 ฟังก์ชันเลือกไอคอนตามหมวดหมู่
     function getCategoryIcon(cat) {
       if (cat.includes('ยา') || cat.includes('เวชภัณฑ์')) return 'pill';
       if (cat.includes('ใช้')) return 'home';

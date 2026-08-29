@@ -7,6 +7,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- LINE LIFF SDK -->
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -83,7 +85,6 @@
         </div>
       </div>
 
-      <!-- การ์ดโชว์พ้อยท์ส่วนตัว -->
       <div class="p-3 md:p-6 pb-1">
         <div class="bg-gradient-to-r from-amber-400 to-orange-500 rounded-2xl md:rounded-3xl p-4 md:p-6 text-white shadow-lg flex items-center justify-between relative overflow-hidden">
           <div class="space-y-1 z-10">
@@ -97,7 +98,6 @@
         </div>
       </div>
 
-      <!-- หมวดหมู่ -->
       <div class="p-3 md:p-6">
         <div class="text-xs md:text-sm font-bold text-gray-500 mb-2 font-display">หมวดหมู่สินค้า</div>
         <div class="flex items-center gap-3 md:gap-5 overflow-x-auto no-scrollbar pb-1" id="custCatFilter"></div>
@@ -113,7 +113,7 @@
       </main>
     </div>
 
-    <!-- ⚡ แถบย่อติดตามสถานะออเดอร์ด้านล่าง -->
+    <!-- ⚡ แถบย่อติดตามสถานะออเดอร์ -->
     <div id="miniOrderStatusCard" class="fixed bottom-0 max-w-5xl w-full bg-white border-t-2 border-[#008B47] shadow-2xl z-30 p-3 md:p-4 hidden rounded-t-2xl md:rounded-t-3xl">
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-2 md:gap-3">
@@ -235,7 +235,6 @@
 
         <div id="custCartItems" class="bg-gray-50 p-3 rounded-2xl border divide-y divide-gray-200 space-y-2 max-h-48 overflow-y-auto"></div>
 
-        <!-- ตัวเลือกการรับสินค้า -->
         <div class="bg-gray-50 p-3 rounded-2xl border space-y-2">
           <div class="text-xs font-bold text-gray-700 font-display">รูปแบบการรับสินค้า</div>
           <div class="grid grid-cols-2 gap-2">
@@ -248,7 +247,6 @@
           </div>
         </div>
 
-        <!-- ตัวเลือกการชำระเงิน -->
         <div class="bg-gray-50 p-3 rounded-2xl border space-y-2">
           <div class="text-xs font-bold text-gray-700 font-display">วิธีการชำระเงิน</div>
           <div class="grid grid-cols-2 gap-2">
@@ -260,7 +258,6 @@
             </button>
           </div>
 
-          <!-- กล่องเลขบัญชี -->
           <div id="bankTransferBox" class="pt-2 border-t space-y-2.5">
             <div class="bg-emerald-50 p-3.5 rounded-xl border border-emerald-300 text-xs space-y-2">
               <div class="flex justify-between items-center border-b border-emerald-200 pb-2">
@@ -290,7 +287,6 @@
           </div>
         </div>
 
-        <!-- ยอดรวมคำนวณ -->
         <div class="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-200 space-y-1">
           <div class="flex justify-between text-xs text-gray-600">
             <span>ค่าสินค้า</span>
@@ -342,7 +338,7 @@
       </div>
     </div>
 
-    <!-- Modal รายละเอียดออเดอร์ฉบับเต็ม -->
+    <!-- Modal รายละเอียดออเดอร์ -->
     <div id="trackingDetailModal" class="hidden fixed inset-0 bg-black/60 flex items-end md:items-center justify-center z-50 p-0 md:p-4">
       <div class="bg-white p-5 md:p-7 rounded-t-3xl md:rounded-3xl max-w-md w-full max-h-[85vh] overflow-y-auto space-y-4 shadow-2xl">
         <div class="flex justify-between items-center border-b pb-3">
@@ -361,9 +357,9 @@
 
             <div id="modalCircle1" class="w-6 h-6 rounded-full bg-[#F37021] text-white flex items-center justify-center text-xs font-bold z-10 shadow">✓</div>
             <div id="modalCircle2" class="w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center text-xs font-bold z-10 shadow">2</div>
-            <div id="modalCircle3" class="w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center text-xs font-bold z-10 shadow">3</div>
-            <div id="modalCircle4" class="w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center text-xs font-bold z-10 shadow">4</div>
-            <div id="modalCircle5" class="w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center text-xs font-bold z-10 shadow">5</div>
+            <div id="modalCircle3" class="w-6 h-6 rounded-full bg-gray-300 text-[#FFFFFF] flex items-center justify-center text-xs font-bold z-10 shadow">3</div>
+            <div id="modalCircle4" class="w-6 h-6 rounded-full bg-gray-300 text-[#FFFFFF] flex items-center justify-center text-xs font-bold z-10 shadow">4</div>
+            <div id="modalCircle5" class="w-6 h-6 rounded-full bg-gray-300 text-[#FFFFFF] flex items-center justify-center text-xs font-bold z-10 shadow">5</div>
           </div>
           <div class="grid grid-cols-5 text-[9px] font-bold text-center text-gray-400">
             <span>รับออเดอร์</span>
@@ -394,8 +390,8 @@
   </div>
 
   <script>
-    // 🔗 **เชื่อมต่อ Google Apps Script สำหรับยิงแจ้งเตือน LINE**
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzufZy7m8IIxHGZ1ae9Yy4cYcYPXsFdkzX8fSA7kpeZVlBMv_XP2W4v0zrIjNMJRKg5/exec";
+    const MY_LIFF_ID = "2011317502-oCvWQ4Ll";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCGMxESjF8ZDAAm7xL_uDvz4hEa7EpZD6Y",
@@ -408,12 +404,19 @@
     };
 
     firebase.initializeApp(firebaseConfig);
-    
-    firebase.firestore().enablePersistence({ synchronizeTabs: true }).catch(err => {
-      console.log("Persistence status:", err.code);
-    });
-
+    firebase.firestore().enablePersistence({ synchronizeTabs: true }).catch(err => console.log("Persistence:", err.code));
     const db = firebase.firestore();
+
+    let customerLineUserId = null;
+
+    // 🟢 LINE LIFF ดึง LINE User ID ของคนกดสั่ง
+    liff.init({ liffId: MY_LIFF_ID }).then(() => {
+      if (liff.isLoggedIn()) {
+        liff.getProfile().then(profile => {
+          customerLineUserId = profile.userId;
+        });
+      }
+    }).catch(err => console.log("LIFF Init Error:", err));
 
     let products = [];
     let rewards = [];
@@ -451,15 +454,46 @@
       renderRedeemCatalog();
     });
 
-    if (currentOrderId) {
-      trackOrderRealtime(currentOrderId);
+    if (currentOrderId) trackOrderRealtime(currentOrderId);
+    if (currentMember) updateMemberUI();
+
+    // 🎯 ดึงพิกัด GPS แม่นยำสูง (High Accuracy)
+    function getCurrentLocation() {
+      const statusText = document.getElementById('gpsStatusText');
+      if (navigator.geolocation) {
+        statusText.innerText = "⏳ กำลังจับสัญญาณดาวเทียม GPS ความแม่นยำสูง...";
+        statusText.className = "text-[10px] font-bold text-amber-600 mt-1 block animate-pulse";
+        
+        const geoOptions = {
+          enableHighAccuracy: true, // บังคับใช้ดาวเทียม GPS บนมือถือเพื่อตำแหน่งที่แม่นที่สุด
+          timeout: 15000,           // รอนานสูงสุด 15 วินาที
+          maximumAge: 0             // ไม่ใช้พิกัดเก่าในแคช
+        };
+
+        navigator.geolocation.getCurrentPosition(position => {
+          userLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          
+          const accuracyMeters = Math.round(position.coords.accuracy);
+
+          statusText.innerText = `✅ ปักหมุด GPS เรียบร้อยแล้ว (ความคลาดเคลื่อน ±${accuracyMeters} เมตร)`;
+          statusText.className = "text-[10px] font-bold text-emerald-700 mt-1 block";
+          document.getElementById('topAddrDisplay').innerText = `ปักหมุด GPS เรียบร้อย (คลาดเคลื่อน ±${accuracyMeters}ม.)`;
+        }, err => {
+          let errMsg = "❌ ไม่สามารถดึงตำแหน่งได้ กรุณาเปิด GPS ในมือถือ";
+          if (err.code === 3) errMsg = "❌ สัญญาณ GPS อ่อน กรุณายืนในที่โล่งแจ้งแล้วกดปักหมุดอีกครั้ง";
+          
+          statusText.innerText = errMsg;
+          statusText.className = "text-[10px] font-bold text-red-600 mt-1 block";
+        }, geoOptions);
+      } else {
+        alert("อุปกรณ์ของคุณไม่รองรับการดึงตำแหน่ง GPS");
+      }
     }
 
-    if (currentMember) {
-      updateMemberUI();
-    }
-
-    // 📲 ฟังก์ชันยิงข้อมูลไปหา Google Apps Script เพื่อส่งเข้า LINE
+    // 📲 ยิงแจ้งเตือนออเดอร์ใหม่เข้า LINE เจ้าของร้าน
     function sendLineNotification(order) {
       if (!GOOGLE_SCRIPT_URL) return;
 
@@ -619,29 +653,6 @@
         addrBox.classList.add('hidden');
       }
       updateCartSummaryUI();
-    }
-
-    function getCurrentLocation() {
-      const statusText = document.getElementById('gpsStatusText');
-      if (navigator.geolocation) {
-        statusText.innerText = "⏳ กำลังดึงพิกัดตำแหน่งของคุณ...";
-        statusText.className = "text-[10px] font-bold text-amber-600 mt-1 block animate-pulse";
-        
-        navigator.geolocation.getCurrentPosition(position => {
-          userLocation = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          };
-          statusText.innerText = `✅ ปักหมุดตำแหน่งเรียบร้อยแล้ว`;
-          statusText.className = "text-[10px] font-bold text-emerald-700 mt-1 block";
-          document.getElementById('topAddrDisplay').innerText = "พิกัดปักหมุด GPS เรียบร้อยแล้ว";
-        }, err => {
-          statusText.innerText = "❌ ไม่สามารถดึงตำแหน่งได้ กรุณาเปิด GPS ในมือถือ";
-          statusText.className = "text-[10px] font-bold text-red-600 mt-1 block";
-        });
-      } else {
-        alert("อุปกรณ์ของคุณไม่รองรับการดึงตำแหน่ง GPS");
-      }
     }
 
     function renderCategoryFilters() {
@@ -835,6 +846,7 @@
         phone: phone,
         name: name,
         address: address,
+        customerLineId: customerLineUserId || '',
         lastOrderTs: Date.now()
       }, { merge: true });
 
@@ -850,6 +862,7 @@
         customerName: name,
         customerPhone: phone,
         customerAddress: address,
+        customerLineId: customerLineUserId || '',
         deliveryType: deliveryType,
         deliveryFee: deliveryFee,
         payOption: payOption,

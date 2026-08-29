@@ -410,7 +410,7 @@
 
   <script>
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzufZy7m8IIxHGZ1ae9Yy4cYcYPXsFdkzX8fSA7kpeZVlBMv_XP2W4v0zrIjNMJRKg5/exec";
-    const MY_LIFF_ID = "2011317502-oCvWQ4LI"; // 🔑 LIFF ID ฉบับแก้ไขถูกต้อง (ตัวใหญ่ I)
+    const MY_LIFF_ID = "2011317502-oCvWQ4LI";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCGMxESjF8ZDAAm7xL_uDvz4hEa7EpZD6Y",
@@ -430,7 +430,6 @@
     let leafletMap = null;
     let leafletMarker = null;
 
-    // 🟢 LINE LIFF ดึง LINE User ID ของคนกดสั่ง
     liff.init({ liffId: MY_LIFF_ID }).then(() => {
       if (liff.isLoggedIn()) {
         liff.getProfile().then(profile => {
@@ -439,7 +438,9 @@
       }
     }).catch(err => console.log("LIFF Init Error:", err));
 
-    let products = [];
+    // ⚡ Fast Cache: ดึงข้อมูลเก่าที่เคยโหลดมาแสดงทันที 0.1s
+    let cachedProducts = localStorage.getItem('cachedProducts');
+    let products = cachedProducts ? JSON.parse(cachedProducts) : [];
     let rewards = [];
     let custCart = [];
     let selectedCategory = 'ทั้งหมด';
@@ -457,14 +458,25 @@
       return String(str).normalize('NFC').toLowerCase().trim();
     }
 
+    // แสดงผลข้อมูลทันทีถ้าระบบมี Fast Cache
+    if (products.length > 0) {
+      setTimeout(() => {
+        renderCategoryFilters();
+        renderCustomerProducts();
+      }, 50);
+    }
+
+    // อัปเดตสินค้าล่าสุดแบบ Realtime หลังบ้าน
     db.collection("products").onSnapshot(s => {
-      products = [];
+      let freshProducts = [];
       s.forEach(doc => {
         const d = doc.data();
         let batches = d.batches || [];
         const totalStock = batches.reduce((sum, b) => sum + b.qty, 0);
-        products.push({ id: doc.id, ...d, stock: d.stock !== undefined ? d.stock : totalStock });
+        freshProducts.push({ id: doc.id, ...d, stock: d.stock !== undefined ? d.stock : totalStock });
       });
+      products = freshProducts;
+      localStorage.setItem('cachedProducts', JSON.stringify(freshProducts));
       renderCategoryFilters();
       renderCustomerProducts();
     });
@@ -478,7 +490,6 @@
     if (currentOrderId) trackOrderRealtime(currentOrderId);
     if (currentMember) updateMemberUI();
 
-    // 🗺️ ระบบแผนที่ลากหมุด Leaflet Map (แก้ไข SVG Red Pin เลื่อนหมุดได้ 100%)
     function initLeafletMap(defaultLat, defaultLng) {
       const redPinIcon = L.divIcon({
         className: 'custom-leaflet-marker',
@@ -504,7 +515,6 @@
           icon: redPinIcon 
         }).addTo(leafletMap);
 
-        // ฟังเหตุการณ์เมื่อลากหมุดย้ายตำแหน่ง
         leafletMarker.on('dragend', function (e) {
           const latlng = leafletMarker.getLatLng();
           userLocation = { lat: latlng.lat, lng: latlng.lng };
@@ -513,7 +523,6 @@
           statusElem.className = "text-[10px] font-bold text-emerald-700 mt-1 block";
         });
 
-        // จิ้มบนแผนที่แล้วย้ายหมุดมาจุดนั้น
         leafletMap.on('click', function (e) {
           leafletMarker.setLatLng(e.latlng);
           userLocation = { lat: e.latlng.lat, lng: e.latlng.lng };
@@ -529,7 +538,6 @@
       userLocation = { lat: defaultLat, lng: defaultLng };
     }
 
-    // 🎯 ดึงพิกัด GPS แม่นยำสูง
     function getCurrentLocation() {
       const statusText = document.getElementById('gpsStatusText');
       if (navigator.geolocation) {
@@ -561,7 +569,6 @@
       }
     }
 
-    // 📲 ยิงแจ้งเตือนออเดอร์ใหม่เข้า LINE เจ้าของร้าน
     function sendLineNotification(order) {
       if (!GOOGLE_SCRIPT_URL) return;
 
@@ -747,7 +754,7 @@
           <span class="text-[11px] md:text-xs font-bold ${selectedCategory === c ? 'text-[#008B47]' : 'text-gray-600'}">${c}</span>
         </button>
       `).join('');
-      lucide.createIcons();
+      if (window.lucide) lucide.createIcons();
     }
 
     function getCategoryIcon(cat) {
@@ -800,7 +807,7 @@
           <div class="bg-white p-2.5 md:p-3.5 rounded-2xl border border-gray-100 flex flex-col justify-between shadow-sm relative overflow-hidden">
             <div>
               <div class="w-full h-28 md:h-36 bg-gray-50 rounded-xl mb-2 overflow-hidden flex items-center justify-center border border-gray-100 relative">
-                ${p.imageUrl ? `<img src="${p.imageUrl}" class="w-full h-full object-cover">` : `<i data-lucide="package" class="w-10 h-10 md:w-12 md:h-12 text-gray-300"></i>`}
+                ${p.imageUrl ? `<img src="${p.imageUrl}" loading="lazy" class="w-full h-full object-cover">` : `<i data-lucide="package" class="w-10 h-10 md:w-12 md:h-12 text-gray-300"></i>`}
                 ${isOutOfStock ? `<div class="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-xs md:text-sm font-bold font-display">สินค้าหมด</div>` : ''}
               </div>
               <div class="font-bold text-xs md:text-sm text-gray-800 line-clamp-2 leading-snug">${p.name}</div>
@@ -818,7 +825,7 @@
         `;
       }).join('');
 
-      lucide.createIcons();
+      if (window.lucide) lucide.createIcons();
     }
 
     function addCustCart(id) {
@@ -880,7 +887,7 @@
       setTimeout(() => {
         initLeafletMap(userLocation.lat, userLocation.lng);
         if (leafletMap) leafletMap.invalidateSize();
-      }, 350);
+      }, 300);
     }
 
     function closeCustomerCartModal() {
@@ -907,7 +914,7 @@
           </div>
         </div>
       `).join('');
-      lucide.createIcons();
+      if (window.lucide) lucide.createIcons();
     }
 
     function submitOrderFromCustomer() {
@@ -1013,7 +1020,7 @@
           </div>
         `;
       }).join('');
-      lucide.createIcons();
+      if (window.lucide) lucide.createIcons();
     }
 
     function redeemReward(rewardId) {
@@ -1109,7 +1116,7 @@
           </div>
         `).join('');
 
-        lucide.createIcons();
+        if (window.lucide) lucide.createIcons();
       });
     }
 
@@ -1135,7 +1142,7 @@
       else modal.classList.add('hidden');
     }
 
-    lucide.createIcons();
+    if (window.lucide) lucide.createIcons();
   </script>
 </body>
 </html>

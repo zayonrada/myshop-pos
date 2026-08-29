@@ -8,7 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- Leaflet Map CSS & JS (แผนที่ลากหมุด) -->
+  <!-- Leaflet Map CSS & JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -33,7 +33,12 @@
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     
-    #mapPicker { height: 180px; width: 100%; border-radius: 1rem; z-index: 1; }
+    #mapPicker { height: 200px; width: 100%; border-radius: 1rem; z-index: 10; touch-action: none; }
+    .custom-leaflet-marker {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
   </style>
 </head>
 <body class="min-h-screen flex justify-center bg-[#E5E7EB]">
@@ -339,7 +344,7 @@
 
             <!-- กล่องแผนที่ลากหมุด -->
             <div id="mapPicker" class="shadow-inner border border-gray-300"></div>
-            <div class="text-[10px] text-gray-400 font-bold text-center">💡 สามารถใช้นิ้วเลื่อนแผนที่หรือลากหมุดแดงไปวางตรงหลังคาบ้านได้เลยครับ</div>
+            <div class="text-[10px] text-gray-400 font-bold text-center">💡 สามารถเอานิ้วลากหมุดสีแดงไปวางตรงหลังคาบ้านได้เลยครับ</div>
 
             <textarea id="custAddress" rows="2" placeholder="ระบุบ้านเลขที่ / จุดสังเกตเพิ่มเติม..." class="w-full p-2.5 rounded-xl border bg-white font-bold text-sm focus:outline-none focus:border-[#008B47]"></textarea>
             <div id="gpsStatusText" class="text-[10px] font-bold text-emerald-700 mt-1 hidden"></div>
@@ -405,7 +410,7 @@
 
   <script>
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzufZy7m8IIxHGZ1ae9Yy4cYcYPXsFdkzX8fSA7kpeZVlBMv_XP2W4v0zrIjNMJRKg5/exec";
-    const MY_LIFF_ID = "2011317502-oCvWQ4Ll";
+    const MY_LIFF_ID = "2011317502-oCvWQ4LI"; // 🔑 LIFF ID ฉบับแก้ไขถูกต้อง (ตัวใหญ่ I)
 
     const firebaseConfig = {
       apiKey: "AIzaSyCGMxESjF8ZDAAm7xL_uDvz4hEa7EpZD6Y",
@@ -440,7 +445,7 @@
     let selectedCategory = 'ทั้งหมด';
     let currentOrderId = localStorage.getItem('lastOrderId') || null;
     let unsubscribeOrderTracking = null;
-    let userLocation = { lat: 13.7563, lng: 100.5018 }; // พิกัดตั้งต้น (กรุงเทพฯ/ไทย)
+    let userLocation = { lat: 13.7563, lng: 100.5018 };
     let deliveryType = 'delivery';
     let payOption = 'transfer';
     let slipBase64 = "";
@@ -473,26 +478,52 @@
     if (currentOrderId) trackOrderRealtime(currentOrderId);
     if (currentMember) updateMemberUI();
 
-    // 🗺️ ระบบแผนที่ลากหมุด Leaflet Map
+    // 🗺️ ระบบแผนที่ลากหมุด Leaflet Map (แก้ไข SVG Red Pin เลื่อนหมุดได้ 100%)
     function initLeafletMap(defaultLat, defaultLng) {
+      const redPinIcon = L.divIcon({
+        className: 'custom-leaflet-marker',
+        html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#E31837" width="36" height="36" style="filter:drop-shadow(0px 3px 3px rgba(0,0,0,0.4));"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`,
+        iconSize: [36, 36],
+        iconAnchor: [18, 36]
+      });
+
       if (!leafletMap) {
-        leafletMap = L.map('mapPicker').setView([defaultLat, defaultLng], 15);
+        leafletMap = L.map('mapPicker', {
+          center: [defaultLat, defaultLng],
+          zoom: 16,
+          zoomControl: true
+        });
+
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           maxZoom: 19,
           attribution: '© OpenStreetMap'
         }).addTo(leafletMap);
 
-        leafletMarker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(leafletMap);
+        leafletMarker = L.marker([defaultLat, defaultLng], { 
+          draggable: true, 
+          icon: redPinIcon 
+        }).addTo(leafletMap);
 
-        // เวลาคนลากหมุดปักใหม่
+        // ฟังเหตุการณ์เมื่อลากหมุดย้ายตำแหน่ง
         leafletMarker.on('dragend', function (e) {
           const latlng = leafletMarker.getLatLng();
           userLocation = { lat: latlng.lat, lng: latlng.lng };
-          document.getElementById('gpsStatusText').innerText = `✅ ปักหมุดพิกัด: ${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`;
-          document.getElementById('gpsStatusText').className = "text-[10px] font-bold text-emerald-700 mt-1 block";
+          const statusElem = document.getElementById('gpsStatusText');
+          statusElem.innerText = `✅ ปักหมุดพิกัด: ${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`;
+          statusElem.className = "text-[10px] font-bold text-emerald-700 mt-1 block";
         });
+
+        // จิ้มบนแผนที่แล้วย้ายหมุดมาจุดนั้น
+        leafletMap.on('click', function (e) {
+          leafletMarker.setLatLng(e.latlng);
+          userLocation = { lat: e.latlng.lat, lng: e.latlng.lng };
+          const statusElem = document.getElementById('gpsStatusText');
+          statusElem.innerText = `✅ ปักหมุดพิกัด: ${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`;
+          statusElem.className = "text-[10px] font-bold text-emerald-700 mt-1 block";
+        });
+
       } else {
-        leafletMap.setView([defaultLat, defaultLng], 15);
+        leafletMap.setView([defaultLat, defaultLng], 16);
         leafletMarker.setLatLng([defaultLat, defaultLng]);
       }
       userLocation = { lat: defaultLat, lng: defaultLng };
@@ -522,7 +553,7 @@
           statusText.className = "text-[10px] font-bold text-emerald-700 mt-1 block";
           document.getElementById('topAddrDisplay').innerText = `ปักหมุด GPS เรียบร้อยแล้ว`;
         }, err => {
-          statusText.innerText = "❌ ไม่สามารถดึง GPS อัตโนมัติได้ คุณสามารถเลื่อนหมุดในแผนที่ได้เองครับ";
+          statusText.innerText = "❌ ไม่สามารถดึง GPS อัตโนมัติได้ คุณสามารถเอานิ้วลากหมุดในแผนที่ได้เองครับ";
           statusText.className = "text-[10px] font-bold text-red-600 mt-1 block";
         }, geoOptions);
       } else {
@@ -565,6 +596,7 @@
             const m = doc.data();
             document.getElementById('custName').value = m.name || '';
             document.getElementById('custAddress').value = m.address || '';
+            if (m.customerLineId && !customerLineUserId) customerLineUserId = m.customerLineId;
             currentMember = m;
             localStorage.setItem('memberProfile', JSON.stringify(m));
             updateMemberUI();
@@ -597,6 +629,7 @@
           document.getElementById('memberNameInput').value = m.name || '';
           document.getElementById('memberAddressInput').value = m.address || '';
           document.getElementById('modalMemberPoints').innerText = (m.points || 0) + ' แต้ม';
+          if (m.customerLineId && !customerLineUserId) customerLineUserId = m.customerLineId;
           currentMember = m;
           localStorage.setItem('memberProfile', JSON.stringify(m));
           updateMemberUI();
@@ -616,7 +649,14 @@
 
       db.collection("members").doc(phone).get().then(doc => {
         const existingPoints = doc.exists ? (doc.data().points || 0) : 0;
-        const memberData = { phone, name, address, points: existingPoints, ts: Date.now() };
+        const memberData = { 
+          phone, 
+          name, 
+          address, 
+          customerLineId: customerLineUserId || (doc.exists ? doc.data().customerLineId : ''),
+          points: existingPoints, 
+          ts: Date.now() 
+        };
 
         db.collection("members").doc(phone).set(memberData, { merge: true }).then(() => {
           localStorage.setItem('memberProfile', JSON.stringify(memberData));
@@ -684,7 +724,9 @@
         btnDelivery.className = "py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm border-2 border-[#008B47] bg-[#008B47] text-white flex items-center justify-center gap-1.5 transition";
         btnPickup.className = "py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm border-2 border-gray-200 bg-white text-gray-700 flex items-center justify-center gap-1.5 transition";
         addrBox.classList.remove('hidden');
-        setTimeout(() => { if (leafletMap) leafletMap.invalidateSize(); }, 300);
+        setTimeout(() => { 
+          if (leafletMap) leafletMap.invalidateSize(); 
+        }, 300);
       } else {
         btnPickup.className = "py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm border-2 border-[#008B47] bg-[#008B47] text-white flex items-center justify-center gap-1.5 transition";
         btnDelivery.className = "py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm border-2 border-gray-200 bg-white text-gray-700 flex items-center justify-center gap-1.5 transition";
@@ -837,7 +879,8 @@
 
       setTimeout(() => {
         initLeafletMap(userLocation.lat, userLocation.lng);
-      }, 300);
+        if (leafletMap) leafletMap.invalidateSize();
+      }, 350);
     }
 
     function closeCustomerCartModal() {

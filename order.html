@@ -83,7 +83,7 @@
         </div>
       </div>
 
-      <!-- การ์ดโชว์พ้อยท์ส่วนตัว (ทุกๆ 100 บาท = 1 แต้ม) -->
+      <!-- การ์ดโชว์พ้อยท์ส่วนตัว -->
       <div class="p-3 md:p-6 pb-1">
         <div class="bg-gradient-to-r from-amber-400 to-orange-500 rounded-2xl md:rounded-3xl p-4 md:p-6 text-white shadow-lg flex items-center justify-between relative overflow-hidden">
           <div class="space-y-1 z-10">
@@ -155,7 +155,7 @@
       </div>
     </div>
 
-    <!-- 👤 Modal สมาชิก / เข้าสู่ระบบด้วยเบอร์โทร -->
+    <!-- 👤 Modal สมาชิก -->
     <div id="memberModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
       <div class="bg-white p-6 rounded-3xl max-w-md w-full space-y-4 shadow-2xl">
         <div class="flex justify-between items-center border-b pb-3">
@@ -198,7 +198,7 @@
       </div>
     </div>
 
-    <!-- 🎁 Modal แคตตาล็อกของรางวัลที่ใช้แต้มแลก -->
+    <!-- 🎁 Modal แคตตาล็อกของรางวัล -->
     <div id="redeemModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
       <div class="bg-white p-6 rounded-3xl max-w-lg w-full max-h-[85vh] overflow-y-auto space-y-4 shadow-2xl">
         <div class="flex justify-between items-center border-b pb-3">
@@ -394,6 +394,9 @@
   </div>
 
   <script>
+    // 🔗 **เชื่อมต่อ Google Apps Script สำหรับยิงแจ้งเตือน LINE**
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzufZy7m8IIxHGZ1ae9Yy4cYcYPXsFdkzX8fSA7kpeZVlBMv_XP2W4v0zrIjNMJRKg5/exec";
+
     const firebaseConfig = {
       apiKey: "AIzaSyCGMxESjF8ZDAAm7xL_uDvz4hEa7EpZD6Y",
       authDomain: "myshop-pos-19a95.firebaseapp.com",
@@ -425,6 +428,11 @@
     let currentMember = JSON.parse(localStorage.getItem('memberProfile')) || null;
     let notifiedCancelledMap = {};
 
+    function normalizeThaiText(str) {
+      if (!str) return '';
+      return String(str).normalize('NFC').toLowerCase().trim();
+    }
+
     db.collection("products").onSnapshot(s => {
       products = [];
       s.forEach(doc => {
@@ -449,6 +457,33 @@
 
     if (currentMember) {
       updateMemberUI();
+    }
+
+    // 📲 ฟังก์ชันยิงข้อมูลไปหา Google Apps Script เพื่อส่งเข้า LINE
+    function sendLineNotification(order) {
+      if (!GOOGLE_SCRIPT_URL) return;
+
+      const itemsText = order.items.map(i => `${i.name} x${i.qty}`).join(', ');
+      const mapsUrl = order.location ? `https://www.google.com/maps/search/?api=1&query=${order.location.lat},${order.location.lng}` : '';
+
+      const payload = {
+        orderCode: order.orderCode,
+        customerName: order.customerName,
+        customerPhone: order.customerPhone,
+        customerAddress: order.customerAddress,
+        itemsText: itemsText,
+        totalAmount: order.totalAmount.toFixed(2),
+        payOption: order.payOption === 'transfer' ? 'โอนเงิน' : 'เงินสด',
+        mapsUrl: mapsUrl,
+        slipUrl: order.slipUrl || ''
+      };
+
+      fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }).catch(err => console.error("Line notify error:", err));
     }
 
     function autoFetchMemberInfo(phoneVal) {
@@ -641,14 +676,19 @@
 
     function renderCustomerProducts() {
       const grid = document.getElementById('custProductGrid');
-      const searchVal = (document.getElementById('custSearchInput')?.value || '').trim().toLowerCase();
+      const searchRaw = document.getElementById('custSearchInput')?.value || '';
+      const searchVal = normalizeThaiText(searchRaw);
 
       let displayList = products;
       if (selectedCategory !== 'ทั้งหมด') {
         displayList = displayList.filter(p => p.category === selectedCategory);
       }
+      
       if (searchVal) {
-        displayList = displayList.filter(p => p.name.toLowerCase().includes(searchVal));
+        displayList = displayList.filter(p => {
+          const pNameNorm = normalizeThaiText(p.name);
+          return pNameNorm.includes(searchVal) || searchVal.includes(pNameNorm);
+        });
       }
 
       if (displayList.length === 0) {
@@ -826,6 +866,8 @@
         localStorage.setItem('lastOrderId', docRef.id);
         currentOrderId = docRef.id;
         
+        sendLineNotification(orderData);
+
         custCart = [];
         slipBase64 = "";
         updateCartSummaryUI();
@@ -980,10 +1022,10 @@
       for (let i = 1; i <= 5; i++) {
         const circle = document.getElementById(`modalCircle${i}`);
         if (i <= step) {
-          circle.className = "w-6 h-6 rounded-full bg-[#F37021] text-white flex items-center justify-center text-xs font-bold z-10 shadow";
+          circle.className = "w-6 h-6 rounded-full bg-[#F37021] text-[#FFFFFF] flex items-center justify-center text-xs font-bold z-10 shadow";
           circle.innerText = "✓";
         } else {
-          circle.className = "w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center text-xs font-bold z-10 shadow";
+          circle.className = "w-6 h-6 rounded-full bg-gray-300 text-[#FFFFFF] flex items-center justify-center text-xs font-bold z-10 shadow";
           circle.innerText = i;
         }
       }

@@ -55,28 +55,35 @@
       animation: slideInPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
 
+    /* ⚡ ตั้งค่าการพิมพ์แยกขนาดกระดาษเด็ดขาดระหว่าง สลิป (80mm) และ รายงาน (A4) */
     @media print {
       body * { visibility: hidden !important; }
       .print-area, .print-area * { visibility: visible !important; }
       
-      .print-area {
+      /* สไตล์ใบเสร็จ / สลิป (80mm) */
+      .receipt-print-box {
         position: absolute !important;
         left: 0 !important;
         right: 0 !important;
         top: 0 !important;
         margin: 0 auto !important;
-        padding: 0 !important;
+        padding: 4mm !important;
+        width: 80mm !important;
+        max-width: 100% !important;
         box-shadow: none !important;
         border: none !important;
         background: white !important;
         color: black !important;
       }
-      
-      .receipt-print-box {
-        width: 80mm !important;
-        max-width: 100% !important;
-        margin: 0 auto !important;
-        padding: 4mm !important;
+
+      /* สไตล์กระดาษ A4 สรุปรายงาน / บาร์โค้ด */
+      .a4-print-page {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 210mm !important;
+        padding: 8mm !important;
+        box-sizing: border-box;
       }
 
       .no-print { display: none !important; }
@@ -196,7 +203,6 @@
           <div id="scanErrorMsg" class="text-sm font-bold text-[#B3432B] hidden"></div>
         </div>
 
-        <!-- ⚡ ช่องค้นหาพร้อมปุ่ม X ล้างข้อความด่วน -->
         <div class="relative">
           <input type="text" id="scanInput" oninput="handleSearchInput()" placeholder="สแกนบาร์โค้ด หรือพิมพ์ชื่อ/รหัสสินค้า..." 
             class="w-full text-2xl p-4 pr-12 rounded-2xl border-2 border-[#0F5C52] bg-[#F5F3EE] focus:outline-none font-bold" autofocus>
@@ -715,7 +721,7 @@
   </div>
 
   <!-- พื้นที่สั่งพิมพ์ใบสั่งซื้อ -->
-  <div id="printRestockArea" class="hidden print-area p-8 space-y-5 bg-white text-black">
+  <div id="printRestockArea" class="hidden print-area a4-print-page space-y-5 bg-white text-black">
     <div class="text-center border-b-2 border-black pb-4">
       <h1 class="text-3xl font-bold font-display">ร้านค้าขวัญใจ — ใบรายการสั่งซื้อ / ใบเช็กสต็อกสินค้า</h1>
       <div id="p-restock-filter-info" class="text-base font-bold font-display text-gray-700 mt-1"></div>
@@ -741,7 +747,7 @@
   </div>
 
   <!-- พื้นที่พิมพ์รายงานสรุปยอดขาย -->
-  <div id="printSalesArea" class="hidden print-area p-8 space-y-6 bg-white text-black">
+  <div id="printSalesArea" class="hidden print-area a4-print-page space-y-6 bg-white text-black">
     <div class="text-center border-b-2 border-black pb-4">
       <h1 class="text-3xl font-bold font-display">ร้านค้าขวัญใจ — รายงานสรุปยอดขายและกำไร</h1>
       <div id="p-sales-period" class="text-lg font-bold font-display text-gray-700 mt-1"></div>
@@ -922,7 +928,7 @@
     </div>
   </div>
 
-  <!-- Modal ใบเสร็จ -->
+  <!-- Modal ใบเสร็จ / สลิปพิมพ์หน้าร้าน -->
   <div id="receiptModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
     <div class="bg-white p-7 rounded-3xl max-w-[440px] w-full space-y-4 print-area receipt-print-box text-center text-lg shadow-2xl">
       <div class="space-y-1">
@@ -1377,7 +1383,7 @@
 
       if (p) {
         addToCart(p.id);
-        clearSearchInput(); // ⚡ สแกนติดปุ๊บ เคลียร์ช่องค้นหาให้สะอาด
+        clearSearchInput();
         if (errorMsg) errorMsg.classList.add('hidden');
       } else {
         if (errorMsg) {
@@ -1405,7 +1411,6 @@
       renderProducts();
     }
 
-    // ⚡ ฟังก์ชันล้างช่องค้นหาหน้าร้าน
     function clearSearchInput() {
       const input = document.getElementById('scanInput');
       if (input) {
@@ -2048,7 +2053,6 @@
       });
     }
 
-    // ⚡ รับออเดอร์ ตัดสต็อก เคลียร์ช่องค้นหา
     function acceptOnlineOrder(orderId) {
       const o = onlineOrders.find(item => item.id === orderId);
       if (!o) return;
@@ -2086,7 +2090,7 @@
 
         db.collection("sales").add(saleData).then(() => {
           db.collection("orders").doc(orderId).update({ status: 'completed' }).then(() => {
-            clearSearchInput(); // ⚡ เคลียร์ช่องค้นหา
+            clearSearchInput();
             alert('รับออเดอร์ออนไลน์ ตัดสต็อก และบันทึกยอดขายเรียบร้อยครับ!');
           });
         });
@@ -2217,7 +2221,7 @@
     function setPosCategory(cat) {
       selectedPosCategory = cat;
       currentPage = 1;
-      clearSearchInput(); // ⚡ เปลี่ยนหมวดหมู่แล้วล้างช่องค้นหาให้อัตโนมัติ
+      clearSearchInput();
       updateCategoryDropdowns();
       renderProducts();
       focusScanInput();
@@ -2713,7 +2717,7 @@
           cart = [];
           document.getElementById('hasDiscountCheck').checked = false;
           toggleDiscountInput();
-          clearSearchInput(); // ⚡ เคลียร์ช่องค้นหาเมื่อจบการขาย
+          clearSearchInput();
           renderCart();
           alert('บันทึกการใช้ในบ้านเรียบร้อยแล้ว');
           focusScanInput();
@@ -2895,7 +2899,7 @@
         cart = []; 
         document.getElementById('hasDiscountCheck').checked = false;
         toggleDiscountInput();
-        clearSearchInput(); // ⚡ ชำระเงินสำเร็จ เคลียร์ช่องค้นหา
+        clearSearchInput();
         renderCart();
       });
     }

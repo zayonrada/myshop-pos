@@ -34,11 +34,7 @@
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     
     #mapPicker { height: 200px; width: 100%; border-radius: 1rem; z-index: 10; touch-action: none; }
-    .custom-leaflet-marker {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+    .custom-leaflet-marker { display: flex; align-items: center; justify-content: center; }
   </style>
 </head>
 <body class="min-h-screen flex justify-center bg-[#E5E7EB]">
@@ -438,9 +434,7 @@
       }
     }).catch(err => console.log("LIFF Init Error:", err));
 
-    // ⚡ Fast Cache: ดึงข้อมูลเก่าที่เคยโหลดมาแสดงทันที 0.1s
-    let cachedProducts = localStorage.getItem('cachedProducts');
-    let products = cachedProducts ? JSON.parse(cachedProducts) : [];
+    let products = [];
     let rewards = [];
     let custCart = [];
     let selectedCategory = 'ทั้งหมด';
@@ -450,7 +444,16 @@
     let deliveryType = 'delivery';
     let payOption = 'transfer';
     let slipBase64 = "";
-    let currentMember = JSON.parse(localStorage.getItem('memberProfile')) || null;
+    
+    // Safety Catch การดึงข้อมูลสมาชิกป้องกันค้าง
+    let currentMember = null;
+    try {
+      const rawMem = localStorage.getItem('memberProfile');
+      if (rawMem) currentMember = JSON.parse(rawMem);
+    } catch(e) {
+      localStorage.removeItem('memberProfile');
+    }
+
     let notifiedCancelledMap = {};
 
     function normalizeThaiText(str) {
@@ -458,15 +461,7 @@
       return String(str).normalize('NFC').toLowerCase().trim();
     }
 
-    // แสดงผลข้อมูลทันทีถ้าระบบมี Fast Cache
-    if (products.length > 0) {
-      setTimeout(() => {
-        renderCategoryFilters();
-        renderCustomerProducts();
-      }, 50);
-    }
-
-    // อัปเดตสินค้าล่าสุดแบบ Realtime หลังบ้าน
+    // 🛡️ ปรับปรุงดึงข้อมูลสินค้าป้องกันหน้าเว็บค้าง
     db.collection("products").onSnapshot(s => {
       let freshProducts = [];
       s.forEach(doc => {
@@ -476,9 +471,10 @@
         freshProducts.push({ id: doc.id, ...d, stock: d.stock !== undefined ? d.stock : totalStock });
       });
       products = freshProducts;
-      localStorage.setItem('cachedProducts', JSON.stringify(freshProducts));
       renderCategoryFilters();
       renderCustomerProducts();
+    }, err => {
+      console.error("Firebase fetch error:", err);
     });
 
     db.collection("rewards").onSnapshot(s => {

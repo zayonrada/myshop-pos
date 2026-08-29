@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>ร้านค้าขวัญใจ — Delivery</title>
+  <title>ร้านค้าขวัญใจ — Delivery & Rewards</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -32,9 +32,9 @@
 
     <!-- Top Header -->
     <header class="bg-white px-4 md:px-8 py-2.5 sticky top-0 z-40 shadow-sm flex items-center justify-between border-b">
-      <button onclick="openMemberModal()" class="flex items-center gap-1.5 text-xs font-bold text-[#008B47] bg-emerald-50 px-3 py-1.5 rounded-full hover:bg-emerald-100 transition">
+      <button onclick="openMemberModal()" class="flex items-center gap-1.5 text-xs font-bold text-[#008B47] bg-emerald-50 px-3 py-1.5 rounded-full hover:bg-emerald-100 transition shadow-sm">
         <i data-lucide="user-check" class="w-4 h-4"></i>
-        <span id="memberHeaderBadge">สมาชิก / เข้าสู่ระบบ</span>
+        <span id="memberHeaderBadge">เข้าสู่ระบบสมาชิก</span>
       </button>
 
       <div class="flex items-center gap-2">
@@ -47,10 +47,17 @@
         </div>
       </div>
 
-      <button onclick="openCustomerCartModal()" class="w-9 h-9 md:w-11 md:h-11 rounded-full bg-emerald-50 flex items-center justify-center relative hover:bg-emerald-100 transition">
-        <i data-lucide="shopping-basket" class="w-5 h-5 md:w-6 md:h-6 text-[#008B47]"></i>
-        <span id="badgeCount" class="absolute -top-1 -right-1 bg-[#E31837] text-white text-[10px] md:text-xs w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center font-bold border-2 border-white hidden">0</span>
-      </button>
+      <div class="flex items-center gap-2">
+        <button onclick="openRedeemCatalogModal()" class="flex items-center gap-1 text-xs font-bold text-amber-900 bg-amber-100 px-3 py-1.5 rounded-full hover:bg-amber-200 transition shadow-sm">
+          <i data-lucide="gift" class="w-4 h-4 text-amber-600"></i>
+          <span id="userPointsBadge">0 แต้ม</span>
+        </button>
+
+        <button onclick="openCustomerCartModal()" class="w-9 h-9 md:w-11 md:h-11 rounded-full bg-emerald-50 flex items-center justify-center relative hover:bg-emerald-100 transition">
+          <i data-lucide="shopping-basket" class="w-5 h-5 md:w-6 md:h-6 text-[#008B47]"></i>
+          <span id="badgeCount" class="absolute -top-1 -right-1 bg-[#E31837] text-white text-[10px] md:text-xs w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center font-bold border-2 border-white hidden">0</span>
+        </button>
+      </div>
     </header>
 
     <!-- 🟢 หน้าเลือกซื้อสินค้าหลัก -->
@@ -76,17 +83,17 @@
         </div>
       </div>
 
-      <!-- แบนเนอร์ -->
+      <!-- การ์ดโชว์พ้อยท์ส่วนตัว (ทุกๆ 100 บาท = 1 แต้ม) -->
       <div class="p-3 md:p-6 pb-1">
-        <div class="bg-gradient-to-r from-[#008B47] to-[#147A6F] rounded-2xl md:rounded-3xl p-3.5 md:p-6 text-white flex items-center justify-between shadow-sm relative overflow-hidden">
-          <div class="space-y-0.5 md:space-y-1 z-10">
-            <span class="bg-[#F37021] text-white text-[10px] md:text-xs font-bold px-2.5 py-0.5 rounded-full font-display">สมาชิกสะสมแต้ม</span>
-            <div class="font-bold text-base md:text-2xl font-display">สั่งง่าย ไม่ต้องพิมพ์ที่อยู่ซ้ำ!</div>
-            <div class="text-xs md:text-sm text-emerald-100">ใส่เบอร์โทรศัพท์เพื่อดึงข้อมูลจัดส่งอัตโนมัติ</div>
+        <div class="bg-gradient-to-r from-amber-400 to-orange-500 rounded-2xl md:rounded-3xl p-4 md:p-6 text-white shadow-lg flex items-center justify-between relative overflow-hidden">
+          <div class="space-y-1 z-10">
+            <span class="bg-white/20 text-white text-[10px] md:text-xs font-bold px-2.5 py-0.5 rounded-full font-display">สะสมแต้มแลกของรางวัล</span>
+            <div class="text-2xl md:text-4xl font-bold font-display" id="cardPointDisplay">0 คะแนน</div>
+            <div class="text-[11px] md:text-xs text-amber-50">ซื้อครบทุก 100 บาท = รับ 1 แต้ม</div>
           </div>
-          <div class="w-16 h-16 md:w-24 md:h-24 bg-white/10 rounded-full flex items-center justify-center z-10">
-            <i data-lucide="user-check" class="w-10 h-10 md:w-14 md:h-14 text-amber-300"></i>
-          </div>
+          <button onclick="openRedeemCatalogModal()" class="z-10 bg-white text-orange-600 px-4 md:px-6 py-2 md:py-2.5 rounded-2xl font-bold text-xs md:text-sm font-display shadow-md hover:bg-amber-50 transition active:scale-95 flex items-center gap-1">
+            <span>🎁 ดูของรางวัล</span>
+          </button>
         </div>
       </div>
 
@@ -148,7 +155,7 @@
       </div>
     </div>
 
-    <!-- Modal สมาชิก -->
+    <!-- 👤 Modal สมาชิก / เข้าสู่ระบบด้วยเบอร์โทร -->
     <div id="memberModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
       <div class="bg-white p-6 rounded-3xl max-w-md w-full space-y-4 shadow-2xl">
         <div class="flex justify-between items-center border-b pb-3">
@@ -178,11 +185,40 @@
             <label class="text-xs font-bold text-gray-600 block mb-1">ที่อยู่จัดส่งประจำ</label>
             <textarea id="memberAddressInput" rows="2" placeholder="ระบุที่อยู่บ้านเลขที่ / จุดสังเกต..." class="w-full p-2.5 rounded-xl border bg-gray-50 font-bold text-sm focus:outline-none focus:border-[#008B47]"></textarea>
           </div>
+
+          <div class="bg-amber-50 p-3 rounded-2xl border border-amber-200 flex justify-between items-center">
+            <span class="text-xs font-bold text-amber-900 font-display">คะแนนสะสมของคุณ:</span>
+            <span class="text-xl font-bold font-display text-amber-600" id="modalMemberPoints">0 แต้ม</span>
+          </div>
         </div>
 
         <button onclick="saveMemberProfile()" class="w-full bg-[#008B47] hover:bg-[#007438] text-white py-3 rounded-2xl font-bold text-base font-display shadow-md transition active:scale-95">
           💾 บันทึกข้อมูลสมาชิก
         </button>
+      </div>
+    </div>
+
+    <!-- 🎁 Modal แคตตาล็อกของรางวัลที่ใช้แต้มแลก -->
+    <div id="redeemModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+      <div class="bg-white p-6 rounded-3xl max-w-lg w-full max-h-[85vh] overflow-y-auto space-y-4 shadow-2xl">
+        <div class="flex justify-between items-center border-b pb-3">
+          <div>
+            <h3 class="font-bold text-xl font-display text-amber-600 flex items-center gap-2">
+              <i data-lucide="gift"></i> แคตตาล็อกของรางวัล
+            </h3>
+            <p class="text-xs text-gray-400">เลือกของรางวัลที่คุณต้องการใช้แต้มแลกรับ</p>
+          </div>
+          <button onclick="closeRedeemCatalogModal()"><i data-lucide="x" class="w-6 h-6 text-gray-500"></i></button>
+        </div>
+
+        <div class="bg-amber-50 p-3 rounded-2xl border border-amber-200 flex justify-between items-center">
+          <span class="text-xs font-bold text-amber-900">แต้มสะสมปัจจุบันของคุณ:</span>
+          <span class="text-xl font-bold font-display text-amber-600" id="catalogUserPoints">0 แต้ม</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="redeemCatalogGrid">
+          <p class="col-span-full text-center py-8 text-gray-400 font-bold">กำลังดึงรายการของรางวัล...</p>
+        </div>
       </div>
     </div>
 
@@ -377,6 +413,7 @@
     const db = firebase.firestore();
 
     let products = [];
+    let rewards = [];
     let custCart = [];
     let selectedCategory = 'ทั้งหมด';
     let currentOrderId = localStorage.getItem('lastOrderId') || null;
@@ -386,7 +423,7 @@
     let payOption = 'transfer';
     let slipBase64 = "";
     let currentMember = JSON.parse(localStorage.getItem('memberProfile')) || null;
-    let notifiedCancelledMap = {}; // ตัวแประบุการแจ้งเตือนยกเลิกแล้ว
+    let notifiedCancelledMap = {};
 
     db.collection("products").onSnapshot(s => {
       products = [];
@@ -400,12 +437,18 @@
       renderCustomerProducts();
     });
 
+    db.collection("rewards").onSnapshot(s => {
+      rewards = [];
+      s.forEach(doc => rewards.push({ id: doc.id, ...doc.data() }));
+      renderRedeemCatalog();
+    });
+
     if (currentOrderId) {
       trackOrderRealtime(currentOrderId);
     }
 
     if (currentMember) {
-      updateMemberBadgeUI();
+      updateMemberUI();
     }
 
     function autoFetchMemberInfo(phoneVal) {
@@ -416,6 +459,9 @@
             const m = doc.data();
             document.getElementById('custName').value = m.name || '';
             document.getElementById('custAddress').value = m.address || '';
+            currentMember = m;
+            localStorage.setItem('memberProfile', JSON.stringify(m));
+            updateMemberUI();
           }
         });
       }
@@ -426,6 +472,7 @@
         document.getElementById('memberPhoneInput').value = currentMember.phone || '';
         document.getElementById('memberNameInput').value = currentMember.name || '';
         document.getElementById('memberAddressInput').value = currentMember.address || '';
+        document.getElementById('modalMemberPoints').innerText = (currentMember.points || 0) + ' แต้ม';
       }
       document.getElementById('memberModal').classList.remove('hidden');
     }
@@ -443,6 +490,10 @@
           const m = doc.data();
           document.getElementById('memberNameInput').value = m.name || '';
           document.getElementById('memberAddressInput').value = m.address || '';
+          document.getElementById('modalMemberPoints').innerText = (m.points || 0) + ' แต้ม';
+          currentMember = m;
+          localStorage.setItem('memberProfile', JSON.stringify(m));
+          updateMemberUI();
           alert(`พบข้อมูลสมาชิก: คุณ${m.name}`);
         } else {
           alert('ยังไม่พบข้อมูลสมาชิกในเบอร์นี้ สามารถกรอกชื่อและที่อยู่เพื่อสมัครใหม่ได้เลยครับ');
@@ -457,20 +508,28 @@
 
       if (!phone || !name) return alert('กรุณากรอกเบอร์โทรศัพท์และชื่อให้ครบถ้วน');
 
-      const memberData = { phone, name, address, ts: Date.now() };
+      db.collection("members").doc(phone).get().then(doc => {
+        const existingPoints = doc.exists ? (doc.data().points || 0) : 0;
+        const memberData = { phone, name, address, points: existingPoints, ts: Date.now() };
 
-      db.collection("members").doc(phone).set(memberData, { merge: true }).then(() => {
-        localStorage.setItem('memberProfile', JSON.stringify(memberData));
-        currentMember = memberData;
-        updateMemberBadgeUI();
-        closeMemberModal();
-        alert('บันทึกข้อมูลสมาชิกเรียบร้อยแล้วครับ');
+        db.collection("members").doc(phone).set(memberData, { merge: true }).then(() => {
+          localStorage.setItem('memberProfile', JSON.stringify(memberData));
+          currentMember = memberData;
+          updateMemberUI();
+          closeMemberModal();
+          alert('บันทึกข้อมูลสมาชิกเรียบร้อยแล้วครับ');
+        });
       });
     }
 
-    function updateMemberBadgeUI() {
+    function updateMemberUI() {
       if (currentMember) {
         document.getElementById('memberHeaderBadge').innerText = `คุณ${currentMember.name}`;
+        const pts = currentMember.points || 0;
+        document.getElementById('userPointsBadge').innerText = pts + ' แต้ม';
+        document.getElementById('cardPointDisplay').innerText = pts + ' คะแนน';
+        document.getElementById('catalogUserPoints').innerText = pts + ' แต้ม';
+        document.getElementById('modalMemberPoints').innerText = pts + ' แต้ม';
       }
     }
 
@@ -778,7 +837,64 @@
       });
     }
 
-    // ⚡ ติดตามออเดอร์ — ลบ ID ออกจากเครื่องทันทีเมื่อจบงานหรือยกเลิก ไม่ให้เด้งซ้ำ
+    function openRedeemCatalogModal() {
+      renderRedeemCatalog();
+      document.getElementById('redeemModal').classList.remove('hidden');
+    }
+
+    function closeRedeemCatalogModal() {
+      document.getElementById('redeemModal').classList.add('hidden');
+    }
+
+    function renderRedeemCatalog() {
+      const grid = document.getElementById('redeemCatalogGrid');
+      const userPoints = currentMember ? (currentMember.points || 0) : 0;
+
+      if (rewards.length === 0) {
+        grid.innerHTML = `<p class="col-span-full text-center py-8 text-gray-400 font-bold">ขณะนี้ยังไม่มีของรางวัลเปิดให้แลก</p>`;
+        return;
+      }
+
+      grid.innerHTML = rewards.map(r => {
+        const canRedeem = userPoints >= r.points && (r.stock > 0);
+        return `
+          <div class="bg-gray-50 p-3 rounded-2xl border flex flex-col justify-between space-y-2">
+            <div>
+              <div class="w-full h-24 bg-white rounded-xl overflow-hidden border flex items-center justify-center mb-1.5">
+                ${r.imageUrl ? `<img src="${r.imageUrl}" class="w-full h-full object-cover">` : `<i data-lucide="gift" class="w-8 h-8 text-amber-400"></i>`}
+              </div>
+              <div class="font-bold text-xs text-gray-800 font-display">${r.name}</div>
+              <div class="text-[11px] text-amber-600 font-bold">ใช้ ${r.points} แต้ม</div>
+            </div>
+            <button onclick="redeemReward('${r.id}')" ${!canRedeem ? 'disabled' : ''} 
+              class="w-full py-2 rounded-xl font-bold text-xs font-display transition ${canRedeem ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm' : 'bg-gray-200 text-gray-400 disabled:cursor-not-allowed'}">
+              ${!currentMember ? 'กรุณาเข้าสู่ระบบ' : (userPoints < r.points ? 'แต้มไม่พอ' : (r.stock <= 0 ? 'ของหมด' : '🎁 กดแลกรับ'))}
+            </button>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function redeemReward(rewardId) {
+      const r = rewards.find(item => item.id === rewardId);
+      if (!r || !currentMember) return;
+
+      if (confirm(`ยืนยันใช้ ${r.points} แต้ม แลกรับ "${r.name}" ใช่หรือไม่?`)) {
+        const newPoints = (currentMember.points || 0) - r.points;
+
+        db.collection("members").doc(currentMember.phone).update({ points: newPoints });
+        db.collection("rewards").doc(rewardId).update({ stock: firebase.firestore.FieldValue.increment(-1) });
+
+        currentMember.points = newPoints;
+        localStorage.setItem('memberProfile', JSON.stringify(currentMember));
+        updateMemberUI();
+        renderRedeemCatalog();
+
+        alert(`🎉 แลกรับ "${r.name}" สำเร็จแล้ว! ทางร้านจะจัดส่งไปพร้อมออเดอร์ถัดไปครับ`);
+      }
+    }
+
     function trackOrderRealtime(orderId) {
       if (unsubscribeOrderTracking) unsubscribeOrderTracking();
 
@@ -795,12 +911,10 @@
 
         const o = doc.data();
 
-        // 🚨 หากออเดอร์โดนยกเลิก (cancelled) หรือ ส่งสำเร็จแล้ว (completed)
         if (o.status === 'cancelled' || o.status === 'completed') {
           card.classList.add('hidden');
           toggleTrackingModal(false);
 
-          // แจ้งเตือนแค่ครั้งเดียว แล้วลบ ID ค้างออกจากเครื่องทันที
           if (o.status === 'cancelled' && !notifiedCancelledMap[orderId]) {
             notifiedCancelledMap[orderId] = true;
             alert('❌ ออเดอร์ของคุณถูกยกเลิกแล้วครับ');

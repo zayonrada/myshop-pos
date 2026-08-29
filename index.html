@@ -94,7 +94,7 @@
 </head>
 <body class="min-h-screen flex flex-col relative">
 
-  <!-- 🔔 กล่องป๊อปอัปแจ้งเตือนออเดอร์เข้าใหม่ดุ๊กดิ๊ก -->
+  <!-- 🔔 ป๊อปอัปแจ้งเตือนออเดอร์เข้าใหม่ -->
   <div id="newOrderAlertToast" class="hidden fixed top-20 right-6 z-[999] max-w-sm w-full bg-white border-4 border-amber-400 p-4 rounded-3xl shadow-2xl animate-pop-in no-print">
     <div class="flex items-start gap-3">
       <div class="w-12 h-12 rounded-2xl bg-amber-400 text-[#0F5C52] flex items-center justify-center font-bold flex-shrink-0 shadow animate-bounce">
@@ -196,8 +196,15 @@
           <div id="scanErrorMsg" class="text-sm font-bold text-[#B3432B] hidden"></div>
         </div>
 
-        <input type="text" id="scanInput" oninput="handleSearchInput()" placeholder="สแกนบาร์โค้ด หรือพิมพ์ชื่อ/รหัสสินค้า..." 
-          class="w-full text-2xl p-4 rounded-2xl border-2 border-[#0F5C52] bg-[#F5F3EE] focus:outline-none font-bold" autofocus>
+        <!-- ⚡ ช่องค้นหาพร้อมปุ่ม X ล้างข้อความด่วน -->
+        <div class="relative">
+          <input type="text" id="scanInput" oninput="handleSearchInput()" placeholder="สแกนบาร์โค้ด หรือพิมพ์ชื่อ/รหัสสินค้า..." 
+            class="w-full text-2xl p-4 pr-12 rounded-2xl border-2 border-[#0F5C52] bg-[#F5F3EE] focus:outline-none font-bold" autofocus>
+          
+          <button type="button" onclick="clearSearchInput()" id="btnClearSearch" class="hidden absolute right-3.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gray-300 hover:bg-gray-400 text-gray-700 flex items-center justify-center transition">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
         
         <div class="flex items-center gap-2 overflow-x-auto pb-1" id="posCategoryFilter"></div>
 
@@ -294,7 +301,12 @@
         </div>
         
         <div class="flex items-center gap-3 flex-wrap">
-          <input type="text" id="stockSearchInput" oninput="renderStockTable()" placeholder="🔍 ค้นหาชื่อ/บาร์โค้ด..." class="p-2.5 border-2 border-[#DEDACB] rounded-xl text-base bg-[#F5F3EE] font-bold w-60">
+          <div class="relative">
+            <input type="text" id="stockSearchInput" oninput="renderStockTable()" placeholder="🔍 ค้นหาชื่อ/บาร์โค้ด..." class="p-2.5 pr-8 border-2 border-[#DEDACB] rounded-xl text-base bg-[#F5F3EE] font-bold w-60">
+            <button onclick="clearStockSearchInput()" id="btnClearStockSearch" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
           <button onclick="printAllBarcodesSheet()" class="bg-[#1C2321] text-white px-4 py-2.5 rounded-xl text-base font-bold flex items-center gap-2 font-display hover:opacity-90 shadow-sm">
             <i data-lucide="printer" class="w-5 h-5"></i> 🖨️ ปริ้นบาร์โค้ดแยกตามหมวดหมู่ใส่แฟ้ม (A4)
           </button>
@@ -1075,10 +1087,8 @@
     let isReStockMode = false;
     let pendingDeleteSaleObj = null;
 
-    // ⚡ ตัวแปร AudioContext สำหรับระบบเสียงเตือน
     let audioCtx = null;
 
-    // ปลุกเปิดระบบเสียงเมื่อผู้ใช้สัมผัสหรือคลิกหน้าจอครั้งแรก
     function initAudioContext() {
       if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1158,7 +1168,7 @@
     let currentBarcodeData = null;
     let activeEditingProductObj = null;
     let currentOnlineOrdersFilter = 'pending';
-    let previousOrderIdsCount = -1; // -1 สำหรับตรวจสอบครั้งแรก
+    let previousOrderIdsCount = -1;
     
     let activeDebtorName = "";
     let selectedDebtDocIds = new Set();
@@ -1367,14 +1377,14 @@
 
       if (p) {
         addToCart(p.id);
-        input.value = '';
+        clearSearchInput(); // ⚡ สแกนติดปุ๊บ เคลียร์ช่องค้นหาให้สะอาด
         if (errorMsg) errorMsg.classList.add('hidden');
       } else {
         if (errorMsg) {
           errorMsg.innerText = `❌ ไม่พบสินค้ารหัส: ${code}`;
           errorMsg.classList.remove('hidden');
         }
-        input.value = '';
+        clearSearchInput();
       }
       renderProducts();
       focusScanInput();
@@ -1390,7 +1400,30 @@
 
     function handleSearchInput() {
       currentPage = 1;
+      const val = document.getElementById('scanInput').value;
+      document.getElementById('btnClearSearch').classList.toggle('hidden', !val);
       renderProducts();
+    }
+
+    // ⚡ ฟังก์ชันล้างช่องค้นหาหน้าร้าน
+    function clearSearchInput() {
+      const input = document.getElementById('scanInput');
+      if (input) {
+        input.value = '';
+        document.getElementById('btnClearSearch').classList.add('hidden');
+        currentPage = 1;
+        renderProducts();
+        focusScanInput();
+      }
+    }
+
+    function clearStockSearchInput() {
+      const input = document.getElementById('stockSearchInput');
+      if (input) {
+        input.value = '';
+        document.getElementById('btnClearStockSearch').classList.add('hidden');
+        renderStockTable();
+      }
     }
 
     function handleStockScan(inputId = 'lowStockScanInput') {
@@ -1653,13 +1686,11 @@
       }
     }
 
-    // 🔊 ระบบยิงเสียงกระดิ่ง "ปิ๊งป่อง~" เตือนออเดอร์ใหม่เข้า
     function playOrderBellSound() {
       try {
         initAudioContext();
         if (!audioCtx) return;
 
-        // เสียงโน้ต 1 (E5)
         const osc1 = audioCtx.createOscillator();
         const gain1 = audioCtx.createGain();
         osc1.type = 'sine';
@@ -1671,7 +1702,6 @@
         osc1.start(audioCtx.currentTime);
         osc1.stop(audioCtx.currentTime + 0.4);
 
-        // เสียงโน้ต 2 (B5)
         const osc2 = audioCtx.createOscillator();
         const gain2 = audioCtx.createGain();
         osc2.type = 'sine';
@@ -1792,7 +1822,6 @@
         renderReports();
       });
 
-      // ⚡ ดักฟังออเดอร์เข้าใหม่ Realtime ชัวร์ 100%
       if(unsubscribeOrders) unsubscribeOrders();
       unsubscribeOrders = db.collection("orders").onSnapshot(s => {
         const newOrdersList = [];
@@ -1800,7 +1829,6 @@
 
         const pendingOrders = newOrdersList.filter(o => o.status === 'pending');
         
-        // ส่งเสียงเตือนและโชว์ป๊อปอัปเมื่อมีออเดอร์เพิ่มขึ้น
         if (previousOrderIdsCount >= 0 && pendingOrders.length > previousOrderIdsCount) {
           const newestOrder = pendingOrders.sort((a,b) => b.ts - a.ts)[0];
           if (newestOrder) {
@@ -2020,6 +2048,7 @@
       });
     }
 
+    // ⚡ รับออเดอร์ ตัดสต็อก เคลียร์ช่องค้นหา
     function acceptOnlineOrder(orderId) {
       const o = onlineOrders.find(item => item.id === orderId);
       if (!o) return;
@@ -2057,6 +2086,7 @@
 
         db.collection("sales").add(saleData).then(() => {
           db.collection("orders").doc(orderId).update({ status: 'completed' }).then(() => {
+            clearSearchInput(); // ⚡ เคลียร์ช่องค้นหา
             alert('รับออเดอร์ออนไลน์ ตัดสต็อก และบันทึกยอดขายเรียบร้อยครับ!');
           });
         });
@@ -2187,6 +2217,7 @@
     function setPosCategory(cat) {
       selectedPosCategory = cat;
       currentPage = 1;
+      clearSearchInput(); // ⚡ เปลี่ยนหมวดหมู่แล้วล้างช่องค้นหาให้อัตโนมัติ
       updateCategoryDropdowns();
       renderProducts();
       focusScanInput();
@@ -2319,6 +2350,8 @@
       const selectedCat = document.getElementById('stockCategorySelect').value;
       const searchKeyword = (document.getElementById('stockSearchInput')?.value || '').trim().toLowerCase();
       
+      document.getElementById('btnClearStockSearch')?.classList.toggle('hidden', !searchKeyword);
+
       let displayProducts = products;
 
       if (selectedCat && selectedCat !== 'ทั้งหมด') {
@@ -2680,6 +2713,7 @@
           cart = [];
           document.getElementById('hasDiscountCheck').checked = false;
           toggleDiscountInput();
+          clearSearchInput(); // ⚡ เคลียร์ช่องค้นหาเมื่อจบการขาย
           renderCart();
           alert('บันทึกการใช้ในบ้านเรียบร้อยแล้ว');
           focusScanInput();
@@ -2861,6 +2895,7 @@
         cart = []; 
         document.getElementById('hasDiscountCheck').checked = false;
         toggleDiscountInput();
+        clearSearchInput(); // ⚡ ชำระเงินสำเร็จ เคลียร์ช่องค้นหา
         renderCart();
       });
     }

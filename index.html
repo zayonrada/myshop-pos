@@ -55,12 +55,10 @@
       animation: slideInPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
 
-    /* ⚡ ตั้งค่าการพิมพ์แยกขนาดกระดาษเด็ดขาดระหว่าง สลิป (80mm) และ รายงาน (A4) */
     @media print {
       body * { visibility: hidden !important; }
       .print-area, .print-area * { visibility: visible !important; }
       
-      /* สไตล์ใบเสร็จ / สลิป (80mm) */
       .receipt-print-box {
         position: absolute !important;
         left: 0 !important;
@@ -76,7 +74,6 @@
         color: black !important;
       }
 
-      /* สไตล์กระดาษ A4 สรุปรายงาน / บาร์โค้ด */
       .a4-print-page {
         position: absolute !important;
         left: 0 !important;
@@ -172,6 +169,9 @@
         <span>เติมสต็อกสินค้า</span>
         <span id="lowStockBadge" class="bg-[#B3432B] text-white text-xs px-2 py-0.5 rounded-full font-bold">0</span>
       </button>
+      <button onclick="showTab('rewards')" id="btn-rewards" class="px-4 py-2 rounded-xl hover:bg-white/10 text-white flex items-center gap-1.5">
+        <span>🎁 จัดการของรางวัล</span>
+      </button>
       <button onclick="showTab('debts')" id="btn-debts" class="px-4 py-2 rounded-xl hover:bg-white/10 text-white">สมุดบัญชีเชื่อ</button>
       <button onclick="showTab('expenses')" id="btn-expenses" class="px-4 py-2 rounded-xl hover:bg-white/10 text-white">รายจ่าย</button>
       <button onclick="showTab('reports')" id="btn-reports" class="px-4 py-2 rounded-xl hover:bg-white/10 text-white">รายงาน</button>
@@ -193,7 +193,7 @@
 
   <main class="p-6 flex-1 max-w-[1600px] w-full mx-auto no-print">
     
-    <!-- แท็บ 1: ขายสินค้า -->
+    <!-- แท็บ 1: ขายสินค้า (POS) -->
     <div id="tab-pos" class="grid grid-cols-1 lg:grid-cols-[1fr_480px] gap-6 items-start">
       <div class="bg-white p-6 rounded-2xl border-2 border-[#DEDACB] space-y-5">
         <div class="flex justify-between items-center">
@@ -411,6 +411,25 @@
       <div id="lowStockPaginationControls" class="flex justify-between items-center pt-4 border-t border-[#DEDACB]"></div>
     </div>
 
+    <!-- แท็บจัดการของรางวัลแลกแต้ม -->
+    <div id="tab-rewards" class="hidden bg-white p-6 rounded-2xl border-2 border-[#DEDACB] space-y-6">
+      <div class="flex justify-between items-center border-b pb-4">
+        <div>
+          <h2 class="font-bold text-2xl font-display flex items-center gap-2 text-[#0F5C52]">
+            <i data-lucide="gift" class="w-7 h-7 text-amber-500"></i> จัดการสินค้าแลกแต้มสะสม
+          </h2>
+          <p class="text-sm text-gray-500 mt-1">เพิ่ม/แก้ไข รายการของรางวัลที่ลูกค้าสามารถใช้แต้มมาแลกได้</p>
+        </div>
+        <button onclick="openRewardModal()" class="bg-[#0F5C52] text-white px-5 py-2.5 rounded-xl font-bold text-base font-display flex items-center gap-2 hover:opacity-90 shadow-sm">
+          <i data-lucide="plus-circle" class="w-5 h-5"></i> + เพิ่มของรางวัลใหม่
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="rewardAdminGrid">
+        <p class="col-span-full text-center py-10 text-gray-400 font-bold">กำลังดึงข้อมูลของรางวัล...</p>
+      </div>
+    </div>
+
     <!-- แท็บ 3: สมุดติดหนี้ -->
     <div id="tab-debts" class="hidden bg-white p-6 rounded-2xl border-2 border-[#DEDACB]">
       <div class="flex justify-between items-center border-b-2 border-[#DEDACB] pb-4 mb-5">
@@ -429,14 +448,14 @@
       <div id="debtList" class="divide-y-2 divide-[#DEDACB]"></div>
     </div>
 
-    <!-- แท็บ 3.5: บันทึกรายจ่าย -->
+    <!-- ⚡ แท็บ 3.5: บันทึกรายจ่าย (มีช่องยอดเงินรวม + รายการย่อยแบบใส่ราคาเพื่อโน้ตกำกับ ไม่ไปบวกคำนวณซ้ำซ้อน) -->
     <div id="tab-expenses" class="hidden bg-white p-6 rounded-2xl border-2 border-[#DEDACB] space-y-6">
       <div class="flex justify-between items-center flex-wrap gap-3 border-b-2 border-[#DEDACB] pb-4">
         <div>
           <h2 class="font-bold text-2xl font-display flex items-center gap-2 text-[#B3432B]">
             <i data-lucide="arrow-down-right" class="w-7 h-7"></i> ระบบบันทึก & สรุปบัญชีรายจ่าย
           </h2>
-          <p class="text-sm text-[#6B6A61] mt-0.5 font-medium">บันทึกรายจ่าย แยกหมวดหมู่ ค้นหา และพิมพ์รายงานสรุป</p>
+          <p class="text-sm text-[#6B6A61] mt-0.5 font-medium">บันทึกรายจ่าย แยกหมวดหมู่ ระบุรายการย่อยกำกับบิล และพิมพ์รายงานสรุป</p>
         </div>
 
         <button onclick="printExpenseReport()" class="bg-[#1C2321] text-white px-5 py-2.5 rounded-xl font-bold font-display flex items-center gap-2 text-base hover:opacity-90 shadow-sm">
@@ -444,30 +463,46 @@
         </button>
       </div>
 
-      <form onsubmit="addExpense(event)" class="grid grid-cols-1 md:grid-cols-4 gap-3 bg-[#F5F3EE] p-5 rounded-2xl border-2 border-[#DEDACB]">
-        <div class="md:col-span-2">
-          <label class="text-xs font-bold text-[#6B6A61] mb-1 block">ชื่อรายการรายจ่าย</label>
-          <input type="text" id="exp-title" placeholder="เช่น ค่าส่งขนมปัง, ค่าสกัดน้ำแข็ง, ค่าน้ำไฟ" class="w-full p-3 rounded-xl border-2 bg-white text-base font-bold" required>
-        </div>
-        <div>
-          <label class="text-xs font-bold text-[#6B6A61] mb-1 block">หมวดหมู่รายจ่าย</label>
-          <select id="exp-category" class="w-full p-3 rounded-xl border-2 bg-white text-base font-bold text-[#B3432B]">
-            <option value="ซื้อของเข้าร้าน/สต็อก">📦 ซื้อของเข้าร้าน / สต็อก</option>
-            <option value="ค่าน้ำ/ค่าไฟ/ค่าเช่า">💡 ค่าน้ำ / ค่าไฟ / ค่าเช่า</option>
-            <option value="ค่าแรงพนักงาน">👷 ค่าแรงพนักงาน</option>
-            <option value="ค่าขนส่ง/เดินทาง">🚚 ค่าขนส่ง / เดินทาง</option>
-            <option value="อื่นๆ">📌 อื่นๆ</option>
-          </select>
-        </div>
-        <div>
-          <label class="text-xs font-bold text-[#6B6A61] mb-1 block">จำนวนเงิน (บาท)</label>
-          <div class="flex gap-2">
-            <input type="number" step="0.01" id="exp-amount" placeholder="0.00" class="w-full p-3 rounded-xl border-2 bg-white font-bold text-xl font-display" required>
-            <button type="submit" class="bg-[#B3432B] text-white px-5 py-3 rounded-xl font-bold text-base font-display hover:opacity-90 whitespace-nowrap shadow-sm">
-              + บันทึก
-            </button>
+      <!-- ฟอร์มบันทึกรายจ่าย -->
+      <form onsubmit="addExpense(event)" class="bg-[#F5F3EE] p-5 rounded-2xl border-2 border-[#DEDACB] space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div class="md:col-span-2">
+            <label class="text-xs font-bold text-[#6B6A61] mb-1 block">ชื่อบิลรายจ่ายหลัก (เช่น ค่ารถน้ำแข็ง, ค่าขนมปัง) *</label>
+            <input type="text" id="exp-title" placeholder="เช่น รถน้ำแข็ง, ค่าน้ำไฟ" class="w-full p-3 rounded-xl border-2 bg-white text-base font-bold focus:outline-none focus:border-[#0F5C52]" required>
+          </div>
+
+          <div>
+            <label class="text-xs font-bold text-[#6B6A61] mb-1 block">หมวดหมู่รายจ่าย</label>
+            <select id="exp-category" class="w-full p-3 rounded-xl border-2 bg-white text-base font-bold text-[#B3432B]">
+              <option value="ซื้อของเข้าร้าน/สต็อก">📦 ซื้อของเข้าร้าน / สต็อก</option>
+              <option value="ค่าน้ำ/ค่าไฟ/ค่าเช่า">💡 ค่าน้ำ / ค่าไฟ / ค่าเช่า</option>
+              <option value="ค่าแรงพนักงาน">👷 ค่าแรงพนักงาน</option>
+              <option value="ค่าขนส่ง/เดินทาง">🚚 ค่าขนส่ง / เดินทาง</option>
+              <option value="อื่นๆ">📌 อื่นๆ</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="text-xs font-bold text-[#6B6A61] mb-1 block">จำนวนเงินรวมทั้งสิ้น (บาท) *</label>
+            <input type="number" step="0.5" id="exp-amount" placeholder="เช่น 1500.00" class="w-full p-3 rounded-xl border-2 bg-white text-xl font-bold font-display text-[#B3432B] text-right focus:outline-none focus:border-[#B3432B]" required>
           </div>
         </div>
+
+        <!-- กล่องเพิ่มรายการย่อยสำหรับระบุกำกับไว้เช็ก (ไม่บวกคำนวณซ้ำ) -->
+        <div class="space-y-2 bg-white p-3.5 rounded-2xl border">
+          <div class="flex justify-between items-center border-b pb-2">
+            <span class="text-xs font-bold text-[#0F5C52] font-display">ระบุรายการย่อยที่ลงในบิลนี้ (กดเพิ่มช่องเพื่อพิมพ์รายการ + ราคาไว้ดูย้อนหลังได้เลย)</span>
+            <button type="button" onclick="addExpenseSubItemRow()" class="text-xs bg-[#0F5C52] hover:bg-[#0d4d43] text-white px-3 py-1.5 rounded-lg font-bold flex items-center gap-1 shadow-sm transition">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i> + เพิ่มรายการย่อย
+            </button>
+          </div>
+
+          <div id="expenseSubItemsContainer" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
+        </div>
+
+        <button type="submit" class="w-full bg-[#B3432B] text-white py-3.5 rounded-xl font-bold text-lg font-display hover:opacity-90 transition shadow-sm">
+          💾 บันทึกรายการจ่ายเงิน
+        </button>
       </form>
 
       <div class="flex justify-between items-center flex-wrap gap-3 bg-white p-2 border-2 border-[#DEDACB] rounded-2xl">
@@ -637,6 +672,45 @@
       </div>
 
       <div id="onlineOrdersList" class="space-y-3"></div>
+    </div>
+  </div>
+
+  <!-- Modal เพิ่ม/แก้ไข ของรางวัล -->
+  <div id="rewardModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 no-print">
+    <div class="bg-white p-6 rounded-3xl max-w-md w-full space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-xl font-display text-[#0F5C52]" id="rewardModalTitle">เพิ่มของรางวัลใหม่</h3>
+        <button onclick="closeRewardModal()"><i data-lucide="x" class="w-6 h-6 text-gray-400"></i></button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs font-bold text-gray-600 block mb-1">ชื่อของรางวัล *</label>
+          <input type="text" id="rwName" placeholder="เช่น ไข่ไก่ 10 ฟอง, คูปองส่วนลด 20 บาท" class="w-full p-2.5 border rounded-xl font-bold text-sm">
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-gray-600 block mb-1">แต้มที่ใช้แลก (คะแนน) *</label>
+          <input type="number" id="rwPoints" placeholder="เช่น 100" class="w-full p-2.5 border rounded-xl font-bold text-lg font-display text-amber-600">
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-gray-600 block mb-1">จำนวนที่มีให้แลก (ชิ้น)</label>
+          <input type="number" id="rwStock" placeholder="เช่น 50" class="w-full p-2.5 border rounded-xl font-bold text-sm">
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-gray-600 block mb-1">รูปภาพของรางวัล</label>
+          <input type="file" id="rwFile" accept="image/*" onchange="previewRewardImg(event)" class="w-full text-xs p-2 border rounded-xl">
+          <div id="rwImgPreviewBox" class="mt-2 hidden flex justify-center">
+            <img id="rwImgPreview" src="" class="w-28 h-28 object-cover rounded-2xl border">
+          </div>
+        </div>
+      </div>
+
+      <button onclick="saveRewardItem()" class="w-full bg-[#0F5C52] text-white py-3 rounded-2xl font-bold font-display text-base shadow-md">
+        💾 บันทึกของรางวัล
+      </button>
     </div>
   </div>
 
@@ -1163,9 +1237,11 @@
 
     const db = firebase.firestore();
 
-    let products = [], cart = [], staff = [], sales = [], expenses = [], debtPayments = [], dailyFloats = [], cashMovements = [], onlineOrders = [];
+    let products = [], cart = [], staff = [], sales = [], expenses = [], debtPayments = [], dailyFloats = [], cashMovements = [], onlineOrders = [], rewardsList = [];
     let currentMethod = 'cash';
     let editingProductId = null;
+    let editingRewardId = null;
+    let rewardBase64Img = "";
     let uploadedBase64Image = "";
     let currentReportRange = 'today';
     let currentExpenseRange = 'today';
@@ -1320,7 +1396,7 @@
 
     document.addEventListener('keydown', function(e) {
       const activeEl = document.activeElement;
-      if (activeEl && (activeEl.id === 'quickNameInput' || activeEl.id === 'quickPriceInput' || activeEl.id === 'cartDiscount' || activeEl.id === 'deletePinInput' || activeEl.classList.contains('cart-qty-input'))) return;
+      if (activeEl && (activeEl.id === 'quickNameInput' || activeEl.id === 'quickPriceInput' || activeEl.id === 'cartDiscount' || activeEl.id === 'deletePinInput' || activeEl.classList.contains('cart-qty-input') || activeEl.classList.contains('exp-sub-input'))) return;
       if (activeEl && activeEl.id !== 'scanInput') return;
 
       const currentTime = Date.now();
@@ -1678,16 +1754,60 @@
       }
     }
 
+    function compressAndResizeImage(file, callback) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 500;
+
+          if (width > height) {
+            if (width > maxDim) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          callback(compressedDataUrl);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
     function previewImageFile(e) {
       const file = e.target.files[0];
       if (file) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-          uploadedBase64Image = event.target.result;
+        compressAndResizeImage(file, function(base64Result) {
+          uploadedBase64Image = base64Result;
           document.getElementById('imgPreview').src = uploadedBase64Image;
           document.getElementById('imgPreviewBlock').classList.remove('hidden');
-        };
-        reader.readAsDataURL(file);
+        });
+      }
+    }
+
+    function previewRewardImg(e) {
+      const file = e.target.files[0];
+      if (file) {
+        compressAndResizeImage(file, function(base64Result) {
+          rewardBase64Img = base64Result;
+          document.getElementById('rwImgPreview').src = rewardBase64Img;
+          document.getElementById('rwImgPreviewBox').classList.remove('hidden');
+        });
       }
     }
 
@@ -1749,6 +1869,7 @@
     let unsubscribeDailyFloats = null;
     let unsubscribeCashMovements = null;
     let unsubscribeOrders = null;
+    let unsubscribeRewards = null;
 
     function initRealtimeListeners() {
       if(unsubscribeProducts) unsubscribeProducts();
@@ -1851,6 +1972,13 @@
         }
         renderOnlineOrdersList();
       });
+
+      if(unsubscribeRewards) unsubscribeRewards();
+      unsubscribeRewards = db.collection("rewards").onSnapshot(s => {
+        rewardsList = [];
+        s.forEach(doc => rewardsList.push({ id: doc.id, ...doc.data() }));
+        renderAdminRewards();
+      });
     }
 
     initRealtimeListeners();
@@ -1860,6 +1988,87 @@
         initRealtimeListeners();
       }
     });
+
+    function renderAdminRewards() {
+      const grid = document.getElementById('rewardAdminGrid');
+      if (!grid) return;
+      if (rewardsList.length === 0) {
+        grid.innerHTML = `<p class="col-span-full text-center py-10 text-gray-400 font-bold">ยังไม่มีรายการของรางวัล กดปุ่มเพิ่มด้านบนได้เลยครับ</p>`;
+        return;
+      }
+
+      grid.innerHTML = rewardsList.map(r => `
+        <div class="bg-gray-50 p-4 rounded-2xl border flex flex-col justify-between space-y-3 relative shadow-sm">
+          <div class="space-y-2">
+            <div class="w-full h-32 bg-white rounded-xl overflow-hidden border flex items-center justify-center">
+              ${r.imageUrl ? `<img src="${r.imageUrl}" class="w-full h-full object-cover">` : `<i data-lucide="gift" class="w-10 h-10 text-amber-400"></i>`}
+            </div>
+            <div class="font-bold text-base text-gray-800 font-display">${r.name}</div>
+            <div class="flex justify-between items-center">
+              <span class="bg-amber-100 text-amber-900 font-bold px-3 py-1 rounded-full text-xs font-display">⭐ ใช้ ${r.points} แต้ม</span>
+              <span class="text-xs font-bold text-gray-500">คงเหลือ ${r.stock || 0} ชิ้น</span>
+            </div>
+          </div>
+          <div class="flex gap-2 pt-2 border-t">
+            <button onclick="openRewardModal('${r.id}')" class="flex-1 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-xl font-bold text-xs">✏️ แก้ไข</button>
+            <button onclick="deleteRewardItem('${r.id}')" class="py-1.5 px-3 bg-red-100 hover:bg-red-200 text-red-700 rounded-xl font-bold text-xs">🗑️ ลบ</button>
+          </div>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function openRewardModal(id = null) {
+      editingRewardId = id;
+      rewardBase64Img = "";
+      if (id) {
+        const r = rewardsList.find(item => item.id === id);
+        document.getElementById('rewardModalTitle').innerText = "✏️ แก้ไขของรางวัล";
+        document.getElementById('rwName').value = r.name || '';
+        document.getElementById('rwPoints').value = r.points || '';
+        document.getElementById('rwStock').value = r.stock || '';
+        rewardBase64Img = r.imageUrl || '';
+        if (rewardBase64Img) {
+          document.getElementById('rwImgPreview').src = rewardBase64Img;
+          document.getElementById('rwImgPreviewBox').classList.remove('hidden');
+        }
+      } else {
+        document.getElementById('rewardModalTitle').innerText = "+ เพิ่มของรางวัลใหม่";
+        document.getElementById('rwName').value = '';
+        document.getElementById('rwPoints').value = '';
+        document.getElementById('rwStock').value = '';
+        document.getElementById('rwImgPreviewBox').classList.add('hidden');
+      }
+      document.getElementById('rewardModal').classList.remove('hidden');
+    }
+
+    function closeRewardModal() { document.getElementById('rewardModal').classList.add('hidden'); }
+
+    function saveRewardItem() {
+      const name = document.getElementById('rwName').value.trim();
+      const points = Number(document.getElementById('rwPoints').value);
+      const stock = Number(document.getElementById('rwStock').value) || 0;
+
+      if (!name || isNaN(points) || points <= 0) return alert('กรุณากรอกชื่อและแต้มที่ใช้แลกให้ถูกต้อง');
+
+      const data = { name, points, stock, imageUrl: rewardBase64Img, ts: Date.now() };
+
+      if (editingRewardId) {
+        db.collection("rewards").doc(editingRewardId).update(data).then(() => {
+          closeRewardModal();
+          alert('แก้ไขข้อมูลของรางวัลเรียบร้อยแล้ว');
+        });
+      } else {
+        db.collection("rewards").add(data).then(() => {
+          closeRewardModal();
+          alert('เพิ่มของรางวัลใหม่เรียบร้อยแล้ว');
+        });
+      }
+    }
+
+    function deleteRewardItem(id) {
+      if (confirm('ต้องการลบของรางวัลนี้ใช่หรือไม่?')) db.collection("rewards").doc(id).delete();
+    }
 
     function openOnlineOrdersModal() {
       renderOnlineOrdersList();
@@ -2057,7 +2266,7 @@
       const o = onlineOrders.find(item => item.id === orderId);
       if (!o) return;
 
-      if (confirm(`ยืนยันการรับออเดอร์ของคุณ ${o.customerName} ยอด ฿${o.totalAmount.toFixed(2)} ใช่หรือไม่?\n\nระบบจะตัดสต็อกและบันทึกยอดขายให้อัตโนมัติ`)) {
+      if (confirm(`ยืนยันการรับออเดอร์ของคุณ ${o.customerName} ยอด ฿${o.totalAmount.toFixed(2)} ใช่หรือไม่?\n\nระบบจะตัดสต็อก บันทึกยอดขาย และคำนวณแต้มสะสมให้อัตโนมัติ`)) {
         const orderCartList = o.items.map(item => ({
           productId: item.productId,
           name: item.name,
@@ -2067,6 +2276,26 @@
 
         const totalCostSum = calculateTotalCostAndDeductStock(orderCartList);
         const staffName = currentSelectedStaff || "รับผ่านเว็บออนไลน์";
+
+        const earnedPoints = Math.floor((o.subtotal || o.totalAmount) / 50);
+
+        if (o.customerPhone && earnedPoints > 0) {
+          db.collection("members").doc(o.customerPhone).get().then(mDoc => {
+            if (mDoc.exists) {
+              db.collection("members").doc(o.customerPhone).update({
+                points: firebase.firestore.FieldValue.increment(earnedPoints)
+              });
+            } else {
+              db.collection("members").doc(o.customerPhone).set({
+                phone: o.customerPhone,
+                name: o.customerName,
+                address: o.customerAddress,
+                points: earnedPoints,
+                ts: Date.now()
+              });
+            }
+          });
+        }
 
         const saleData = {
           ts: Date.now(),
@@ -2091,7 +2320,7 @@
         db.collection("sales").add(saleData).then(() => {
           db.collection("orders").doc(orderId).update({ status: 'completed' }).then(() => {
             clearSearchInput();
-            alert('รับออเดอร์ออนไลน์ ตัดสต็อก และบันทึกยอดขายเรียบร้อยครับ!');
+            alert(`รับออเดอร์ออนไลน์ ตัดสต็อก บันทึกยอดขาย และเพิ่มแต้มสะสม (+${earnedPoints} แต้ม) เรียบร้อยครับ!`);
           });
         });
       }
@@ -3179,6 +3408,26 @@
       if (confirm('ต้องการลบสินค้าใช่หรือไม่?')) db.collection("products").doc(id).delete();
     }
 
+    // ⚡ ฟังก์ชันเพิ่มแถบรายการย่อย (ไม่ไปบวกคำนวณซ้ำกับยอดรวมใหญ่ด้านบน)
+    function addExpenseSubItemRow(name = '', amount = '') {
+      const container = document.getElementById('expenseSubItemsContainer');
+      const rowId = 'sub_row_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+
+      const div = document.createElement('div');
+      div.id = rowId;
+      div.className = "flex gap-2 items-center bg-gray-50 p-2 rounded-xl border";
+      div.innerHTML = `
+        <input type="text" placeholder="ชื่อรายการย่อย (เช่น น้ำแข็ง, โค้ก)..." value="${name}" class="exp-sub-name flex-1 p-2 border rounded-lg text-sm font-bold bg-white focus:outline-none focus:border-[#0F5C52]">
+        <input type="number" step="0.5" placeholder="ราคา..." value="${amount}" class="exp-sub-amount exp-sub-input w-32 p-2 border rounded-lg text-sm font-bold font-display text-right text-[#B3432B] bg-white focus:outline-none focus:border-[#B3432B]">
+        <button type="button" onclick="document.getElementById('${rowId}').remove();" class="text-red-500 hover:text-red-700 p-1">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+      `;
+      container.appendChild(div);
+      lucide.createIcons();
+    }
+
+    // ⚡ ฟังก์ชันบันทึกรายจ่าย (ยึดตามยอดเงินรวมใหญ่ที่กรอกด้านบนเป็นหลัก)
     function addExpense(e) {
       e.preventDefault();
       const title = document.getElementById('exp-title').value.trim();
@@ -3186,18 +3435,35 @@
       const amount = Number(document.getElementById('exp-amount').value);
       const staffName = currentSelectedStaff || "ไม่ระบุพนักงาน";
 
-      if (title && amount > 0) {
-        db.collection("expenses").add({
-          title,
-          category,
-          amount,
-          ts: Date.now(),
-          cashierName: staffName
-        }).then(() => {
-          document.getElementById('exp-title').value = '';
-          document.getElementById('exp-amount').value = '';
-        });
-      }
+      const subNameInputs = document.querySelectorAll('.exp-sub-name');
+      const subAmountInputs = document.querySelectorAll('.exp-sub-amount');
+
+      const subItems = [];
+      subNameInputs.forEach((input, i) => {
+        const nameVal = input.value.trim();
+        const amtVal = Number(subAmountInputs[i].value) || 0;
+        if (nameVal || amtVal > 0) {
+          subItems.push({ name: nameVal || 'รายการย่อย', amount: amtVal });
+        }
+      });
+
+      if (!title || isNaN(amount) || amount <= 0) return alert('กรุณากรอกชื่อรายการหลักและจำนวนเงินรวมทั้งสิ้นให้ถูกต้อง');
+
+      const expenseData = {
+        title: title,
+        category: category,
+        amount: amount,
+        subItems: subItems,
+        ts: Date.now(),
+        cashierName: staffName
+      };
+
+      db.collection("expenses").add(expenseData).then(() => {
+        document.getElementById('exp-title').value = '';
+        document.getElementById('exp-amount').value = '';
+        document.getElementById('expenseSubItemsContainer').innerHTML = '';
+        alert('บันทึกรายการจ่ายเงินเรียบร้อยแล้ว');
+      });
     }
 
     function setExpenseRange(range) {
@@ -3291,23 +3557,32 @@
         return list.innerHTML = `<p class="py-10 text-center text-base text-[#6B6A61] font-bold">ยังไม่มีการบันทึกรายจ่ายในช่วงเวลานี้</p>`;
       }
       
-      list.innerHTML = filtered.map(ex => `
-        <div class="flex justify-between items-center py-3.5 text-base">
-          <div>
-            <div class="font-bold text-lg text-[#1C2321]">${ex.title}</div>
-            <div class="text-xs text-[#6B6A61] font-semibold mt-0.5">
-              <span class="bg-[#F5F3EE] border px-2.5 py-0.5 rounded-full text-xs font-bold text-[#B3432B] mr-2">${ex.category || 'อื่นๆ'}</span>
-              ${new Date(ex.ts).toLocaleString('th-TH')} (${ex.cashierName})
+      list.innerHTML = filtered.map(ex => {
+        const subItemsHtml = (ex.subItems && ex.subItems.length > 0) 
+          ? `<div class="mt-2 p-2 bg-amber-50 rounded-xl border border-amber-200 space-y-1 text-xs text-gray-700">` +
+              ex.subItems.map(s => `<div class="flex justify-between font-semibold"><span>• ${s.name}</span><span class="font-mono text-[#B3432B] font-bold">฿${s.amount.toFixed(2)}</span></div>`).join('') +
+            `</div>` 
+          : '';
+
+        return `
+          <div class="flex justify-between items-start py-3.5 text-base">
+            <div class="flex-1 pr-4">
+              <div class="font-bold text-lg text-[#1C2321]">${ex.title}</div>
+              <div class="text-xs text-[#6B6A61] font-semibold mt-0.5">
+                <span class="bg-[#F5F3EE] border px-2.5 py-0.5 rounded-full text-xs font-bold text-[#B3432B] mr-2">${ex.category || 'อื่นๆ'}</span>
+                ${new Date(ex.ts).toLocaleString('th-TH')} (${ex.cashierName})
+              </div>
+              ${subItemsHtml}
+            </div>
+            <div class="flex items-center gap-4">
+              <span class="font-bold text-[#B3432B] font-display text-xl">-฿${ex.amount.toFixed(2)}</span>
+              <button onclick="deleteExpense('${ex.id}')" class="text-gray-400 hover:text-[#B3432B] p-1">
+                <i data-lucide="trash-2" class="w-5 h-5"></i>
+              </button>
             </div>
           </div>
-          <div class="flex items-center gap-4">
-            <span class="font-bold text-[#B3432B] font-display text-xl">-฿${ex.amount.toFixed(2)}</span>
-            <button onclick="deleteExpense('${ex.id}')" class="text-gray-400 hover:text-[#B3432B] p-1">
-              <i data-lucide="trash-2" class="w-5 h-5"></i>
-            </button>
-          </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
       lucide.createIcons();
     }
 
@@ -3352,15 +3627,18 @@
         `;
       }).join('');
 
-      document.getElementById('p-exp-list-table').innerHTML = filtered.map(ex => `
-        <tr>
-          <td class="border border-black p-2 text-xs">${new Date(ex.ts).toLocaleString('th-TH')}</td>
-          <td class="border border-black p-2 font-bold">${ex.title}</td>
-          <td class="border border-black p-2">${ex.category || 'อื่นๆ'}</td>
-          <td class="border border-black p-2">${ex.cashierName}</td>
-          <td class="border border-black p-2 text-right font-display font-bold">฿${ex.amount.toFixed(2)}</td>
-        </tr>
-      `).join('');
+      document.getElementById('p-exp-list-table').innerHTML = filtered.map(ex => {
+        const subDetails = (ex.subItems && ex.subItems.length > 0) ? ` (${ex.subItems.map(s => `${s.name} ฿${s.amount}`).join(', ')})` : '';
+        return `
+          <tr>
+            <td class="border border-black p-2 text-xs">${new Date(ex.ts).toLocaleString('th-TH')}</td>
+            <td class="border border-black p-2 font-bold">${ex.title}${subDetails}</td>
+            <td class="border border-black p-2">${ex.category || 'อื่นๆ'}</td>
+            <td class="border border-black p-2">${ex.cashierName}</td>
+            <td class="border border-black p-2 text-right font-display font-bold">฿${ex.amount.toFixed(2)}</td>
+          </tr>
+        `;
+      }).join('');
 
       document.getElementById('printExpenseArea').classList.remove('hidden');
       window.print();
@@ -3931,9 +4209,11 @@
     }
 
     function showTab(name) {
-      ['pos', 'stock', 'lowstock', 'debts', 'expenses', 'reports', 'staff'].forEach(t => {
-        document.getElementById(`tab-${t}`).classList.add('hidden');
-        document.getElementById(`btn-${t}`).className = `px-4 py-2 rounded-xl ${t===name ? 'bg-[#F5F3EE] text-[#1C2321] font-semibold' : 'hover:bg-white/10 text-white'}`;
+      ['pos', 'stock', 'lowstock', 'rewards', 'debts', 'expenses', 'reports', 'staff'].forEach(t => {
+        const el = document.getElementById(`tab-${t}`);
+        if(el) el.classList.add('hidden');
+        const btn = document.getElementById(`btn-${t}`);
+        if(btn) btn.className = `px-4 py-2 rounded-xl ${t===name ? 'bg-[#F5F3EE] text-[#1C2321] font-semibold' : 'hover:bg-white/10 text-white'}`;
       });
       document.getElementById(`tab-${name}`).classList.remove('hidden');
       if(name==='pos') focusScanInput();

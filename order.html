@@ -16,6 +16,9 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+  <!-- QR Code Generator JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
   <!-- LINE LIFF SDK -->
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <!-- Firebase SDKs -->
@@ -53,7 +56,6 @@
       </button>
 
       <div class="flex items-center gap-2">
-        <!-- 🖼️ โลโก้ร้านค้าส่วน Header -->
         <img src="logo.jpg.png" alt="โลโก้ร้านค้าขวัญใจ" class="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover shadow-sm border border-orange-200">
         <div class="flex flex-col items-center">
           <span class="font-bold text-xl md:text-2xl font-display tracking-tight text-[#008B47] leading-none">ร้านค้าขวัญใจ</span>
@@ -84,7 +86,7 @@
             </div>
             <div class="truncate">
               <div class="text-[10px] md:text-xs text-emerald-200 font-normal">สั่งซื้อด่วน Delivery:</div>
-              <div id="topAddrDisplay" class="truncate text-sm md:text-base font-display text-white">ซื้อครบ 100.- ส่งฟรี (ไม่เกิน 5 กม.)</div>
+              <div id="topAddrDisplay" class="truncate text-sm md:text-base font-display text-white">ส่งฟรี 3 กม. แรกเมื่อซื้อครบ 100.- (เกินคิดตามจริง)</div>
             </div>
           </div>
         </div>
@@ -169,7 +171,7 @@
 
     <!-- 👤 Modal สมาชิก -->
     <div id="memberModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div class="bg-white p-6 rounded-3xl max-w-md w-full space-y-4 shadow-2xl">
+      <div class="bg-white p-6 rounded-3xl max-w-md w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
         <div class="flex justify-between items-center border-b pb-3">
           <h3 class="font-bold text-xl font-display flex items-center gap-2 text-[#008B47]">
             <i data-lucide="user-check"></i> เข้าสู่ระบบสมาชิก
@@ -201,6 +203,13 @@
           <div class="bg-amber-50 p-3 rounded-2xl border border-amber-200 flex justify-between items-center">
             <span class="text-xs font-bold text-amber-900 font-display">คะแนนสะสมของคุณ:</span>
             <span class="text-xl font-bold font-display text-amber-600" id="modalMemberPoints">0 แต้ม</span>
+          </div>
+
+          <!-- 📱 กล่องแสดง QR Code สมาชิกสำหรับเปิดยิงสแกนหน้าร้าน -->
+          <div id="qrCodeBox" class="hidden bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-center space-y-2">
+            <div class="text-xs font-bold text-[#008B47] font-display">📱 QR Code บัตรสมาชิกของคุณ</div>
+            <div class="text-[10px] text-gray-500">ยื่นหน้าจอนี้ให้พนักงานสแกนหน้าร้านเพื่อสะสมแต้มได้ทันที</div>
+            <div id="qrcodeCanvas" class="flex justify-center p-3 bg-white rounded-xl shadow-sm w-max mx-auto border border-emerald-100"></div>
           </div>
         </div>
 
@@ -305,7 +314,7 @@
             <span id="custCartSubtotal">฿0.00</span>
           </div>
           <div class="flex justify-between text-xs text-gray-600">
-            <span>ค่าจัดส่ง (ไม่เกิน 5 กม.)</span>
+            <span>ค่าจัดส่ง</span>
             <span id="custDeliveryFee" class="font-bold text-[#F37021]">฿0.00</span>
           </div>
           <div class="flex justify-between items-center border-t border-emerald-200 pt-1.5 mt-1">
@@ -411,6 +420,11 @@
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzufZy7m8IIxHGZ1ae9Yy4cYcYPXsFdkzX8fSA7kpeZVlBMv_XP2W4v0zrIjNMJRKg5/exec";
     const MY_LIFF_ID = "2011317502-oCvWQ4LI";
 
+    // 📍 พิกัดร้านค้า
+    const STORE_LOCATION = { lat: 13.867726, lng: 100.113623 }; 
+    const FREE_DISTANCE_LIMIT_KM = 3; // รัศมีส่งฟรี (กม.)
+    const EXTRA_FEE_PER_KM = 10;       // ค่าจัดส่งส่วนเกินกิโลเมตรละ (บาท/กม.)
+
     const firebaseConfig = {
       apiKey: "AIzaSyCGMxESjF8ZDAAm7xL_uDvz4hEa7EpZD6Y",
       authDomain: "myshop-pos-19a95.firebaseapp.com",
@@ -428,6 +442,9 @@
     let customerLineUserId = null;
     let leafletMap = null;
     let leafletMarker = null;
+    let storeMarker = null;
+    let storeCircle = null;
+    let qrCodeInstance = null;
 
     liff.init({ liffId: MY_LIFF_ID }).then(() => {
       if (liff.isLoggedIn()) {
@@ -443,7 +460,7 @@
     let selectedCategory = 'ทั้งหมด';
     let currentOrderId = localStorage.getItem('lastOrderId') || null;
     let unsubscribeOrderTracking = null;
-    let userLocation = { lat: 13.7563, lng: 100.5018 };
+    let userLocation = { ...STORE_LOCATION };
     let deliveryType = 'delivery';
     let payOption = 'transfer';
     let slipBase64 = "";
@@ -457,6 +474,17 @@
     }
 
     let notifiedCancelledMap = {};
+
+    function calculateDistanceInKm(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
 
     function normalizeThaiText(str) {
       if (!str) return '';
@@ -487,6 +515,29 @@
     if (currentOrderId) trackOrderRealtime(currentOrderId);
     if (currentMember) updateMemberUI();
 
+    // 📱 ฟังก์ชันสร้าง QR Code จากเบอร์โทรศัพท์ลูกค้า
+    function generateMemberQRCode(phone) {
+      const container = document.getElementById("qrcodeCanvas");
+      const box = document.getElementById("qrCodeBox");
+      if (!container) return;
+
+      container.innerHTML = "";
+      
+      if (phone && phone.trim().length >= 9) {
+        qrCodeInstance = new QRCode(container, {
+          text: phone.trim(),
+          width: 140,
+          height: 140,
+          colorDark : "#008B47",
+          colorLight : "#ffffff",
+          correctLevel : QRCode.CorrectLevel.H
+        });
+        box.classList.remove("hidden");
+      } else {
+        box.classList.add("hidden");
+      }
+    }
+
     function initLeafletMap(defaultLat, defaultLng) {
       const redPinIcon = L.divIcon({
         className: 'custom-leaflet-marker',
@@ -495,16 +546,35 @@
         iconAnchor: [18, 36]
       });
 
+      const storePinIcon = L.divIcon({
+        className: 'custom-leaflet-marker',
+        html: `<div style="background:#008B47; color:white; padding:4px 8px; border-radius:12px; font-weight:bold; font-size:11px; border:2px solid white; box-shadow:0 2px 6px rgba(0,0,0,0.4); display:flex; align-items:center; gap:3px; white-space:nowrap;">🏪 ร้านค้า</div>`,
+        iconSize: [65, 26],
+        iconAnchor: [32, 13]
+      });
+
       if (!leafletMap) {
         leafletMap = L.map('mapPicker', {
-          center: [defaultLat, defaultLng],
-          zoom: 16,
+          center: [STORE_LOCATION.lat, STORE_LOCATION.lng],
+          zoom: 14,
           zoomControl: true
         });
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           maxZoom: 19,
           attribution: '© OpenStreetMap'
+        }).addTo(leafletMap);
+
+        storeMarker = L.marker([STORE_LOCATION.lat, STORE_LOCATION.lng], { icon: storePinIcon })
+          .addTo(leafletMap)
+          .bindPopup("<b>🏪 ร้านค้าขวัญใจ</b>");
+
+        storeCircle = L.circle([STORE_LOCATION.lat, STORE_LOCATION.lng], {
+          color: '#008B47',
+          fillColor: '#008B47',
+          fillOpacity: 0.15,
+          weight: 2,
+          radius: FREE_DISTANCE_LIMIT_KM * 1000
         }).addTo(leafletMap);
 
         leafletMarker = L.marker([defaultLat, defaultLng], { 
@@ -515,24 +585,33 @@
         leafletMarker.on('dragend', function (e) {
           const latlng = leafletMarker.getLatLng();
           userLocation = { lat: latlng.lat, lng: latlng.lng };
-          const statusElem = document.getElementById('gpsStatusText');
-          statusElem.innerText = `✅ ปักหมุดพิกัด: ${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`;
-          statusElem.className = "text-[10px] font-bold text-emerald-700 mt-1 block";
+          updateLocationStatus(latlng.lat, latlng.lng);
         });
 
         leafletMap.on('click', function (e) {
           leafletMarker.setLatLng(e.latlng);
           userLocation = { lat: e.latlng.lat, lng: e.latlng.lng };
-          const statusElem = document.getElementById('gpsStatusText');
-          statusElem.innerText = `✅ ปักหมุดพิกัด: ${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`;
-          statusElem.className = "text-[10px] font-bold text-emerald-700 mt-1 block";
+          updateLocationStatus(e.latlng.lat, e.latlng.lng);
         });
 
       } else {
-        leafletMap.setView([defaultLat, defaultLng], 16);
+        leafletMap.setView([defaultLat, defaultLng], 14);
         leafletMarker.setLatLng([defaultLat, defaultLng]);
       }
+      
       userLocation = { lat: defaultLat, lng: defaultLng };
+      updateLocationStatus(defaultLat, defaultLng);
+    }
+
+    function updateLocationStatus(lat, lng) {
+      const distance = calculateDistanceInKm(STORE_LOCATION.lat, STORE_LOCATION.lng, lat, lng);
+      const statusElem = document.getElementById('gpsStatusText');
+      
+      let zoneText = distance <= FREE_DISTANCE_LIMIT_KM ? `🟢 อยู่ในระยะส่งฟรี (ไม่เกิน ${FREE_DISTANCE_LIMIT_KM} กม.)` : `🔴 เกินระยะส่งฟรีมา ${(distance - FREE_DISTANCE_LIMIT_KM).toFixed(2)} กม.`;
+      
+      statusElem.innerText = `✅ ปักหมุด: ${lat.toFixed(5)}, ${lng.toFixed(5)} (ห่างจากร้าน ~${distance.toFixed(2)} กม. - ${zoneText})`;
+      statusElem.className = "text-[10px] font-bold text-emerald-700 mt-1 block";
+      updateCartSummaryUI();
     }
 
     function getCurrentLocation() {
@@ -550,13 +629,11 @@
         navigator.geolocation.getCurrentPosition(position => {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
-          const accuracyMeters = Math.round(position.coords.accuracy);
 
           initLeafletMap(lat, lng);
 
-          statusText.innerText = `✅ ดึงตำแหน่ง GPS สำเร็จ (ความคลาดเคลื่อน ±${accuracyMeters} เมตร) เลื่อนหมุดย้ายตำแหน่งได้ครับ`;
-          statusText.className = "text-[10px] font-bold text-emerald-700 mt-1 block";
-          document.getElementById('topAddrDisplay').innerText = `ปักหมุด GPS เรียบร้อยแล้ว`;
+          const distance = calculateDistanceInKm(STORE_LOCATION.lat, STORE_LOCATION.lng, lat, lng);
+          document.getElementById('topAddrDisplay').innerText = `ปักหมุด GPS เรียบร้อย (ห่าง ~${distance.toFixed(1)} กม.)`;
         }, err => {
           statusText.innerText = "❌ ไม่สามารถดึง GPS อัตโนมัติได้ คุณสามารถเอานิ้วลากหมุดในแผนที่ได้เองครับ";
           statusText.className = "text-[10px] font-bold text-red-600 mt-1 block";
@@ -615,6 +692,9 @@
         document.getElementById('memberNameInput').value = currentMember.name || '';
         document.getElementById('memberAddressInput').value = currentMember.address || '';
         document.getElementById('modalMemberPoints').innerText = (currentMember.points || 0) + ' แต้ม';
+        generateMemberQRCode(currentMember.phone);
+      } else {
+        generateMemberQRCode("");
       }
       document.getElementById('memberModal').classList.remove('hidden');
     }
@@ -637,8 +717,10 @@
           currentMember = m;
           localStorage.setItem('memberProfile', JSON.stringify(m));
           updateMemberUI();
+          generateMemberQRCode(phone);
           alert(`พบข้อมูลสมาชิก: คุณ${m.name}`);
         } else {
+          generateMemberQRCode("");
           alert('ยังไม่พบข้อมูลสมาชิกในเบอร์นี้ สามารถกรอกชื่อและที่อยู่เพื่อสมัครใหม่ได้เลยครับ');
         }
       });
@@ -666,6 +748,7 @@
           localStorage.setItem('memberProfile', JSON.stringify(memberData));
           currentMember = memberData;
           updateMemberUI();
+          generateMemberQRCode(phone);
           closeMemberModal();
           alert('บันทึกข้อมูลสมาชิกเรียบร้อยแล้วครับ');
         });
@@ -854,8 +937,19 @@
       const subtotal = custCart.reduce((sum, c) => sum + (c.price * c.qty), 0);
 
       let deliveryFee = 0;
+      let distanceKm = 0;
+      let extraDist = 0;
+      let extraFee = 0;
+
       if (deliveryType === 'delivery') {
-        deliveryFee = subtotal >= 100 ? 0 : 20;
+        distanceKm = calculateDistanceInKm(STORE_LOCATION.lat, STORE_LOCATION.lng, userLocation.lat, userLocation.lng);
+        
+        const baseFee = subtotal >= 100 ? 0 : 20;
+
+        extraDist = Math.max(0, distanceKm - FREE_DISTANCE_LIMIT_KM);
+        extraFee = Math.ceil(extraDist) * EXTRA_FEE_PER_KM;
+
+        deliveryFee = baseFee + extraFee;
       }
 
       const totalNet = subtotal + deliveryFee;
@@ -868,7 +962,18 @@
       document.getElementById('bottomCartBar').classList.toggle('hidden', totalQty === 0);
 
       document.getElementById('custCartSubtotal').innerText = '฿' + subtotal.toFixed(2);
-      document.getElementById('custDeliveryFee').innerText = deliveryFee === 0 ? 'ส่งฟรี (ซื้อครบ 100.-)' : '฿' + deliveryFee.toFixed(2);
+      
+      const feeElem = document.getElementById('custDeliveryFee');
+      if (deliveryType === 'pickup') {
+        feeElem.innerText = '฿0.00 (รับเองที่ร้าน)';
+      } else {
+        if (extraDist > 0) {
+          feeElem.innerText = `฿${deliveryFee.toFixed(2)} (${distanceKm.toFixed(1)} กม. - เกิน ${FREE_DISTANCE_LIMIT_KM} กม. +฿${extraFee.toFixed(2)})`;
+        } else {
+          feeElem.innerText = deliveryFee === 0 ? `ฟรีค่าส่ง (~${distanceKm.toFixed(1)} กม.)` : `฿${deliveryFee.toFixed(2)} (~${distanceKm.toFixed(1)} กม.)`;
+        }
+      }
+
       document.getElementById('custModalTotal').innerText = '฿' + totalNet.toFixed(2);
     }
 
@@ -943,9 +1048,18 @@
       }, { merge: true });
 
       const subtotal = custCart.reduce((sum, c) => sum + (c.price * c.qty), 0);
-      const deliveryFee = deliveryType === 'delivery' ? (subtotal >= 100 ? 0 : 20) : 0;
-      const totalNet = subtotal + deliveryFee;
+      
+      let deliveryFee = 0;
+      let distanceKm = 0;
+      if (deliveryType === 'delivery') {
+        distanceKm = calculateDistanceInKm(STORE_LOCATION.lat, STORE_LOCATION.lng, userLocation.lat, userLocation.lng);
+        const baseFee = subtotal >= 100 ? 0 : 20;
+        const extraDist = Math.max(0, distanceKm - FREE_DISTANCE_LIMIT_KM);
+        const extraFee = Math.ceil(extraDist) * EXTRA_FEE_PER_KM;
+        deliveryFee = baseFee + extraFee;
+      }
 
+      const totalNet = subtotal + deliveryFee;
       const shortOrderId = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
 
       const orderData = {
@@ -957,6 +1071,7 @@
         customerLineId: customerLineUserId || '',
         deliveryType: deliveryType,
         deliveryFee: deliveryFee,
+        distanceKm: Number(distanceKm.toFixed(2)),
         payOption: payOption,
         slipUrl: slipBase64,
         location: userLocation,

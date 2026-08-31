@@ -105,6 +105,9 @@
       }
     }
   </style>
+  <!-- Leaflet.js สำหรับแสดงแผนที่ปักหมุด (ฟรี) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body class="min-h-screen flex flex-col relative">
 
@@ -164,12 +167,10 @@
 
     <nav class="flex items-center gap-1.5 bg-white/10 p-1.5 rounded-2xl text-base font-semibold flex-wrap">
       <button onclick="showTab('pos')" id="btn-pos" class="px-4 py-2 rounded-xl bg-[#F5F3EE] text-[#1C2321]">ขายสินค้า</button>
-      
       <button onclick="openOnlineOrdersModal()" id="btn-online-orders" class="px-4 py-2 rounded-xl hover:bg-white/10 text-white flex items-center gap-1.5 relative">
         <span>🛒 ออเดอร์ออนไลน์</span>
         <span id="onlineOrdersBadge" class="bg-amber-500 text-black text-xs px-2 py-0.5 rounded-full font-bold hidden animate-pulse">0</span>
       </button>
-
       <button onclick="showTab('stock')" id="btn-stock" class="px-4 py-2 rounded-xl hover:bg-white/10 text-white">สต็อกสินค้า</button>
       <button onclick="showTab('lowstock')" id="btn-lowstock" class="px-4 py-2 rounded-xl hover:bg-white/10 text-white flex items-center gap-1.5">
         <span>เติมสต็อกสินค้า</span>
@@ -190,7 +191,9 @@
         <span class="text-sm">กะปัจจุบัน:</span>
         <span id="currentStaffBadge" class="text-base font-bold font-display text-amber-300">ไม่ระบุพนักงาน</span>
       </button>
-      
+      <button onclick="openShopLocationModal()" class="bg-[#0F5C52] text-white px-3 py-1.5 rounded-xl text-sm font-bold font-display hover:opacity-90 flex items-center gap-1.5 shadow-sm">
+  <i data-lucide="map-pin" class="w-4 h-4"></i> ตั้งค่าพิกัดร้าน
+</button>
       <button onclick="lockSystem()" class="bg-[#B3432B] hover:opacity-90 text-white p-2 rounded-xl text-sm font-bold flex items-center gap-1" title="ล็อกระบบ">
         <i data-lucide="lock" class="w-4 h-4"></i>
       </button>
@@ -198,10 +201,9 @@
   </header>
 
   <main class="p-6 flex-1 max-w-[1600px] w-full mx-auto no-print">
-    
     <!-- แท็บ 1: ขายสินค้า (POS) -->
     <div id="tab-pos" class="grid grid-cols-1 lg:grid-cols-[1fr_480px] gap-6 items-start">
-      <div class="bg-white p-6 rounded-2xl border-2 border-[#DEDACB] space-y-5">
+      <div class="bg-white p-6 rounded-2xl border-2 border-[#DEDACB] space-y-5 min-w-0">
         <div class="flex justify-between items-center">
           <div class="flex items-center gap-2 text-[#0F5C52] font-bold font-display text-xl">
             <i data-lucide="scan-line" class="w-6 h-6"></i> ยิงบาร์โค้ด / พิมพ์ค้นหาชื่อสินค้า
@@ -212,7 +214,6 @@
         <div class="relative">
           <input type="text" id="scanInput" oninput="handleSearchInput()" placeholder="สแกนบาร์โค้ด หรือพิมพ์ชื่อ/รหัสสินค้า..." 
             class="w-full text-2xl p-4 pr-12 rounded-2xl border-2 border-[#0F5C52] bg-[#F5F3EE] focus:outline-none font-bold" autofocus>
-          
           <button type="button" onclick="clearSearchInput()" id="btnClearSearch" class="hidden absolute right-3.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gray-300 hover:bg-gray-400 text-gray-700 flex items-center justify-center transition">
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
@@ -225,7 +226,6 @@
           <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4">
             <p class="col-span-4 text-center py-12 text-base text-[#0F5C52] font-bold animate-pulse">⏳ กำลังเชื่อมต่อฐานข้อมูลและดึงรายการสินค้า...</p>
           </div>
-          
           <div id="paginationControls" class="flex justify-between items-center pt-4 border-t border-[#DEDACB] mt-4"></div>
         </div>
       </div>
@@ -274,13 +274,19 @@
           </div>
 
           <div class="grid grid-cols-1 gap-2">
-            <button onclick="openCheckoutModal()" class="w-full bg-[#0F5C52] text-white py-4 rounded-2xl font-bold hover:opacity-90 transition text-2xl font-display shadow-md">
+            <button onclick="openCheckoutModal()" class="w-full bg-[#0F5C52] text-white py-3.5 rounded-2xl font-bold hover:opacity-90 transition text-2xl font-display shadow-md">
               ชำระเงิน / ติดหนี้
             </button>
-            
-            <button onclick="checkoutHomeUse()" class="w-full bg-amber-800 text-white py-2 rounded-xl font-bold hover:opacity-90 transition text-sm font-display shadow-sm flex items-center justify-center gap-1.5">
-              <i data-lucide="home" class="w-4 h-4"></i> 🏠 บันทึกกิน/ใช้เองในบ้าน (ตัดสต็อกตามต้นทุน)
-            </button>
+
+            <!-- 🔘 ปุ่มตัดสต็อกพิเศษ (ไม่คิดเป็นยอดขาย) -->
+            <div class="grid grid-cols-2 gap-2">
+              <button onclick="checkoutHomeUse()" class="bg-amber-800 hover:bg-amber-900 text-white py-2 rounded-xl font-bold transition text-xs font-display shadow-sm flex items-center justify-center gap-1">
+                <i data-lucide="home" class="w-3.5 h-3.5"></i> 🏠 บันทึกใช้ในบ้าน
+              </button>
+              <button onclick="checkoutWorkerUse()" class="bg-[#B3432B] hover:opacity-90 text-white py-2 rounded-xl font-bold transition text-xs font-display shadow-sm flex items-center justify-center gap-1">
+                <i data-lucide="hard-hat" class="w-3.5 h-3.5"></i> 👷 บันทึกเลี้ยงคนงาน
+              </button>
+            </div>
           </div>
 
           <div class="bg-white p-3.5 rounded-2xl border-2 border-amber-500 shadow-sm space-y-2 mt-2">
@@ -290,16 +296,13 @@
             <div class="grid grid-cols-[1fr_110px_auto] gap-2 items-center">
               <input type="text" id="quickNameInput" placeholder="ชื่อรายการ (เว้นได้)..." 
                 class="w-full p-2 border-2 border-amber-300 rounded-xl text-base font-bold bg-[#F5F3EE] focus:outline-none focus:bg-white">
-              
               <input type="number" step="0.5" id="quickPriceInput" onkeydown="if(event.key==='Enter') addQuickItemDirect()" 
                 placeholder="ราคา..." class="w-full p-2 border-2 border-amber-400 rounded-xl text-base font-bold font-display bg-[#F5F3EE] focus:outline-none focus:bg-white text-right text-[#B3432B]">
-              
               <button onclick="addQuickItemDirect()" class="bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-2 rounded-xl font-bold text-base font-display shadow-sm whitespace-nowrap transition">
                 + เพิ่ม
               </button>
             </div>
           </div>
-
         </div>
       </div>
     </div>
@@ -584,7 +587,9 @@
         </div>
       </div>
 
+      <!-- 1. กล่องการ์ดบนสุด 2 คอลัมน์ (Float & ยืมเงิน) -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- การ์ดเงินทอน Float -->
         <div class="bg-[#F5F3EE] p-5 rounded-2xl border-2 border-[#DEDACB] flex flex-col justify-between space-y-3">
           <div class="flex justify-between items-start">
             <div>
@@ -602,15 +607,16 @@
           </div>
         </div>
 
-        <div class="bg-amber-50 p-5 rounded-2xl border-2 border-amber-200 flex flex-col justify-between space-y-3">
+        <!-- การ์ดเงินยืมส่วนตัว -->
+        <div class="bg-amber-50 p-5 rounded-2xl border-2 border-amber-200 flex flex-col justify-between space-y-3 shadow-sm hover:border-amber-400 transition cursor-pointer" onclick="openBorrowDetailModal()">
           <div class="flex justify-between items-start">
             <div>
               <div class="font-bold text-lg font-display text-amber-900 flex items-center gap-2">
                 <i data-lucide="wallet" class="text-amber-700 w-5 h-5"></i> ยอดเงินส่วนตัวยืมมาหมุนในเก๊ะ
               </div>
-              <div class="text-xs text-amber-700 mt-0.5">ยอดเงินที่ยืมมาเติมทอนหรือสำรองจ่าย</div>
+              <div class="text-xs text-amber-700 mt-0.5">คลิกเพื่อดูบันทึกรายละเอียดประวัติยืม/คืน</div>
             </div>
-            <div class="flex gap-1.5">
+            <div class="flex gap-1.5" onclick="event.stopPropagation()">
               <button onclick="openBorrowCashModal(true)" class="bg-[#B3432B] text-white px-3 py-1.5 rounded-xl text-sm font-bold font-display hover:opacity-90 shadow-sm">
                 + เติมเงิน
               </button>
@@ -631,8 +637,10 @@
         </div>
       </div>
 
+      <!-- 2. กล่องสรุปผล 4 การ์ดล่าง (เต็มความกว้าง 100%) -->
       <div id="reportSummary" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
 
+      <!-- 3. ส่วนประวัติรายการย้อนหลัง (เต็มความกว้าง 100%) -->
       <div class="font-bold font-display text-lg pt-3 border-t-2 border-[#DEDACB]">ประวัติการทำรายการย้อนหลัง</div>
       <div id="salesHistory" class="divide-y-2 divide-[#DEDACB] border-t-2 border-[#DEDACB]"></div>
     </div>
@@ -660,6 +668,54 @@
         </div>
       </div>
     </div>
+<!-- Modal ตั้งค่าพิกัดตำแหน่งร้านค้า -->
+<div id="shopLocationModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+  <div class="bg-white p-6 rounded-3xl max-w-xl w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div class="flex justify-between items-center border-b pb-3">
+      <h3 class="font-bold text-xl font-display text-[#1C2321] flex items-center gap-2">
+        <i data-lucide="map-pin" class="text-[#0F5C52] w-6 h-6"></i> ตั้งค่าพิกัดตำแหน่งร้านค้า
+      </h3>
+      <button onclick="closeShopLocationModal()" class="text-gray-400 hover:text-gray-600 p-1">
+        <i data-lucide="x" class="w-6 h-6"></i>
+      </button>
+    </div>
+
+    <p class="text-xs text-gray-500 font-medium">
+      คลิกหรือลากหมุดบนแผนที่ไปยังตำแหน่งหน้าร้าน เพื่อให้ระบบใช้พิกัดนี้คำนวณระยะทางจัดส่งในแอปฝั่งลูกค้า
+    </p>
+
+    <!-- แผนที่ปักหมุด -->
+    <div id="shopMap" class="w-full h-64 rounded-2xl border-2 border-[#DEDACB] overflow-hidden z-10 relative z-0"></div>
+
+    <div class="flex gap-2">
+      <button type="button" onclick="getCurrentShopLocation()" class="bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold font-display flex items-center gap-1.5 shadow-sm transition">
+        <i data-lucide="locate" class="w-4 h-4"></i> ดึงพิกัด GPS ปัจจุบัน
+      </button>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3 text-sm">
+      <div>
+        <label class="block text-xs font-bold text-gray-600 mb-1">ละติจูด (Latitude)</label>
+        <input type="text" id="shopLat" readonly class="w-full p-2.5 bg-gray-100 border border-[#DEDACB] rounded-xl font-mono text-xs font-bold">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-600 mb-1">ลองจิจูด (Longitude)</label>
+        <input type="text" id="shopLng" readonly class="w-full p-2.5 bg-gray-100 border border-[#DEDACB] rounded-xl font-mono text-xs font-bold">
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-xs font-bold text-gray-600 mb-1">ชื่อ/ที่อยู่หน้าร้านสั้นๆ</label>
+      <input type="text" id="shopAddress" placeholder="เช่น ร้านขวัญใจ POS สาขาใหญ่" class="w-full p-3 border-2 border-[#DEDACB] rounded-xl text-sm font-medium focus:border-[#0F5C52] focus:outline-none">
+    </div>
+
+    <div class="flex gap-2 pt-2">
+      <button onclick="saveShopLocation()" class="w-full bg-[#0F5C52] hover:opacity-90 text-white py-3 rounded-xl font-bold font-display text-base shadow-sm transition flex items-center justify-center gap-2">
+        <i data-lucide="save" class="w-5 h-5"></i> บันทึกพิกัดร้านค้า
+      </button>
+    </div>
+  </div>
+</div>
 
   </main>
 
@@ -972,20 +1028,59 @@
     </div>
   </div>
 
-  <!-- Modal สำหรับยืมเงินส่วนตัว -->
+  <!-- Modal สำหรับยืมเงินส่วนตัว (ปรับเพิ่มช่องใส่หมายเหตุ) -->
   <div id="borrowModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 no-print">
     <div class="bg-[#F5F3EE] p-6 rounded-3xl max-w-md w-full space-y-4 shadow-2xl">
       <div class="flex justify-between items-center border-b-2 border-[#DEDACB] pb-3">
         <h3 id="borrowModalTitle" class="font-bold text-2xl font-display">เติมเงินส่วนตัวใส่เก๊ะ</h3>
         <button onclick="closeBorrowModal()"><i data-lucide="x" class="w-6 h-6"></i></button>
       </div>
-      <div class="space-y-2">
-        <label id="borrowModalLabel" class="block text-sm font-bold text-[#6B6A61]">จำนวนเงินที่เอาเงินส่วนตัวมาใส่เพิ่ม (บาท)</label>
-        <input type="number" id="borrowAmountInput" placeholder="500.00" class="w-full p-3.5 rounded-2xl border-2 bg-white text-2xl font-display font-bold">
+      <div class="space-y-3">
+        <div>
+          <label id="borrowModalLabel" class="block text-sm font-bold text-[#6B6A61] mb-1">จำนวนเงิน (บาท) *</label>
+          <input type="number" id="borrowAmountInput" placeholder="500.00" class="w-full p-3.5 rounded-2xl border-2 bg-white text-2xl font-display font-bold">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-[#6B6A61] mb-1">หมายเหตุ / ระบุสาเหตุ (เช่น สำรองจ่ายค่าน้ำแข็ง, ถอนคืนเงินสด)</label>
+          <input type="text" id="borrowNoteInput" placeholder="ระบุเหตุผลกำกับไว้จำ..." class="w-full p-3 rounded-2xl border-2 bg-white text-base font-bold">
+        </div>
       </div>
       <button onclick="saveBorrowCash()" class="w-full bg-[#B3432B] text-[#FFFFFF] py-3.5 rounded-2xl font-bold text-xl font-display shadow-md">
         บันทึกรายการ
       </button>
+    </div>
+  </div>
+
+  <!-- Modal ดูรายละเอียดประวัติเงินยืมส่วนตัวทั้งหมด -->
+  <div id="borrowDetailModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 no-print">
+    <div class="bg-white p-6 md:p-7 rounded-3xl max-w-2xl w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b pb-3">
+        <div>
+          <div class="text-xs font-bold text-gray-400">รายละเอียดเงินหมุนเวียนส่วนตัว</div>
+          <h3 class="font-bold text-2xl font-display text-[#B3432B] flex items-center gap-2">
+            💼 ประวัติการยืม & ถอนคืนเงินส่วนตัว
+          </h3>
+        </div>
+        <button onclick="closeBorrowDetailModal()" class="p-1 rounded-full bg-gray-100"><i data-lucide="x" class="w-6 h-6 text-gray-500"></i></button>
+      </div>
+
+      <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 flex justify-between items-center flex-wrap gap-2">
+        <div>
+          <div class="text-xs font-bold text-amber-900">ยอดค้างคืนส่วนตัวรวมปัจจุบัน</div>
+          <div id="modalNetBorrowedVal" class="text-3xl font-bold font-display text-[#B3432B] mt-0.5">฿0.00</div>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="closeBorrowDetailModal(); openBorrowCashModal(true);" class="bg-[#B3432B] text-white px-3.5 py-2 rounded-xl text-xs font-bold font-display hover:opacity-90 shadow-sm">+ เติมเงินส่วนตัว</button>
+          <button onclick="closeBorrowDetailModal(); openBorrowCashModal(false);" class="bg-gray-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold font-display hover:opacity-90 shadow-sm">- ถอนคืนส่วนตัว</button>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <div class="text-xs font-bold text-[#6B6A61]">ประวัติบันทึกการยืม/คืนเงินทั้งหมด</div>
+        <div id="borrowHistoryList" class="divide-y divide-gray-100 bg-gray-50 p-3 rounded-2xl border max-h-80 overflow-y-auto space-y-1"></div>
+      </div>
+
+      <button onclick="closeBorrowDetailModal()" class="w-full py-3 bg-gray-200 text-gray-800 rounded-xl font-bold font-display hover:bg-gray-300 transition">ปิดหน้าต่าง</button>
     </div>
   </div>
 
@@ -1230,7 +1325,7 @@
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label id="lblStockQty" class="text-xs font-bold text-[#1C2321] block mb-1">จำนวนสต็อกคงเหลือ</label>
+            <label id="lblStockQty" class="text-xs font-bold text-[#1C2321] block mb-1">จำนวนสต็อกรวม</label>
             <input type="number" id="p-addQty" placeholder="0" class="w-full p-2.5 border-2 border-[#DEDACB] rounded-xl bg-[#F5F3EE] text-xl font-bold font-display">
           </div>
           <div>
@@ -1240,8 +1335,8 @@
         </div>
 
         <div id="batchHistoryBox" class="hidden pt-2 border-t space-y-1">
-          <div class="text-xs font-bold text-[#6B6A61]">ประวัติต้นทุนลอตคงเหลือในคลัง:</div>
-          <div id="batchHistoryList" class="space-y-1 text-xs max-h-24 overflow-y-auto"></div>
+          <div class="text-xs font-bold text-[#6B6A61]">แก้ไขจำนวนและต้นทุนแยกรายลอต:</div>
+          <div id="batchHistoryList" class="space-y-1.5 max-h-40 overflow-y-auto pr-1"></div>
         </div>
       </div>
 
@@ -1375,7 +1470,6 @@
       return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
     }
 
-    // 📱 ดึงข้อมูลสมาชิกหน้าร้านจากเบอร์โทรศัพท์
     function fetchPosMemberInfo(phoneVal) {
       const cleanPhone = phoneVal.trim();
       const nameDisplay = document.getElementById('posMemberNameDisplay');
@@ -1538,7 +1632,7 @@
 
     document.addEventListener('keydown', function(e) {
       const activeEl = document.activeElement;
-      if (activeEl && (activeEl.id === 'quickNameInput' || activeEl.id === 'quickPriceInput' || activeEl.id === 'cartDiscount' || activeEl.id === 'deletePinInput' || activeEl.id === 'posCustomerPhone' || activeEl.classList.contains('cart-qty-input') || activeEl.classList.contains('exp-sub-input'))) return;
+      if (activeEl && (activeEl.id === 'quickNameInput' || activeEl.id === 'quickPriceInput' || activeEl.id === 'cartDiscount' || activeEl.id === 'deletePinInput' || activeEl.id === 'posCustomerPhone' || activeEl.classList.contains('cart-qty-input') || activeEl.classList.contains('exp-sub-input') || activeEl.classList.contains('edit-batch-qty') || activeEl.classList.contains('edit-batch-cost'))) return;
       if (activeEl && activeEl.id !== 'scanInput') return;
 
       const currentTime = Date.now();
@@ -2682,7 +2776,7 @@
           <button onclick="addToCart('${p.id}')" class="text-left bg-[#F5F3EE] p-3.5 rounded-2xl border-2 border-[#DEDACB] hover:border-[#0F5C52] transition flex flex-col items-center justify-between relative shadow-sm">
             <span class="absolute top-2.5 left-2.5 bg-[#1C2321]/80 text-white text-xs px-2.5 py-0.5 rounded-full font-bold">${p.category || 'ทั่วไป'}</span>
             ${p.isSubProduct ? `<span class="absolute top-2.5 right-2.5 bg-amber-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">แบ่งขาย</span>` : ''}
-            <div class="w-full h-32 bg-white rounded-xl mb-2.5 overflow-hidden flex items-center justify-center border border-[#DEDACB]">
+            <div class="w-full aspect-square bg-white rounded-xl mb-2.5 overflow-hidden flex items-center justify-center border border-[#DEDACB]">
               ${p.imageUrl ? `<img src="${p.imageUrl}" class="w-full h-full object-cover">` : `<i data-lucide="package" class="w-12 h-12 text-gray-400"></i>`}
             </div>
             <div class="text-base font-normal text-black truncate w-full mb-1 text-center font-body">${p.name}</div>
@@ -3073,18 +3167,18 @@
       return totalCostSum;
     }
 
+    // 🏠 บันทึกใช้ในบ้าน (ไม่รวมเป็นยอดขาย)
     function checkoutHomeUse() {
       if (cart.length === 0) return alert('ไม่มีสินค้าในตะกร้า');
-      
       const staffName = currentSelectedStaff || "ไม่ระบุพนักงาน";
 
-      if (confirm(`ยืนยันการนำสินค้าในตะกร้าไปกิน/ใช้เองในบ้านใช่หรือไม่?\n\nระบบจะตัดสต็อกและบันทึกต้นทุนสินค้าให้อัตโนมัติ`)) {
+      if (confirm(`ยืนยันการนำสินค้าในตะกร้าไปกิน/ใช้เองในบ้านใช่หรือไม่?\n\nระบบจะตัดสต็อกและบันทึกต้นทุนสินค้าให้อัตโนมัติ (ไม่นำไปรวมเป็นยอดขาย)`)) {
         const totalCost = calculateTotalCostAndDeductStock(cart);
-
         const homeUseDoc = {
           ts: Date.now(),
           items: [...cart],
           totalCost: totalCost,
+          total: 0, // ยอดขายเป็น 0 เสมอ
           isHomeUse: true,
           cashierName: staffName
         };
@@ -3096,6 +3190,34 @@
           clearSearchInput();
           renderCart();
           alert('บันทึกการใช้ในบ้านเรียบร้อยแล้ว');
+          focusScanInput();
+        });
+      }
+    }
+
+    // 👷 บันทึกเลี้ยงคนงาน (ไม่รวมเป็นยอดขาย)
+    function checkoutWorkerUse() {
+      if (cart.length === 0) return alert('ไม่มีสินค้าในตะกร้า');
+      const staffName = currentSelectedStaff || "ไม่ระบุพนักงาน";
+
+      if (confirm(`ยืนยันการบันทึกรายการ "ของเลี้ยงคนงาน" ใช่หรือไม่?\n\nระบบจะตัดสต็อกและบันทึกต้นทุนสินค้าให้อัตโนมัติ (ไม่นำไปรวมเป็นยอดขาย)`)) {
+        const totalCost = calculateTotalCostAndDeductStock(cart);
+        const workerUseDoc = {
+          ts: Date.now(),
+          items: [...cart],
+          totalCost: totalCost,
+          total: 0, // ยอดขายเป็น 0 เสมอ
+          isWorkerUse: true,
+          cashierName: staffName
+        };
+
+        db.collection("sales").add(workerUseDoc).then(() => {
+          cart = [];
+          document.getElementById('hasDiscountCheck').checked = false;
+          toggleDiscountInput();
+          clearSearchInput();
+          renderCart();
+          alert('บันทึกรายการเลี้ยงคนงานเรียบร้อยแล้ว');
           focusScanInput();
         });
       }
@@ -3347,7 +3469,7 @@
           </div>
         `).join('');
 
-        document.getElementById('r-total').innerText = '฿' + s.total.toFixed(2);
+        document.getElementById('r-total').innerText = '฿' + (s.isHomeUse || s.isWorkerUse ? 0 : s.total).toFixed(2);
 
         const isCreditOnly = (s.creditPart > 0 && s.cashPart === 0 && s.transferPart === 0);
         document.getElementById('r-doc-type').innerText = isCreditOnly ? 'ใบบันทึกการติดหนี้ / สินเชื่อ' : 'ใบเสร็จรับเงิน';
@@ -3431,6 +3553,16 @@
       document.getElementById('productModal').classList.remove('hidden');
     }
 
+    // 🔄 คำนวณยอดรวมใหม่เมื่อมีการพิมพ์แก้ตัวเลขในช่องลอตย่อย
+    function recalcBatchTotal() {
+      const qtyInputs = document.querySelectorAll('.edit-batch-qty');
+      let total = 0;
+      qtyInputs.forEach(input => {
+        total += (Number(input.value) || 0);
+      });
+      document.getElementById('p-addQty').value = total;
+    }
+
     function openEditProductModal(id, isReStock = false) {
       editingProductId = id;
       isReStockMode = isReStock;
@@ -3454,7 +3586,7 @@
 
       if (isReStock) {
         document.getElementById('pModalTitle').innerText = '⚡ เติมสต็อกสินค้าลอตใหม่';
-        document.getElementById('batchTitleText').innerText = "⚡ เติมสต็อกลอตใหม่ (สร้างลอตต้นทุนเพิ่ม)";
+        document.getElementById('batchTitleText').innerText = "⚡ เติมสต็อกลอตใหม่";
         document.getElementById('lblStockQty').innerText = "จำนวนที่นำมาเติมเพิ่ม";
         document.getElementById('lblStockCost').innerText = "ต้นทุนต่อชิ้นรอบนี้ (บาท)";
         document.getElementById('p-addQty').value = '';
@@ -3463,8 +3595,8 @@
       } else {
         document.getElementById('pModalTitle').innerText = '✏️ แก้ไขข้อมูลสินค้า';
         document.getElementById('batchTitleText').innerText = "📦 จัดการสต็อกและต้นทุน";
-        document.getElementById('lblStockQty').innerText = "จำนวนสต็อกคงเหลือ";
-        document.getElementById('lblStockCost').innerText = "ต้นทุนต่อชิ้น (บาท)";
+        document.getElementById('lblStockQty').innerText = "จำนวนสต็อกรวม";
+        document.getElementById('lblStockCost').innerText = "ต้นทุนล่าสุด (บาท)";
         document.getElementById('p-addQty').value = p.stock;
         document.getElementById('p-addCost').value = p.cost || '';
         document.getElementById('currentStockBadgeText').innerText = '';
@@ -3477,17 +3609,25 @@
         document.getElementById('imgPreviewBlock').classList.add('hidden');
       }
 
+      // 🔄 ส่วนสร้างช่องกรอกแก้ไขข้อมูลลอตย่อย
       const batches = p.batches || [];
       const batchContainer = document.getElementById('batchHistoryList');
-      if (batches.length > 0) {
+      if (batches.length > 0 && !isReStock) {
         batchContainer.innerHTML = batches.map((b, idx) => `
-          <div class="flex justify-between bg-gray-50 p-1.5 rounded border">
-            <span>ลอต ${idx+1}: คงเหลือ <b>${b.qty}</b> ชิ้น</span>
-            <span class="text-[#0F5C52] font-bold">ต้นทุน @฿${(b.cost||0).toFixed(2)}</span>
+          <div class="flex items-center gap-2 bg-white p-2 rounded-xl border border-gray-300 shadow-sm">
+            <span class="text-xs font-bold w-12 text-[#0F5C52]">ลอต ${idx+1}:</span>
+            <div class="flex-1 flex gap-1.5 items-center">
+              <input type="number" value="${b.qty}" oninput="recalcBatchTotal()" class="edit-batch-qty w-full p-1.5 border border-gray-300 rounded-lg text-center font-bold text-sm focus:outline-none focus:border-[#0F5C52]" placeholder="จำนวน">
+              <span class="text-xs text-gray-500 font-bold">ชิ้น</span>
+              <input type="number" step="0.01" value="${b.cost}" class="edit-batch-cost w-full p-1.5 border border-gray-300 rounded-lg text-right font-bold text-sm text-[#0F5C52] focus:outline-none focus:border-[#0F5C52]" placeholder="ต้นทุน">
+              <span class="text-xs text-gray-500 font-bold">฿</span>
+            </div>
+            <button type="button" onclick="this.parentElement.remove(); recalcBatchTotal();" class="text-red-500 hover:text-red-700 p-1 font-bold text-base" title="ลบลอตนี้">✕</button>
           </div>
         `).join('');
         document.getElementById('batchHistoryBox').classList.remove('hidden');
       } else {
+        batchContainer.innerHTML = '';
         document.getElementById('batchHistoryBox').classList.add('hidden');
       }
 
@@ -3518,22 +3658,34 @@
       }
 
       if (editingProductId && activeEditingProductObj) {
-        let batches = activeEditingProductObj.batches ? [...activeEditingProductObj.batches] : [];
+        let batches = [];
 
         if (isReStockMode) {
+          // โหมดเติมสต็อกลอตใหม่
+          batches = activeEditingProductObj.batches ? [...activeEditingProductObj.batches] : [];
           if (addQty > 0) {
-            batches.push({
-              qty: addQty,
-              cost: addCost,
-              ts: Date.now()
-            });
+            batches.push({ qty: addQty, cost: addCost, ts: Date.now() });
           }
         } else {
-          if (batches.length > 0) {
-            batches[0].qty = addQty;
-            batches[0].cost = addCost;
+          // โหมดแก้ไข: ดึงข้อมูลจากช่อง Input แต่ละลอตที่ผู้ใช้กรอก
+          const qtyInputs = document.querySelectorAll('.edit-batch-qty');
+          const costInputs = document.querySelectorAll('.edit-batch-cost');
+
+          if (qtyInputs.length > 0) {
+            qtyInputs.forEach((input, idx) => {
+              const q = Number(input.value) || 0;
+              const c = Number(costInputs[idx].value) || 0;
+              if (q > 0) {
+                const origTs = (activeEditingProductObj.batches && activeEditingProductObj.batches[idx]) 
+                               ? activeEditingProductObj.batches[idx].ts : Date.now();
+                batches.push({ qty: q, cost: c, ts: origTs });
+              }
+            });
           } else {
-            batches = [{ qty: addQty, cost: addCost, ts: Date.now() }];
+            // กรณีไม่มีรายการลอตเดิม ให้สร้างลอตใหม่จากยอดรวม
+            if (addQty > 0) {
+              batches = [{ qty: addQty, cost: addCost, ts: Date.now() }];
+            }
           }
         }
 
@@ -3548,18 +3700,15 @@
           ratio: isSubProduct ? ratio : 1,
           batches: isSubProduct ? [] : batches,
           cost: addCost,
-          stock: isSubProduct ? 0 : (isReStockMode ? batches.reduce((sum, b) => sum + b.qty, 0) : addQty)
+          stock: isSubProduct ? 0 : batches.reduce((sum, b) => sum + b.qty, 0)
         };
 
         db.collection("products").doc(editingProductId).update(data);
       } else {
+        // เพิ่มสินค้าใหม่
         let batches = [];
         if (addQty > 0 && !isSubProduct) {
-          batches.push({
-            qty: addQty,
-            cost: addCost,
-            ts: Date.now()
-          });
+          batches.push({ qty: addQty, cost: addCost, ts: Date.now() });
         }
 
         const data = {
@@ -3872,7 +4021,7 @@
       document.getElementById('debtDetailModal').classList.remove('hidden');
     }
 
-    function closeDebtDetailModal() {
+function closeDebtDetailModal() {
       document.getElementById('debtDetailModal').classList.add('hidden');
       activeDebtorName = "";
       selectedDebtDocIds.clear();
@@ -4030,21 +4179,147 @@
       document.getElementById('borrowModalTitle').innerText = isBorrow ? '📥 เติมเงินส่วนตัวใส่เก๊ะ' : '📤 คืนเงินยืมส่วนตัว';
       document.getElementById('borrowModalLabel').innerText = isBorrow ? 'จำนวนเงินที่เอาเงินส่วนตัวมาใส่เพิ่ม (บาท)' : 'จำนวนเงินสดที่ถอนคืนเงินส่วนตัว (บาท)';
       document.getElementById('borrowAmountInput').value = '';
+      document.getElementById('borrowNoteInput').value = '';
       document.getElementById('borrowModal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('borrowAmountInput').focus(), 100);
     }
-    function closeBorrowModal() { document.getElementById('borrowModal').classList.add('hidden'); focusScanInput(); }
+
+    function closeBorrowModal() { 
+      document.getElementById('borrowModal').classList.add('hidden'); 
+      focusScanInput(); 
+    }
 
     function saveBorrowCash() {
       const amt = Number(document.getElementById('borrowAmountInput').value);
+      const note = document.getElementById('borrowNoteInput').value.trim();
+
       if (amt > 0) {
         const staffName = currentSelectedStaff || "ไม่ระบุพนักงาน";
         db.collection("cash_movements").add({
           amount: isBorrowingMode ? amt : -amt,
           type: isBorrowingMode ? 'borrow' : 'repay',
+          note: note || (isBorrowingMode ? 'เติมเงินส่วนตัวใส่เก๊ะ' : 'ถอนคืนเงินยืมส่วนตัว'),
           ts: Date.now(),
           cashierName: staffName
         }).then(() => {
           closeBorrowModal();
+          // ถ้าเปิดหน้าต่างรายละเอียดอยู่ ให้รีเฟรชลิสต์ข้างในด้วย
+          if (!document.getElementById('borrowDetailModal').classList.contains('hidden')) {
+            renderBorrowDetailModal();
+          }
+        });
+      } else {
+        alert('กรุณากรอกจำนวนเงินให้ถูกต้องครับ');
+      }
+    }
+
+// 💵 ฟังก์ชันสำหรับทยอยคืนเงินส่วนตัวประจำรายการ
+    function repaySpecificBorrow(docId, maxRemaining) {
+      const input = prompt(`ระบุจำนวนเงินสดที่ต้องการถอนคืนรายการนี้ (บาท):\n(ยอดค้างคืนสูงสุด: ฿${maxRemaining.toFixed(2)})`, maxRemaining);
+      if (input === null) return;
+      
+      const payAmt = Number(input);
+      if (isNaN(payAmt) || payAmt <= 0) return alert('กรุณากรอกจำนวนเงินให้ถูกต้องครับ');
+      if (payAmt > maxRemaining) return alert('จำนวนเงินเกินยอดที่ค้างคืนอยู่ครับ');
+
+      db.collection("cash_movements").doc(docId).get().then(doc => {
+        if (doc.exists) {
+          const currentRepaid = doc.data().repaidAmt || 0;
+          db.collection("cash_movements").doc(docId).update({
+            repaidAmt: currentRepaid + payAmt
+          }).then(() => {
+            renderBorrowDetailModal();
+          });
+        }
+      });
+    }
+
+    // 📖 เปิดหน้าต่างดูประวัติยืม/คืนย่อยทั้งหมด
+    function openBorrowDetailModal() {
+      renderBorrowDetailModal();
+      document.getElementById('borrowDetailModal').classList.remove('hidden');
+    }
+
+    function closeBorrowDetailModal() {
+      document.getElementById('borrowDetailModal').classList.add('hidden');
+      focusScanInput();
+    }
+
+    function renderBorrowDetailModal() {
+      // คำนวณยอดค้างคืนรวมสุทธิ (หักส่วนที่ทยอยคืนไปแล้ว)
+      const totalNetBorrowed = cashMovements.reduce((sum, cm) => {
+        if (cm.amount > 0) {
+          return sum + Math.max(0, cm.amount - (cm.repaidAmt || 0));
+        }
+        return sum + cm.amount;
+      }, 0);
+
+      document.getElementById('modalNetBorrowedVal').innerText = `฿${totalNetBorrowed.toFixed(2)}`;
+
+      const list = document.getElementById('borrowHistoryList');
+      const sortedMovements = [...cashMovements].sort((a, b) => b.ts - a.ts);
+
+      if (sortedMovements.length === 0) {
+        list.innerHTML = `<p class="py-8 text-center text-sm text-gray-500 font-bold">ยังไม่มีประวัติบันทึกการยืมหรือถอนคืนเงินส่วนตัว</p>`;
+        return;
+      }
+
+      list.innerHTML = sortedMovements.map(cm => {
+        const isBorrow = cm.amount > 0;
+        const repaid = cm.repaidAmt || 0;
+        const remaining = isBorrow ? Math.max(0, cm.amount - repaid) : 0;
+        const isFullyPaid = isBorrow && remaining === 0;
+
+        let statusBadge = '';
+        if (isBorrow) {
+          if (isFullyPaid) {
+            statusBadge = `<span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-0.5 rounded-full">✅ คืนครบแล้ว</span>`;
+          } else if (repaid > 0) {
+            statusBadge = `<span class="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-full">🟡 คืนแล้ว ฿${repaid.toFixed(2)} (เหลือ ฿${remaining.toFixed(2)})</span>`;
+          } else {
+            statusBadge = `<span class="bg-red-100 text-red-800 text-xs font-bold px-2 py-0.5 rounded-full">🔴 ยังไม่คืน</span>`;
+          }
+        } else {
+          statusBadge = `<span class="bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-full">📤 ถอนคืนเงิน</span>`;
+        }
+
+        return `
+          <div class="py-3 flex justify-between items-center text-sm border-b">
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                ${statusBadge}
+                <span class="font-bold text-gray-800 text-base">${cm.note || (isBorrow ? 'เติมเงินส่วนตัว' : 'ถอนคืนเงินส่วนตัว')}</span>
+              </div>
+              <div class="text-xs text-gray-500 mt-1">
+                📅 ${new Date(cm.ts).toLocaleString('th-TH')} (ผู้บันทึก: ${cm.cashierName || 'ไม่ระบุพนักงาน'})
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <span class="font-bold font-display text-lg ${isBorrow ? 'text-[#B3432B]' : 'text-emerald-700'}">
+                ${isBorrow ? '+' : ''}฿${cm.amount.toFixed(2)}
+              </span>
+
+              ${isBorrow && !isFullyPaid ? `
+                <button onclick="repaySpecificBorrow('${cm.id}', ${remaining})" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs px-2.5 py-1.5 rounded-xl font-bold font-display shadow-sm transition whitespace-nowrap">
+                  💵 คืนรายการนี้
+                </button>
+              ` : ''}
+
+              <button onclick="deleteCashMovement('${cm.id}')" class="text-gray-400 hover:text-red-600 p-1 transition" title="ลบรายการนี้">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function deleteCashMovement(id) {
+      if (confirm('คุณต้องการลบประวัติรายการบันทึกเงินยืม/คืนนี้ใช่หรือไม่?')) {
+        db.collection("cash_movements").doc(id).delete().then(() => {
+          renderBorrowDetailModal();
         });
       }
     }
@@ -4183,17 +4458,22 @@
       document.getElementById('p-sales-period').innerText = "ช่วงเวลาทำรายการ: " + periodText;
       document.getElementById('p-sales-print-date').innerText = new Date().toLocaleString('th-TH');
 
-      const normalSalesOnly = filteredSales.filter(s => !s.isHomeUse);
+      const normalSalesOnly = filteredSales.filter(s => !s.isHomeUse && !s.isWorkerUse);
       const totalSalesVal = normalSalesOnly.reduce((a, b) => a + b.total, 0);
       const totalCostVal = normalSalesOnly.reduce((a, b) => a + (b.totalCost || 0), 0);
       const totalExp = filteredExpenses.reduce((a, b) => a + b.amount, 0);
       const netProfit = (totalSalesVal - totalCostVal) - totalExp;
 
-      const directCashSales = filteredSales.reduce((a, b) => a + (b.cashPart || (b.method === 'cash' ? b.total : 0)), 0);
+      const directCashSales = normalSalesOnly.reduce((a, b) => a + (b.cashPart || (b.method === 'cash' ? b.total : 0)), 0);
       const debtPaidCash = filteredDebtPayments.reduce((a, b) => a + b.total, 0);
       const totalCashSales = directCashSales + debtPaidCash;
 
-      const totalNetBorrowed = filteredMovements.reduce((sum, cm) => sum + cm.amount, 0);
+      const totalNetBorrowed = filteredMovements.reduce((sum, cm) => {
+        if (cm.amount > 0) {
+          return sum + Math.max(0, cm.amount - (cm.repaidAmt || 0));
+        }
+        return sum + cm.amount;
+      }, 0);
 
       const netCashInDrawer = (currentReportRange === 'today' ? todayFloatObj ? todayFloatVal : 0 : 0) + totalNetBorrowed + totalCashSales - totalExp;
 
@@ -4203,15 +4483,17 @@
       document.getElementById('p-sales-net-profit').innerText = "฿" + netProfit.toFixed(2);
       document.getElementById('p-sales-drawer-cash').innerText = "฿" + netCashInDrawer.toFixed(2);
 
-      const homeUseTotal = filteredSales.filter(s => s.isHomeUse).reduce((a, b) => a + b.totalCost, 0);
+      const homeUseTotal = filteredSales.filter(s => s.isHomeUse).reduce((a, b) => a + (b.totalCost || 0), 0);
+      const workerUseTotal = filteredSales.filter(s => s.isWorkerUse).reduce((a, b) => a + (b.totalCost || 0), 0);
 
       document.getElementById('p-sales-summary-table').innerHTML = `
-        <tr><td class="border border-black p-2">ยอดขายสินค้ารวมสุทธิ</td><td class="border border-black p-2 text-right font-display font-bold text-emerald-800">฿${totalSalesVal.toFixed(2)}</td></tr>
+        <tr><td class="border border-black p-2">ยอดขายสินค้ารวมสุทธิ (ขายจริง)</td><td class="border border-black p-2 text-right font-display font-bold text-emerald-800">฿${totalSalesVal.toFixed(2)}</td></tr>
         <tr><td class="border border-black p-2">ต้นทุนสินค้าที่ขายได้</td><td class="border border-black p-2 text-right font-display font-bold text-gray-800">฿${totalCostVal.toFixed(2)}</td></tr>
         <tr class="bg-gray-50"><td class="border border-black p-2">กำไรขั้นต้นจากการขาย (Sales Profit)</td><td class="border border-black p-2 text-right font-display font-bold text-blue-800">฿${(totalSalesVal - totalCostVal).toFixed(2)}</td></tr>
         <tr><td class="border border-black p-2">รายจ่ายประจำวันออก</td><td class="border border-black p-2 text-right font-display font-bold text-red-800">-฿${totalExp.toFixed(2)}</td></tr>
         <tr class="bg-blue-100 font-bold"><td class="border border-black p-2">กำไรสุทธิจริงช่วงเวลานี้ (Net Profit)</td><td class="border border-black p-2 text-right font-display text-blue-900">฿${netProfit.toFixed(2)}</td></tr>
         <tr><td class="border border-black p-2">มูลค่าสินค้าหยิบกิน/ใช้เองในบ้าน (ต้นทุน)</td><td class="border border-black p-2 text-right font-display font-bold text-amber-800">฿${homeUseTotal.toFixed(2)}</td></tr>
+        <tr><td class="border border-black p-2">มูลค่าสินค้าเลี้ยงคนงาน (ต้นทุน)</td><td class="border border-black p-2 text-right font-display font-bold text-[#B3432B]">฿${workerUseTotal.toFixed(2)}</td></tr>
       `;
 
       const combinedHistory = [
@@ -4229,13 +4511,14 @@
         }
 
         if(item.isHomeUse) note = '🏠 ใช้เองในบ้าน (คิดต้นทุน)';
+        else if(item.isWorkerUse) note = '👷 เลี้ยงคนงาน (คิดต้นทุน)';
         else if(item.type === 'debt_payment') note = `รับชำระหนี้ (${item.debtorName})`;
         else if(item.type === 'cash_movement') note = item.amount > 0 ? 'เติมเงินส่วนตัวใส่เก๊ะ' : 'คืนเงินยืมส่วนตัว';
         else note = item.creditPart > 0 ? `ผสม/ติดหนี้ (${item.debtorName})` : (item.method === 'transfer' ? 'โอนเงิน' : 'เงินสด');
 
         const amtDisplay = item.type === 'cash_movement' 
           ? (item.amount > 0 ? `+฿${item.amount.toFixed(2)}` : `-฿${Math.abs(item.amount).toFixed(2)}`)
-          : `฿${(item.isHomeUse ? item.totalCost : item.total).toFixed(2)}`;
+          : ((item.isHomeUse || item.isWorkerUse) ? `ต้นทุน ฿${item.totalCost.toFixed(2)}` : `฿${item.total.toFixed(2)}`);
 
         return `
           <tr>
@@ -4297,27 +4580,25 @@
         borrowStatusBadge.className = "bg-blue-200 text-blue-900 text-xs font-bold px-3 py-1 rounded-full font-display";
       }
 
-      const normalSales = filteredSales.filter(s => !s.isHomeUse);
+      // 🛑 ยอดขายคิดเฉพาะบิลขายจริงเท่านั้น (ไม่รวมใช้ในบ้าน และ เลี้ยงคนงาน)
+      const normalSales = filteredSales.filter(s => !s.isHomeUse && !s.isWorkerUse);
       const totalSalesVal = normalSales.reduce((a, b) => a + b.total, 0);
       const totalCostVal = normalSales.reduce((a, b) => a + (b.totalCost || 0), 0);
 
       const cashSalesOnly = normalSales.reduce((a, b) => a + (b.cashPart || (b.method === 'cash' ? b.total : 0)), 0);
       const transferSalesOnly = normalSales.reduce((a, b) => a + (b.transferPart || (b.method === 'transfer' ? b.total : 0)), 0);
       
-      const homeUseSales = filteredSales.filter(s => s.isHomeUse);
-      const homeUseTotalCost = homeUseSales.reduce((a, b) => a + b.totalCost, 0);
-
-      const debtPaidCash = filteredDebtPayments.reduce((a, b) => a + b.total, 0);
-      const totalCashInDrawer = cashSalesOnly + debtPaidCash;
+      const homeUseTotalCost = filteredSales.filter(s => s.isHomeUse).reduce((a, b) => a + (b.totalCost || 0), 0);
+      const workerUseTotalCost = filteredSales.filter(s => s.isWorkerUse).reduce((a, b) => a + (b.totalCost || 0), 0);
 
       const totalExp = filteredExpenses.reduce((a, b) => a + b.amount, 0);
       const netProfitVal = (totalSalesVal - totalCostVal) - totalExp;
-      
-      const netCashInDrawer = (currentReportRange === 'today' ? todayFloatObj ? todayFloatVal : 0 : 0) + totalNetBorrowed + totalCashInDrawer - totalExp;
 
+      // 📊 แสดงผล 4 การ์ดหลัก (เอาการ์ดเงินในเก๊ะออก)
+      document.getElementById('reportSummary').className = "grid grid-cols-2 md:grid-cols-4 gap-4";
       document.getElementById('reportSummary').innerHTML = `
         <div class="p-4 bg-[#F5F3EE] rounded-2xl border-2 border-[#DEDACB]">
-          <div class="text-xs font-bold text-[#6B6A61]">🛍️ ยอดขายรวม (ไม่รวมกินเอง)</div>
+          <div class="text-xs font-bold text-[#6B6A61]">🛍️ ยอดขายรวม (ขายจริง)</div>
           <div class="text-2xl font-bold text-[#0F5C52] font-display mt-1">฿${totalSalesVal.toFixed(2)}</div>
           <div class="text-xs text-gray-600 mt-1 font-bold flex justify-between border-t border-dashed pt-1">
             <span>💵 สด: ฿${cashSalesOnly.toFixed(2)}</span>
@@ -4330,14 +4611,14 @@
           <div class="text-xs text-gray-500 mt-1">กำไรขั้นต้น: ฿${(totalSalesVal - totalCostVal).toFixed(2)}</div>
         </div>
         <div class="p-4 bg-[#F5F3EE] rounded-2xl border-2 border-[#DEDACB]">
-          <div class="text-xs font-bold text-[#6B6A61]">🏠 สินค้าใช้กินเองในบ้าน</div>
+          <div class="text-xs font-bold text-[#6B6A61]">🏠 สินค้าใช้ในบ้าน</div>
           <div class="text-2xl font-bold text-amber-800 font-display mt-1">฿${homeUseTotalCost.toFixed(2)}</div>
-          <div class="text-xs text-gray-500 mt-1">(ตัดสต็อกตามต้นทุน)</div>
+          <div class="text-xs text-gray-500 mt-1">(คิดตามต้นทุน)</div>
         </div>
-        <div class="p-4 bg-[#1C2321] text-white rounded-2xl border-2 border-[#DEDACB]">
-          <div class="text-xs font-bold text-gray-300">💰 เงินสดคงเหลือจริงในเก๊ะ</div>
-          <div class="text-2xl font-bold text-amber-400 font-display mt-1">฿${netCashInDrawer.toFixed(2)}</div>
-          <div class="text-xs text-[#FFFFFF]/60 mt-1">รายจ่ายออก: ฿${totalExp.toFixed(2)}</div>
+        <div class="p-4 bg-[#F5F3EE] rounded-2xl border-2 border-[#DEDACB]">
+          <div class="text-xs font-bold text-[#6B6A61]">👷 สินค้าเลี้ยงคนงาน</div>
+          <div class="text-2xl font-bold text-[#B3432B] font-display mt-1">฿${workerUseTotalCost.toFixed(2)}</div>
+          <div class="text-xs text-gray-500 mt-1">(คิดตามต้นทุน)</div>
         </div>
       `;
 
@@ -4356,6 +4637,8 @@
         let badge = '';
         if (item.isHomeUse) {
           badge = `<span class="bg-amber-100 text-amber-900 text-sm font-bold px-3 py-1 rounded-full">🏠 ใช้เองในบ้าน</span>`;
+        } else if (item.isWorkerUse) {
+          badge = `<span class="bg-orange-100 text-orange-900 text-sm font-bold px-3 py-1 rounded-full">👷 เลี้ยงคนงาน</span>`;
         } else if(item.type === 'debt_payment') {
           badge = `<span class="bg-[#0F5C52] text-white text-sm font-bold px-3 py-1 rounded-full">🤝 รับชำระหนี้ (${item.debtorName})</span>`;
         } else if (item.type === 'cash_movement') {
@@ -4370,7 +4653,7 @@
 
         const amtDisplay = item.type === 'cash_movement' 
           ? (item.amount > 0 ? `+฿${item.amount.toFixed(2)}` : `-฿${Math.abs(item.amount).toFixed(2)}`)
-          : (item.isHomeUse ? `ต้นทุน ฿${item.totalCost.toFixed(2)}` : `฿${item.total.toFixed(2)}`);
+          : ((item.isHomeUse || item.isWorkerUse) ? `ต้นทุน ฿${item.totalCost.toFixed(2)}` : `฿${item.total.toFixed(2)}`);
 
         let itemsText = '';
         if (item.items && item.items.length > 0) {
@@ -4420,6 +4703,107 @@
         navigator.serviceWorker.register('./sw.js')
           .then(reg => console.log('Service Worker Registered!', reg))
           .catch(err => console.log('Service Worker Error:', err));
+      });
+    }
+    let shopMap = null;
+    let shopMarker = null;
+
+    function openShopLocationModal() {
+      document.getElementById('shopLocationModal').classList.remove('hidden');
+
+      // โหลดพิกัดร้านที่เคยเซฟไว้จาก Firebase
+      db.collection("settings").doc("shop").get().then(doc => {
+        let lat = 13.8202; // ค่าเริ่มต้นพิกัดประเทศไทย
+        let lng = 100.0433;
+        let address = "";
+
+        if (doc.exists && doc.data().lat && doc.data().lng) {
+          lat = doc.data().lat;
+          lng = doc.data().lng;
+          address = doc.data().address || "";
+        }
+
+        document.getElementById('shopLat').value = lat;
+        document.getElementById('shopLng').value = lng;
+        document.getElementById('shopAddress').value = address;
+
+        // แสดงผลแผนที่ Leaflet
+        setTimeout(() => {
+          if (!shopMap) {
+            shopMap = L.map('shopMap').setView([lat, lng], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '&copy; OpenStreetMap'
+            }).addTo(shopMap);
+
+            shopMarker = L.marker([lat, lng], { draggable: true }).addTo(shopMap);
+
+            // ย้ายหมุดเมื่อลาก
+            shopMarker.on('dragend', function () {
+              const pos = shopMarker.getLatLng();
+              document.getElementById('shopLat').value = pos.lat.toFixed(6);
+              document.getElementById('shopLng').value = pos.lng.toFixed(6);
+            });
+
+            // ย้ายหมุดเมื่อคลิกบนแผนที่
+            shopMap.on('click', function (e) {
+              shopMarker.setLatLng(e.latlng);
+              document.getElementById('shopLat').value = e.latlng.lat.toFixed(6);
+              document.getElementById('shopLng').value = e.latlng.lng.toFixed(6);
+            });
+          } else {
+            shopMap.invalidateSize();
+            shopMap.setView([lat, lng], 15);
+            shopMarker.setLatLng([lat, lng]);
+          }
+        }, 200);
+      });
+    }
+
+    function closeShopLocationModal() {
+      document.getElementById('shopLocationModal').classList.add('hidden');
+    }
+
+    // ดึงพิกัดจาก GPS เครื่อง
+    function getCurrentShopLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          document.getElementById('shopLat').value = lat.toFixed(6);
+          document.getElementById('shopLng').value = lng.toFixed(6);
+
+          if (shopMap && shopMarker) {
+            shopMap.setView([lat, lng], 16);
+            shopMarker.setLatLng([lat, lng]);
+          }
+        }, () => {
+          alert('ไม่สามารถดึงตำแหน่งพิกัดได้ กรุณาเปิดใช้งาน GPS หรืออนุญาตสิทธิ์เข้าถึงตำแหน่งในเบราว์เซอร์');
+        });
+      } else {
+        alert('เบราว์เซอร์นี้ไม่รองรับการดึงพิกัด GPS');
+      }
+    }
+
+    // บันทึกพิกัดลง Firebase Firestore
+    function saveShopLocation() {
+      const lat = Number(document.getElementById('shopLat').value);
+      const lng = Number(document.getElementById('shopLng').value);
+      const address = document.getElementById('shopAddress').value.trim();
+
+      if (!lat || !lng) {
+        return alert('กรุณาปักหมุดเลือกระบุพิกัดร้านค้าก่อนครับ');
+      }
+
+      db.collection("settings").doc("shop").set({
+        lat: lat,
+        lng: lng,
+        address: address,
+        updatedAt: Date.now()
+      }, { merge: true }).then(() => {
+        alert('✅ บันทึกพิกัดตำแหน่งร้านค้าเรียบร้อยแล้ว!');
+        closeShopLocationModal();
+      }).catch(err => {
+        alert('เกิดข้อผิดพลาด: ' + err.message);
       });
     }
   </script>

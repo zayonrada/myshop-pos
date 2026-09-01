@@ -980,13 +980,19 @@
       <div class="text-xs text-gray-500 mt-1">วันที่พิมพ์รายงาน: <span id="p-sales-print-date"></span></div>
     </div>
 
-    <div class="grid grid-cols-2 gap-4 border border-black p-4 rounded-xl">
-      <div><b>ยอดขายรวมสุทธิ:</b> <span id="p-sales-cash-in" class="font-bold font-display"></span></div>
-      <div><b>ต้นทุนสินค้าขาย:</b> <span id="p-sales-total-cost" class="font-bold font-display"></span></div>
-      <div><b>รายจ่ายออกรวม:</b> <span id="p-sales-exp-out" class="font-bold font-display text-[#B3432B]"></span></div>
-      <div><b>กำไรสุทธิจริง:</b> <span id="p-sales-net-profit" class="font-bold font-display text-blue-600"></span></div>
-      <div class="col-span-2 pt-2 border-t"><b>เงินสดคงเหลือจริงในเก๊ะ:</b> <span id="p-sales-drawer-cash" class="font-bold font-display text-emerald-700"></span></div>
+    <div class="grid grid-cols-2 gap-4 border border-black p-4 rounded-xl font-display">
+  <div><b>ยอดขายรวมสุทธิ:</b> <span id="p-sales-cash-in" class="font-bold font-display"></span></div>
+  <div><b>ต้นทุนสินค้าขาย:</b> <span id="p-sales-total-cost" class="font-bold font-display"></span></div>
+  <div><b>รายจ่ายออกรวม:</b> <span id="p-sales-exp-out" class="font-bold font-display text-[#B3432B]"></span></div>
+  <div><b>กำไรสุทธิจริง:</b> <span id="p-sales-net-profit" class="font-bold font-display text-blue-600"></span></div>
+  <div class="col-span-2 pt-2 border-t border-black flex justify-between items-center">
+    <div>
+      <b class="text-[#0F5C52]">เงินสดสุทธิเข้าเก๊ะวันนี้:</b>
+      <span class="text-xs text-gray-500 font-normal block">(ขายสด + รับชำระหนี้ - รายจ่ายสด)</span>
     </div>
+    <span id="p-sales-drawer-cash" class="font-bold font-display text-[#0F5C52] text-xl"></span>
+  </div>
+</div>
 
     <div>
       <h3 class="font-bold text-lg font-display mb-2">สรุปตัวเลขทางบัญชี</h3>
@@ -995,8 +1001,9 @@
       </table>
     </div>
 
-    <div>
-      <h3 class="font-bold text-lg font-display mb-2">ประวัติการทำรายการในช่วงเวลานี้</h3>
+    <!-- 🟢 สั่งให้เว้นขึ้นหน้าใหม่ทันทีเมื่อกดพิมพ์ (Print) -->
+<div style="page-break-before: always;" class="print:break-before-page pt-2">
+  <h3 class="font-bold text-lg font-display mb-2">ประวัติการทำรายการในช่วงเวลานี้</h3>
       <table class="w-full border-collapse border border-black text-xs text-left">
         <thead>
           <tr class="bg-gray-100 border-b border-black font-bold">
@@ -4500,13 +4507,19 @@ function closeDebtDetailModal() {
         return sum + cm.amount;
       }, 0);
 
-      const netCashInDrawer = (currentReportRange === 'today' ? todayFloatObj ? todayFloatVal : 0 : 0) + totalNetBorrowed + totalCashSales - totalExp;
+      // 🟢 คำนวณเงินสดสุทธิเฉพาะของวันนี้ใหม่ทั้งหมด (ขายสด + รับชำระหนี้สด - รายจ่ายสด)
+const totalCashInVal = filteredSales.reduce((sum, s) => {
+  if (s.method === 'cash') return sum + (s.total || 0);
+  return sum + (s.cashPart || 0);
+}, 0);
 
-      document.getElementById('p-sales-cash-in').innerText = "฿" + totalSalesVal.toFixed(2);
-      document.getElementById('p-sales-total-cost').innerText = "฿" + totalCostVal.toFixed(2);
-      document.getElementById('p-sales-exp-out').innerText = "฿" + totalExp.toFixed(2);
-      document.getElementById('p-sales-net-profit').innerText = "฿" + netProfit.toFixed(2);
-      document.getElementById('p-sales-drawer-cash').innerText = "฿" + netCashInDrawer.toFixed(2);
+const netCashInDrawer = totalCashInVal - totalExp;
+
+document.getElementById('p-sales-cash-in').innerText = fmtMoney(totalSalesVal);
+document.getElementById('p-sales-total-cost').innerText = fmtMoney(totalCostVal);
+document.getElementById('p-sales-exp-out').innerText = fmtMoney(totalExp);
+document.getElementById('p-sales-net-profit').innerText = fmtMoney(netProfit);
+document.getElementById('p-sales-drawer-cash').innerText = fmtMoney(netCashInDrawer);
 
       const homeUseTotal = filteredSales.filter(s => s.isHomeUse).reduce((a, b) => a + (b.totalCost || 0), 0);
       const workerUseTotal = filteredSales.filter(s => s.isWorkerUse).reduce((a, b) => a + (b.totalCost || 0), 0);

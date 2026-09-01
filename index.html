@@ -262,16 +262,16 @@
             </div>
           </div>
 
-          <div class="space-y-1 border-t-2 border-[#DEDACB] pt-3">
-            <div class="flex justify-between items-center text-sm font-semibold text-[#6B6A61]">
-              <span>ยอดรวมสินค้า</span>
-              <span id="subTotal">฿0.00</span>
-            </div>
-            <div class="flex justify-between items-center font-bold font-display text-[#B3432B] py-1">
-              <span class="text-2xl text-black">ยอดรวมสุทธิ</span>
-              <span id="cartTotal" class="text-4xl">฿0.00</span>
-            </div>
-          </div>
+          <div class="space-y-1 border-t-2 border-[#DEDACB] pt-3 font-display">
+        <div class="flex justify-between items-center text-sm font-semibold text-[#6B6A61]">
+          <span>ยอดรวมสินค้า</span>
+          <span id="subTotal">฿ 0</span>
+        </div>
+        <div class="flex justify-between items-center font-bold text-[#B3432B] py-1">
+          <span class="text-2xl text-black">ยอดรวมสุทธิ</span>
+          <span id="cartTotal" class="text-4xl font-bold">฿ 0</span>
+        </div>
+      </div>
 
           <div class="grid grid-cols-1 gap-2">
             <button onclick="openCheckoutModal()" class="w-full bg-[#0F5C52] text-white py-3.5 rounded-2xl font-bold hover:opacity-90 transition text-2xl font-display shadow-md">
@@ -1144,10 +1144,14 @@
           <input type="number" id="cashReceived" oninput="calcChange()" placeholder="ใส่จำนวนเงินสด หรือคลิกปุ่มสีธนบัตรด่วน..." class="w-full p-3.5 rounded-2xl border-2 bg-white text-2xl font-display font-bold">
         </div>
 
-        <div class="flex justify-between font-bold text-lg pt-1">
-          <span id="cashStatusLabel">เงินทอน</span>
-          <span id="cashChange" class="text-2xl font-display text-[#0F5C52]">฿0.00</span>
-        </div>
+        <!-- 🟧 เงินทอน: กล่องสีส้มอมทอง ฟอนต์เดิม อ่านง่ายสำหรับผู้สูงอายุ -->
+<div class="bg-amber-100 border-2 border-amber-400 p-3.5 rounded-2xl flex justify-between items-center shadow-sm font-display mt-3">
+  <div>
+    <span id="cashStatusLabel" class="block text-xl font-bold text-amber-950 font-display">เงินทอน</span>
+    <span class="text-xs text-amber-800 font-medium font-display">ทอนลูกค้า</span>
+  </div>
+  <span id="cashChange" class="text-3xl font-bold text-amber-800 tracking-wider font-display">฿ 0</span>
+</div>
 
         <div id="cashDebtorSection" class="hidden pt-2 border-t-2 border-dashed border-[#DEDACB] space-y-2">
           <div class="text-sm font-bold text-[#B3432B] flex items-center gap-1">
@@ -1218,21 +1222,21 @@
       
       <div id="r-items" class="border-t-2 border-b-2 border-dashed border-black py-4 space-y-3 text-left font-semibold text-lg"></div>
       
-      <div class="space-y-1.5 pt-1">
-        <div id="r-subtotal-box" class="hidden flex justify-between text-sm text-gray-600 font-bold">
+      <!-- สรุปยอดเงิน อ่านง่าย สบายตา ไม่แน่นเกินไป -->
+      <div class="space-y-2 pt-2 text-left font-sans">
+        <div id="r-subtotal-box" class="hidden flex justify-between text-base text-gray-600 font-medium">
           <span>รวมสินค้า</span>
-          <span id="r-subtotal">฿0.00</span>
+          <span id="r-subtotal">฿ 0</span>
         </div>
-        <div id="r-discount-box" class="hidden flex justify-between text-sm text-[#B3432B] font-bold">
+        <div id="r-discount-box" class="hidden flex justify-between text-base text-[#B3432B] font-medium">
           <span>ส่วนลดพิเศษ</span>
-          <span id="r-discount">-฿0.00</span>
+          <span id="r-discount">-฿ 0</span>
         </div>
-        <div class="flex justify-between font-bold text-2xl pt-1 border-t border-dashed">
-          <span id="r-total-label">รวมทั้งสิ้น</span>
-          <span id="r-total" class="font-display text-2xl"></span>
+        <div class="flex justify-between items-center font-bold text-2xl pt-2 border-t-2 border-dashed border-gray-300">
+          <span id="r-total-label" class="text-gray-800">รวมทั้งสิ้น</span>
+          <span id="r-total" class="text-3xl font-extrabold text-[#0F5C52] tracking-wide"></span>
         </div>
-        
-        <div id="r-cash-details" class="text-base text-left border-t border-dashed border-gray-300 pt-2 space-y-1"></div>
+        <div id="r-cash-details" class="pt-2 space-y-2"></div>
       </div>
 
       <div id="r-method" class="text-base font-bold text-[#6B6A61]"></div>
@@ -3100,14 +3104,15 @@
     }
 
     function renderCartSummary() {
-      const subtotal = cart.reduce((a, b) => a + b.price * b.qty, 0);
-      const isChecked = document.getElementById('hasDiscountCheck').checked;
-      const discount = isChecked ? (Number(document.getElementById('cartDiscount').value) || 0) : 0;
-      const netTotal = Math.max(0, subtotal - discount);
+  const subtotal = cart.reduce((a, b) => a + b.price * b.qty, 0);
+  const isChecked = document.getElementById('hasDiscountCheck').checked;
+  const discount = isChecked ? (Number(document.getElementById('cartDiscount').value) || 0) : 0;
+  const netTotal = Math.max(0, subtotal - discount);
 
-      document.getElementById('subTotal').innerText = '฿' + subtotal.toFixed(2);
-      document.getElementById('cartTotal').innerText = '฿' + netTotal.toFixed(2);
-    }
+  // อัปเดตตัวเลขให้ไม่มีจุดทศนิยม และเว้นวรรค ฿
+  document.getElementById('subTotal').innerText = fmtMoney(subtotal);
+  document.getElementById('cartTotal').innerText = fmtMoney(netTotal);
+}
 
     function changeQty(idx, delta) {
       cart[idx].qty += delta;
@@ -3230,12 +3235,12 @@
       const discount = isChecked ? (Number(document.getElementById('cartDiscount').value) || 0) : 0;
       const netTotal = Math.max(0, subtotal - discount);
 
-      document.getElementById('modalCartSubtotal').innerText = '฿' + subtotal.toFixed(2);
-      document.getElementById('modalCartDiscount').innerText = '-฿' + discount.toFixed(2);
-      document.getElementById('modalCartTotal').innerText = '฿' + netTotal.toFixed(2);
+      document.getElementById('modalCartSubtotal').innerText = fmtMoney(subtotal);
+document.getElementById('modalCartDiscount').innerText = '-' + fmtMoney(discount);
+document.getElementById('modalCartTotal').innerText = fmtMoney(netTotal);
 
-      document.getElementById('cashReceived').value = '';
-      document.getElementById('cashChange').innerText = '฿0.00';
+document.getElementById('cashReceived').value = '';
+document.getElementById('cashChange').innerText = fmtMoney(0);
       document.getElementById('cashDebtorSection').classList.add('hidden');
       document.getElementById('debtorName').value = '';
       document.getElementById('regularDebtorSelect').value = '';
@@ -3273,30 +3278,30 @@
     }
 
     function calcChange() {
-      const subtotal = cart.reduce((a, b) => a + b.price * b.qty, 0);
-      const isChecked = document.getElementById('hasDiscountCheck').checked;
-      const discount = isChecked ? (Number(document.getElementById('cartDiscount').value) || 0) : 0;
-      const netTotal = Math.max(0, subtotal - discount);
+  const subtotal = cart.reduce((a, b) => a + b.price * b.qty, 0);
+  const isChecked = document.getElementById('hasDiscountCheck').checked;
+  const discount = isChecked ? (Number(document.getElementById('cartDiscount').value) || 0) : 0;
+  const netTotal = Math.max(0, subtotal - discount);
 
-      const recInput = document.getElementById('cashReceived').value;
-      const rec = Number(recInput) || 0;
-      const statusLabel = document.getElementById('cashStatusLabel');
-      const changeEl = document.getElementById('cashChange');
-      const debtorSection = document.getElementById('cashDebtorSection');
+  const recInput = document.getElementById('cashReceived').value;
+  const rec = Number(recInput) || 0;
+  const statusLabel = document.getElementById('cashStatusLabel');
+  const changeEl = document.getElementById('cashChange');
+  const debtorSection = document.getElementById('cashDebtorSection');
 
-      if (!recInput || rec >= netTotal) {
-        statusLabel.innerText = "เงินทอน";
-        changeEl.innerText = '฿' + Math.max(0, rec - netTotal).toFixed(2);
-        changeEl.className = "text-2xl font-display text-[#0F5C52]";
-        debtorSection.classList.add('hidden');
-      } else {
-        const remaining = netTotal - rec;
-        statusLabel.innerText = "คงเหลือติดหนี้";
-        changeEl.innerText = '฿' + remaining.toFixed(2);
-        changeEl.className = "text-2xl font-display text-[#B3432B]";
-        debtorSection.classList.remove('hidden');
-      }
-    }
+  if (!recInput || rec >= netTotal) {
+    statusLabel.innerText = "เงินทอน";
+    changeEl.innerText = fmtMoney(Math.max(0, rec - netTotal));
+    changeEl.className = "text-3xl font-bold text-amber-800 tracking-wider font-display";
+    debtorSection.classList.add('hidden');
+  } else {
+    const remaining = netTotal - rec;
+    statusLabel.innerText = "คงเหลือติดหนี้";
+    changeEl.innerText = fmtMoney(remaining);
+    changeEl.className = "text-3xl font-bold text-[#B3432B] tracking-wider font-display";
+    debtorSection.classList.remove('hidden');
+  }
+}
 
     function calcSplitSum() {
       const subtotal = cart.reduce((a, b) => a + b.price * b.qty, 0);
@@ -3429,104 +3434,124 @@
       });
     }
 
-    function showReceipt(s) {
-      document.getElementById('r-date').innerText = new Date(s.ts).toLocaleString('th-TH');
-      document.getElementById('r-staff').innerText = 'พนักงาน: ' + (s.cashierName || 'ไม่ระบุพนักงาน');
-      
-      const cashDetailBox = document.getElementById('r-cash-details');
-      const subtotalBox = document.getElementById('r-subtotal-box');
-      const discountBox = document.getElementById('r-discount-box');
+    // ฟังก์ชันจัดฟอร์แมตเงินให้อ่านง่ายสำหรับคนแก่ (เว้นวรรค ฿ / ตัด .00 ถ้าไม่มีเศษ)
+function fmtMoney(amount) {
+  const num = Number(amount) || 0;
+  const isInteger = num % 1 === 0;
+  const formatted = num.toLocaleString('th-TH', {
+    minimumFractionDigits: isInteger ? 0 : 2,
+    maximumFractionDigits: 2
+  });
+  return `฿ ${formatted}`;
+}
 
-      if (s.discount > 0) {
-        subtotalBox.classList.remove('hidden');
-        discountBox.classList.remove('hidden');
-        document.getElementById('r-subtotal').innerText = '฿' + (s.subtotal || s.total).toFixed(2);
-        document.getElementById('r-discount').innerText = '-฿' + s.discount.toFixed(2);
-      } else {
-        subtotalBox.classList.add('hidden');
-        discountBox.classList.add('hidden');
+// ฟังก์ชันจัดฟอร์แมตเงินให้อ่านง่าย (เว้นวรรค ฿ / ตัด .00 ถ้าไม่มีเศษ)
+function fmtMoney(amount) {
+  const num = Number(amount) || 0;
+  const isInteger = num % 1 === 0;
+  const formatted = num.toLocaleString('th-TH', {
+    minimumFractionDigits: isInteger ? 0 : 2,
+    maximumFractionDigits: 2
+  });
+  return `฿ ${formatted}`;
+}
+
+// 🟢 แก้ไขปุ่มปิดหน้าต่าง ไม่ให้ค้าง
+function closeReceiptModal() { 
+  const modal = document.getElementById('receiptModal');
+  if (modal) modal.classList.add('hidden');
+  if (typeof focusScanInput === 'function') {
+    try { focusScanInput(); } catch(e) { console.log(e); }
+  }
+}
+
+function showReceipt(s) {
+  document.getElementById('r-date').innerText = new Date(s.ts).toLocaleString('th-TH');
+  document.getElementById('r-staff').innerText = 'พนักงาน: ' + (s.cashierName || 'ไม่ระบุพนักงาน');
+  
+  const cashDetailBox = document.getElementById('r-cash-details');
+  const subtotalBox = document.getElementById('r-subtotal-box');
+  const discountBox = document.getElementById('r-discount-box');
+
+  if (s.discount > 0) {
+    subtotalBox.classList.remove('hidden');
+    discountBox.classList.remove('hidden');
+    document.getElementById('r-subtotal').innerText = fmtMoney(s.subtotal || s.total);
+    document.getElementById('r-discount').innerText = '-' + fmtMoney(s.discount);
+  } else {
+    subtotalBox.classList.add('hidden');
+    discountBox.classList.add('hidden');
+  }
+
+  // 🟧 กล่องเงินทอนสีส้มอมทอง (ตัวใหญ่ อ่านง่าย ใช้ฟอนต์หลักของระบบที่ไม่หนาเตอะ)
+  const changeOrangeBox = (received, change) => `
+    <div class="flex justify-between items-center text-gray-700 text-base font-display pt-2 border-t border-dashed border-gray-300">
+      <span>รับเงินมา:</span>
+      <span class="font-bold text-lg text-gray-800 font-display">${fmtMoney(received)}</span>
+    </div>
+    <div class="bg-amber-100 border-2 border-amber-400 p-3.5 rounded-2xl flex justify-between items-center mt-2 shadow-sm font-display">
+      <span class="text-xl font-bold text-amber-950">เงินทอน:</span>
+      <span class="text-3xl font-bold text-amber-800 tracking-wider">${fmtMoney(change)}</span>
+    </div>
+  `;
+
+  if (s.isDebtPayment) {
+    document.getElementById('r-items').innerHTML = `<div class="py-2 text-center font-bold font-display">รับชำระหนี้สินเชื่อค้างชำระ</div>`;
+    document.getElementById('r-total').innerText = fmtMoney(s.total);
+    document.getElementById('r-doc-type').innerText = 'ใบเสร็จรับเงิน (ชำระหนี้)';
+    document.getElementById('r-doc-type').className = 'text-sm font-bold text-white bg-[#0F5C52] py-1 rounded-xl my-2 font-display';
+    document.getElementById('r-total-label').innerText = 'ยอดรับชำระเงินสด';
+    document.getElementById('r-total').className = 'font-display text-2xl text-[#0F5C52]';
+    document.getElementById('r-method').innerText = `รับชำระหนี้จาก: คุณ ${s.debtorName}`;
+    
+    cashDetailBox.classList.remove('hidden');
+    cashDetailBox.innerHTML = changeOrangeBox(s.cashReceived || s.total, s.change || 0);
+  } else {
+    document.getElementById('r-items').innerHTML = s.items.map(i => `
+      <div class="grid grid-cols-[1fr_auto] gap-3 items-start border-b border-dashed border-gray-200 pb-1.5 font-display">
+        <div class="break-words font-medium text-base text-gray-900 leading-snug">${i.name} <span class="font-bold text-black ml-1">x${i.qty}</span></div>
+        <div class="font-semibold text-lg text-black text-right whitespace-nowrap pl-2">${fmtMoney(i.price * i.qty)}</div>
+      </div>
+    `).join('');
+
+    document.getElementById('r-total').innerText = fmtMoney(s.isHomeUse || s.isWorkerUse ? 0 : s.total);
+
+    const isCreditOnly = (s.creditPart > 0 && s.cashPart === 0 && s.transferPart === 0);
+    document.getElementById('r-doc-type').innerText = isCreditOnly ? 'ใบบันทึกการติดหนี้ / สินเชื่อ' : 'ใบเสร็จรับเงิน';
+    document.getElementById('r-doc-type').className = isCreditOnly ? 'text-sm font-bold text-white bg-[#B3432B] py-1 rounded-xl my-2 font-display' : 'text-sm font-bold text-white bg-black py-1 rounded-xl my-2 font-display';
+    document.getElementById('r-total-label').innerText = isCreditOnly ? 'ยอดค้างชำระ' : 'รวมทั้งสิ้น';
+    document.getElementById('r-total').className = isCreditOnly ? 'font-display text-2xl text-[#B3432B]' : 'font-display text-2xl text-[#0F5C52]';
+    
+    let methodText = "";
+    let detailsHtml = "";
+
+    if (s.creditPart > 0) {
+      methodText = `ลูกหนี้: คุณ ${s.debtorName}`;
+      if (s.cashPart > 0) detailsHtml += `<div class="flex justify-between text-[#0F5C52] font-display"><span>รับเงินสดมา:</span><span class="font-bold">${fmtMoney(s.cashPart)}</span></div>`;
+      if (s.transferPart > 0) detailsHtml += `<div class="flex justify-between text-blue-800 font-display"><span>จ่ายโอนเงิน:</span><span class="font-bold">${fmtMoney(s.transferPart)}</span></div>`;
+      detailsHtml += `<div class="flex justify-between text-[#B3432B] font-display"><span>ยอดคงเหลือติดหนี้:</span><span class="font-bold">${fmtMoney(s.creditPart)}</span></div>`;
+    } else {
+      methodText = "ชำระเรียบร้อยแล้ว";
+      if (s.method === 'cash' || s.cashPart > 0) {
+        detailsHtml += changeOrangeBox(s.cashReceived || s.total, s.change || 0);
       }
-
-      if(s.isDebtPayment) {
-        document.getElementById('r-items').innerHTML = `<div class="py-2 text-center font-bold">รับชำระหนี้สินเชื่อค้างชำระ</div>`;
-        document.getElementById('r-total').innerText = '฿' + s.total.toFixed(2);
-        document.getElementById('r-doc-type').innerText = 'ใบเสร็จรับเงิน (ชำระหนี้)';
-        document.getElementById('r-doc-type').className = 'text-sm font-bold text-white bg-[#0F5C52] py-1 rounded-xl my-2';
-        document.getElementById('r-total-label').innerText = 'ยอดรับชำระเงินสด';
-        document.getElementById('r-total').className = 'font-display text-2xl text-[#0F5C52]';
-        document.getElementById('r-method').innerText = `รับชำระหนี้จาก: คุณ ${s.debtorName}`;
-        
-        cashDetailBox.classList.remove('hidden');
-        cashDetailBox.innerHTML = `
-          <div class="flex justify-between text-gray-600"><span>รับเงินมา:</span><span class="font-bold font-display">฿${(s.cashReceived || s.total).toFixed(2)}</span></div>
-          <div class="flex justify-between text-gray-600"><span>เงินทอน:</span><span class="font-bold font-display text-[#0F5C52]">฿${(s.change || 0).toFixed(2)}</span></div>
-        `;
-      } else {
-        document.getElementById('r-items').innerHTML = s.items.map(i => `
-          <div class="grid grid-cols-[1fr_auto] gap-3 items-start border-b border-dashed border-gray-200 pb-1.5">
-            <div class="break-words font-medium text-base text-gray-900 leading-snug">${i.name} <span class="font-bold text-black ml-1">x${i.qty}</span></div>
-            <div class="font-bold text-lg font-display text-black text-right whitespace-nowrap pl-2">฿${(i.price*i.qty).toFixed(2)}</div>
-          </div>
-        `).join('');
-
-        document.getElementById('r-total').innerText = '฿' + (s.isHomeUse || s.isWorkerUse ? 0 : s.total).toFixed(2);
-
-        const isCreditOnly = (s.creditPart > 0 && s.cashPart === 0 && s.transferPart === 0);
-        document.getElementById('r-doc-type').innerText = isCreditOnly ? 'ใบบันทึกการติดหนี้ / สินเชื่อ' : 'ใบเสร็จรับเงิน';
-        document.getElementById('r-doc-type').className = isCreditOnly ? 'text-sm font-bold text-white bg-[#B3432B] py-1 rounded-xl my-2' : 'text-sm font-bold text-white bg-black py-1 rounded-xl my-2';
-        document.getElementById('r-total-label').innerText = isCreditOnly ? 'ยอดค้างชำระ' : 'รวมทั้งสิ้น';
-        document.getElementById('r-total').className = isCreditOnly ? 'font-display text-2xl text-[#B3432B]' : 'font-display text-2xl text-[#0F5C52]';
-        
-        let methodText = "";
-        let detailsHtml = "";
-
-        if (s.creditPart > 0) {
-          methodText = `ลูกหนี้: คุณ ${s.debtorName}`;
-          if(s.cashPart > 0) detailsHtml += `<div class="flex justify-between text-[#0F5C52]"><span>รับเงินสดมา:</span><span class="font-bold font-display">฿${s.cashPart.toFixed(2)}</span></div>`;
-          if(s.transferPart > 0) detailsHtml += `<div class="flex justify-between text-blue-800"><span>จ่ายโอนเงิน:</span><span class="font-bold font-display">฿${s.transferPart.toFixed(2)}</span></div>`;
-          detailsHtml += `<div class="flex justify-between text-[#B3432B]"><span>ยอดคงเหลือติดหนี้:</span><span class="font-bold font-display">฿${s.creditPart.toFixed(2)}</span></div>`;
-        } else {
-          methodText = "ชำระเรียบร้อยแล้ว";
-          if (s.method === 'cash' || s.cashPart > 0) {
-            detailsHtml += `<div class="flex justify-between text-gray-600"><span>รับเงินมา:</span><span class="font-bold font-display">฿${(s.cashReceived || s.total).toFixed(2)}</span></div>`;
-            detailsHtml += `<div class="flex justify-between text-gray-600"><span>เงินทอน:</span><span class="font-bold font-display text-[#0F5C52]">฿${(s.change || 0).toFixed(2)}</span></div>`;
-          }
-          if (s.transferPart > 0 && s.cashPart > 0) {
-            detailsHtml += `<div class="flex justify-between text-blue-800"><span>ส่วนของโอนเงิน:</span><span class="font-bold font-display">฿${s.transferPart.toFixed(2)}</span></div>`;
-          }
-        }
-
-        if (s.earnedPoints > 0) {
-          detailsHtml += `<div class="flex justify-between text-amber-800 pt-1 font-bold border-t border-dashed"><span>แต้มสะสมได้รับรอบนี้:</span><span class="font-display text-amber-600">+${s.earnedPoints} แต้ม</span></div>`;
-        }
-
-        document.getElementById('r-method').innerText = methodText;
-        cashDetailBox.classList.remove('hidden');
-        cashDetailBox.innerHTML = detailsHtml;
+      if (s.transferPart > 0 && s.cashPart > 0) {
+        detailsHtml += `<div class="flex justify-between text-blue-800 font-display"><span>ส่วนของโอนเงิน:</span><span class="font-bold">${fmtMoney(s.transferPart)}</span></div>`;
       }
-
-      document.getElementById('receiptModal').classList.remove('hidden');
     }
 
-    function closeReceiptModal() { 
-      document.getElementById('receiptModal').classList.add('hidden');
-      focusScanInput();
+    if (s.earnedPoints > 0) {
+      detailsHtml += `<div class="flex justify-between text-amber-800 pt-1 font-bold border-t border-dashed font-display"><span>แต้มสะสมได้รับรอบนี้:</span><span class="text-amber-600">+${s.earnedPoints} แต้ม</span></div>`;
     }
 
-    function toggleChildProductBox() {
-      const isSub = document.getElementById('p-isSubProduct').checked;
-      const subBox = document.getElementById('subProductBox');
-      const normalStockSection = document.getElementById('normalStockSection');
+    document.getElementById('r-method').innerText = methodText;
+    cashDetailBox.classList.remove('hidden');
+    cashDetailBox.innerHTML = detailsHtml;
+  }
 
-      if (isSub) {
-        subBox.classList.remove('hidden');
-        normalStockSection.classList.add('hidden');
-        populateParentProductsDropdown();
-      } else {
-        subBox.classList.add('hidden');
-        normalStockSection.classList.remove('hidden');
-      }
-    }
+  const receiptModal = document.getElementById('receiptModal');
+  if (receiptModal) receiptModal.classList.remove('hidden');
+}
 
     function openAddProductModal() {
       editingProductId = null;

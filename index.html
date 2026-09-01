@@ -3441,17 +3441,6 @@ document.getElementById('cashChange').innerText = fmtMoney(0);
       });
     }
 
-    // ฟังก์ชันจัดฟอร์แมตเงินให้อ่านง่ายสำหรับคนแก่ (เว้นวรรค ฿ / ตัด .00 ถ้าไม่มีเศษ)
-function fmtMoney(amount) {
-  const num = Number(amount) || 0;
-  const isInteger = num % 1 === 0;
-  const formatted = num.toLocaleString('th-TH', {
-    minimumFractionDigits: isInteger ? 0 : 2,
-    maximumFractionDigits: 2
-  });
-  return `฿ ${formatted}`;
-}
-
 // ฟังก์ชันจัดฟอร์แมตเงินให้อ่านง่าย (เว้นวรรค ฿ / ตัด .00 ถ้าไม่มีเศษ)
 function fmtMoney(amount) {
   const num = Number(amount) || 0;
@@ -3558,6 +3547,19 @@ function showReceipt(s) {
 
   const receiptModal = document.getElementById('receiptModal');
   if (receiptModal) receiptModal.classList.remove('hidden');
+}
+
+function toggleChildProductBox() {
+  const isSub = document.getElementById('p-isSubProduct').checked;
+  const subBox = document.getElementById('subProductBox');
+  const normalStockSection = document.getElementById('normalStockSection');
+  if (isSub) {
+    if (subBox) subBox.classList.remove('hidden');
+    if (normalStockSection) normalStockSection.classList.add('hidden');
+  } else {
+    if (subBox) subBox.classList.add('hidden');
+    if (normalStockSection) normalStockSection.classList.remove('hidden');
+  }
 }
 
     function openAddProductModal() {

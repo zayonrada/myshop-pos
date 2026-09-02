@@ -267,7 +267,7 @@
 
           <div class="space-y-1 border-t-2 border-[#DEDACB] pt-3 font-display">
         <div class="flex justify-between items-center text-sm font-semibold text-[#6B6A61]">
-          <span>ยอดรวมสินค้า</span>
+          <span>ยอดรวมสินค้า <span id="cartTotalQtyText" class="text-xs text-[#B3432B] font-bold ml-1">(0 ชิ้น)</span></span>
           <span id="subTotal">฿ 0</span>
         </div>
         <div class="flex justify-between items-center font-bold text-[#B3432B] py-1">
@@ -1240,6 +1240,10 @@
       
       <!-- สรุปยอดเงิน อ่านง่าย สบายตา ไม่แน่นเกินไป -->
       <div class="space-y-2 pt-2 text-left font-sans">
+      <div class="flex justify-between text-base text-gray-600 font-medium">
+  <span>จำนวนรวมทั้งหมด</span>
+  <span id="r-total-qty">0 ชิ้น</span>
+</div>
         <div id="r-subtotal-box" class="hidden flex justify-between text-base text-gray-600 font-medium">
           <span>รวมสินค้า</span>
           <span id="r-subtotal">฿ 0</span>
@@ -3177,6 +3181,10 @@
   // อัปเดตตัวเลขให้ไม่มีจุดทศนิยม และเว้นวรรค ฿
   document.getElementById('subTotal').innerText = fmtMoney(subtotal);
   document.getElementById('cartTotal').innerText = fmtMoney(netTotal);
+  // คำนวณและแสดงจำนวนชิ้นรวม
+  const totalQty = cart.reduce((sum, item) => sum + Number(item.qty || 1), 0);
+  const qtyEl = document.getElementById('cartTotalQtyText');
+  if (qtyEl) qtyEl.innerText = `(${totalQty} ชิ้น)`;
 }
 
     function changeQty(idx, delta) {
@@ -3532,6 +3540,9 @@ function showReceipt(s) {
   const cashDetailBox = document.getElementById('r-cash-details');
   const subtotalBox = document.getElementById('r-subtotal-box');
   const discountBox = document.getElementById('r-discount-box');
+  const totalQty = (s.items || []).reduce((sum, item) => sum + Number(item.qty || 1), 0);
+const rQtyEl = document.getElementById('r-total-qty');
+if (rQtyEl) rQtyEl.innerText = `${totalQty} ชิ้น`;
 
   if (s.discount > 0) {
     subtotalBox.classList.remove('hidden');

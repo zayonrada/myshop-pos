@@ -1315,6 +1315,14 @@
         <input type="number" id="p-price" placeholder="0.00" class="w-full p-2.5 border-2 border-[#0284C7] rounded-xl bg-white text-xl font-bold font-display text-[#0284C7]">
       </div>
 
+      <!-- 🚫 ปุ่มเปิด-ปิดในเดลิเวอรี -->
+          <div class="bg-red-50 p-4 rounded-2xl border-2 border-red-200 mt-3">
+            <label class="flex items-center gap-2 cursor-pointer font-bold text-sm text-red-900 font-display">
+              <input type="checkbox" id="p-hideInDelivery" class="w-5 h-5 accent-red-600 rounded cursor-pointer">
+              <span>🚫 ซ่อนสินค้านี้ในระบบสั่งออนไลน์ (เดลิเวอรี)</span>
+            </label>
+          </div>
+
       <div class="bg-amber-50 p-4 rounded-2xl border-2 border-amber-300 space-y-3">
         <label class="flex items-center gap-2 cursor-pointer font-bold text-sm text-amber-900 font-display">
           <input type="checkbox" id="p-isSubProduct" onchange="toggleChildProductBox()" class="w-5 h-5 accent-amber-600 rounded cursor-pointer">
@@ -3656,6 +3664,7 @@ function toggleChildProductBox() {
       });
       document.getElementById('p-category').value = 'ทั่วไป';
       document.getElementById('p-isSubProduct').checked = false;
+      document.getElementById('p-hideInDelivery').checked = false;
       toggleChildProductBox();
 
       document.getElementById('imgPreviewBlock').classList.add('hidden');
@@ -3694,6 +3703,7 @@ function toggleChildProductBox() {
       const isSub = !!p.isSubProduct;
       document.getElementById('p-isSubProduct').checked = isSub;
       toggleChildProductBox();
+      document.getElementById('p-hideInDelivery').checked = !!p.hideInDelivery;
 
       if (isSub) {
         document.getElementById('p-parentId').value = p.parentId || '';
@@ -3807,6 +3817,7 @@ function refundStockToProduct(productId, qtyToRefund) {
       const isSubProduct = document.getElementById('p-isSubProduct').checked;
       const parentId = document.getElementById('p-parentId').value;
       const ratio = Number(document.getElementById('p-ratio').value) || 1;
+      const hideInDelivery = document.getElementById('p-hideInDelivery').checked;
 
       const addQty = Number(document.getElementById('p-addQty').value) || 0;
       const addCost = Number(document.getElementById('p-addCost').value) || 0;
@@ -3859,6 +3870,7 @@ function refundStockToProduct(productId, qtyToRefund) {
           ratio: isSubProduct ? ratio : 1,
           batches: isSubProduct ? [] : batches,
           cost: addCost,
+          hideInDelivery: hideInDelivery,
           stock: isSubProduct ? 0 : batches.reduce((sum, b) => sum + b.qty, 0)
         };
 
@@ -3881,6 +3893,7 @@ function refundStockToProduct(productId, qtyToRefund) {
           ratio: isSubProduct ? ratio : 1,
           batches: batches,
           cost: addCost,
+          hideInDelivery: hideInDelivery,
           stock: isSubProduct ? 0 : addQty
         };
 

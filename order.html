@@ -18,7 +18,7 @@
 
   <!-- QR Code Generator JS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-โ
+
   <!-- LINE LIFF SDK -->
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <!-- Firebase SDKs -->
@@ -294,7 +294,7 @@
                     <i data-lucide="copy" class="w-3.5 h-3.5"></i> ก๊อปปี้เลขบัญชี
                   </button>
                 </div>
-                <div class="text-gray-700 text-xs font-bold pt-1">ชื่อบัญชี: ยลรดา ฉิมพาลี</div>
+                <div class="text-gray-700 text-xs font-bold pt-1">ชื่อบัญชี: ยลรดา Chimphali / ฉิมพาลี</div>
               </div>
             </div>
 
@@ -851,6 +851,7 @@
       if (cat.includes('เครื่องสำอาง')) return 'sparkles';
       if (cat.includes('เชื้อเพลิง') || cat.includes('พลังงาน')) return 'flame';
       if (cat.includes('เนื้อสัตว์') || cat.includes('ของสด')) return 'beef';
+      if (cat.includes('กล่องพัสดุ')) return 'box'; // เพิ่มไอคอน box สำหรับกล่องพัสดุ
       if (cat.includes('ทั่วไป')) return 'box';
       return 'grid';
     }

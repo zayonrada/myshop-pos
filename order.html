@@ -853,7 +853,8 @@
     'เชื้อเพลิง/พลังงาน'
   ];
 
-  const existingCats = new Set(products.map(p => p.category || 'ทั่วไป'));
+  const visibleProds = products.filter(p => !p.hideInDelivery);
+const existingCats = new Set(visibleProds.map(p => p.category || 'ทั่วไป'));
   let cats = masterOrder.filter(c => c === 'ทั้งหมด' || existingCats.has(c));
   const extraCats = Array.from(existingCats).filter(c => !masterOrder.includes(c)).sort((a, b) => a.localeCompare(b, 'th'));
   cats = [...cats, ...extraCats];
@@ -905,7 +906,7 @@
       const searchRaw = document.getElementById('custSearchInput')?.value || '';
       const searchVal = normalizeThaiText(searchRaw);
 
-      let displayList = [...products];
+      let displayList = products.filter(p => !p.hideInDelivery);
       if (selectedCategory !== 'ทั้งหมด') {
         displayList = displayList.filter(p => p.category === selectedCategory);
       }

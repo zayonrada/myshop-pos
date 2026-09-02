@@ -82,6 +82,9 @@
         border: none !important;
         background: white !important;
         color: black !important;
+        /* 🟢 เพิ่ม 2 บรรทัดนี้ป้องกันสลิปพิมพ์ขาด */
+        max-height: none !important;
+        overflow: visible !important;
       }
 
       .a4-print-page {
@@ -1219,7 +1222,13 @@
 
   <!-- Modal ใบเสร็จ / สลิปพิมพ์หน้าร้าน -->
   <div id="receiptModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-    <div class="bg-white p-7 rounded-3xl max-w-[440px] w-full space-y-4 print-area receipt-print-box text-center text-lg shadow-2xl">
+    <div class="bg-white p-7 rounded-3xl max-w-[440px] w-full space-y-4 print-area receipt-print-box text-center text-lg shadow-2xl max-h-[90vh] overflow-y-auto relative">
+      
+      <!-- ❌ ปุ่มกากบาทมุมขวาบน (กดปิดได้ตลอดเวลา และไม่แสดงผลบนสลิปที่ปริ้น) -->
+      <button onclick="closeReceiptModal()" class="absolute top-4 right-4 text-gray-400 hover:text-black p-1.5 rounded-full no-print transition">
+        <i data-lucide="x" class="w-6 h-6"></i>
+      </button>
+
       <div class="space-y-1">
         <div class="font-bold text-3xl font-display">ร้านค้าขวัญใจ</div>
         <div id="r-doc-type" class="text-sm font-bold text-white bg-black py-1 rounded-xl my-2">ใบเสร็จรับเงิน</div>
@@ -1252,7 +1261,7 @@
         ❤️ ขอบคุณที่ใช้บริการ / โอกาสหน้าเชิญใหม่ครับ
       </div>
 
-      <button onclick="window.print()" class="w-full bg-[#0F5C52] text-white py-3.5 rounded-2xl font-bold no-print flex items-center justify-center gap-2 mt-5 text-xl font-display shadow-md">
+      <button onclick="window.print()" class="w-full bg-[#0F5C52] text-[#FFFFFF] py-3.5 rounded-2xl font-bold no-print flex items-center justify-center gap-2 mt-5 text-xl font-display shadow-md">
         <i data-lucide="printer" class="w-6 h-6"></i> พิมพ์สลิป
       </button>
       <button onclick="closeReceiptModal()" class="w-full border-2 py-2.5 rounded-2xl text-base no-print font-bold text-[#6B6A61]">ปิดหน้าต่าง</button>
@@ -1290,6 +1299,7 @@
         <label class="text-sm font-bold block mb-1">หมวดหมู่สินค้า</label>
         <select id="p-category" class="w-full p-2.5 border-2 rounded-xl bg-white font-bold text-lg text-[#0F5C52]">
           <option value="ทั่วไป">ทั่วไป / อื่นๆ</option>
+          <option value="กล่องพัสดุ">📦 กล่องพัสดุ / อุปกรณ์แพ็ค</option>
           <option value="เชื้อเพลิง/พลังงาน">เชื้อเพลิง / พลังงาน (น้ำมัน)</option>
           <option value="อาหาร/เครื่องดื่ม">อาหาร / เครื่องดื่ม</option>
           <option value="เครื่องสำอาง">เครื่องสำอาง / เสริมความงาม</option>
@@ -1590,45 +1600,35 @@
     }
 
     function confirmDeleteSaleWithPin() {
-      const pin = document.getElementById('deletePinInput').value;
-      const errorEl = document.getElementById('deletePinError');
+  const pin = document.getElementById('deletePinInput').value;
+  const errorEl = document.getElementById('deletePinError');
 
-      if (pin !== CORRECT_PIN) {
-        errorEl.classList.remove('hidden');
-        document.getElementById('deletePinInput').value = '';
-        return;
+  if (pin !== CORRECT_PIN) {
+    errorEl.classList.remove('hidden');
+    document.getElementById('deletePinInput').value = '';
+    return;
+  }
+
+  if (!pendingDeleteSaleObj) return;
+
+  const saleToDelete = pendingDeleteSaleObj;
+
+  // คืนสต็อกสินค้าทุกรายการในบิลกลับเข้าคลังอย่างถูกต้อง
+  if (saleToDelete.items && saleToDelete.items.length > 0) {
+    saleToDelete.items.forEach(item => {
+      if (!item.isCustom && item.productId) {
+        refundStockToProduct(item.productId, item.qty);
       }
+    });
+  }
 
-      if (!pendingDeleteSaleObj) return;
-
-      const saleToDelete = pendingDeleteSaleObj;
-      const batch = db.batch();
-
-      if (saleToDelete.items && saleToDelete.items.length > 0) {
-        saleToDelete.items.forEach(item => {
-          if (!item.isCustom && item.productId) {
-            const p = products.find(prod => prod.id === item.productId);
-            const targetId = (p && p.isSubProduct && p.parentId) ? p.parentId : item.productId;
-            const refundQty = (p && p.isSubProduct && p.ratio) ? (item.qty / p.ratio) : item.qty;
-
-            const pRef = db.collection("products").doc(targetId);
-            batch.update(pRef, {
-              stock: firebase.firestore.FieldValue.increment(refundQty)
-            });
-          }
-        });
-      }
-
-      const saleRef = db.collection("sales").doc(saleToDelete.id);
-      batch.delete(saleRef);
-
-      batch.commit().then(() => {
-        closeDeleteSaleModal();
-        alert('ลบบิลเรียบร้อยแล้ว คืนสินค้าเข้าสต็อกให้อัตโนมัติแล้วครับ');
-      }).catch(err => {
-        alert('เกิดข้อผิดพลาดในการลบ: ' + err.message);
-      });
-    }
+  db.collection("sales").doc(saleToDelete.id).delete().then(() => {
+    closeDeleteSaleModal();
+    alert('ลบบิลเรียบร้อยแล้ว คืนสินค้าเข้าสต็อกและลงลอตให้อัตโนมัติแล้วครับ');
+  }).catch(err => {
+    alert('เกิดข้อผิดพลาดในการลบ: ' + err.message);
+  });
+}
 
     let barcodeBuffer = '';
     let lastKeyTime = Date.now();
@@ -2353,37 +2353,26 @@
     }
 
     function cancelOnlineOrder(orderId) {
-      const o = onlineOrders.find(item => item.id === orderId);
-      if (!o) return;
+  const o = onlineOrders.find(item => item.id === orderId);
+  if (!o) return;
 
-      if (confirm(`คุณต้องการยกเลิกออเดอร์ของ ${o.customerName} ใช่หรือไม่?\n\nหากเคยหักสต็อกไปแล้ว ระบบจะบวกสต็อกคืนเข้าคลังให้อัตโนมัติ`)) {
-        const batch = db.batch();
-
-        if (o.status === 'completed' && o.items && o.items.length > 0) {
-          o.items.forEach(item => {
-            if (!item.isCustom && item.productId) {
-              const p = products.find(prod => prod.id === item.productId);
-              const targetId = (p && p.isSubProduct && p.parentId) ? p.parentId : item.productId;
-              const refundQty = (p && p.isSubProduct && p.ratio) ? (item.qty / p.ratio) : item.qty;
-
-              const pRef = db.collection("products").doc(targetId);
-              batch.update(pRef, {
-                stock: firebase.firestore.FieldValue.increment(refundQty)
-              });
-            }
-          });
+  if (confirm(`คุณต้องการยกเลิกออเดอร์ของ ${o.customerName} ใช่หรือไม่?\n\nหากเคยหักสต็อกไปแล้ว ระบบจะบวกสต็อกคืนเข้าคลังให้อัตโนมัติ`)) {
+    // ถ้าออเดอร์นั้นถูกตัดสต็อกไปแล้ว (status === 'completed') ให้คืนสต็อกกลับเข้าคลัง
+    if (o.status === 'completed' && o.items && o.items.length > 0) {
+      o.items.forEach(item => {
+        if (!item.isCustom && item.productId) {
+          refundStockToProduct(item.productId, item.qty);
         }
-
-        const orderRef = db.collection("orders").doc(orderId);
-        batch.update(orderRef, { status: 'cancelled' });
-
-        batch.commit().then(() => {
-          alert('ยกเลิกออเดอร์เรียบร้อย คืนสินค้าเข้าสต็อกให้เรียบร้อยแล้วครับ');
-        }).catch(err => {
-          alert('เกิดข้อผิดพลาด: ' + err.message);
-        });
-      }
+      });
     }
+
+    db.collection("orders").doc(orderId).update({ status: 'cancelled' }).then(() => {
+      alert('ยกเลิกออเดอร์เรียบร้อย คืนสินค้าเข้าสต็อกให้เรียบร้อยแล้วครับ');
+    }).catch(err => {
+      alert('เกิดข้อผิดพลาด: ' + err.message);
+    });
+  }
+}
 
     function renderOnlineOrdersList() {
       const list = document.getElementById('onlineOrdersList');
@@ -2678,27 +2667,53 @@
     }
 
     function updateCategoryDropdowns() {
-      const cats = ['ทั้งหมด', ...new Set(products.map(p => p.category || 'ทั่วไป'))];
-      
-      const posFilter = document.getElementById('posCategoryFilter');
-      posFilter.innerHTML = cats.map(c => `
-        <button onclick="setPosCategory('${c}')" class="px-4 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition ${selectedPosCategory === c ? 'bg-[#0F5C52] text-white' : 'bg-[#F5F3EE] text-[#6B6A61] hover:bg-[#DEDACB]'}">
+  // 📌 กำหนดลำดับหมวดหมู่ให้คงที่ถาวร (ปุ่มจะไม่ขยับสลับตำแหน่งอีกต่อไป)
+  const masterOrder = [
+    'ทั้งหมด',
+    'กล่องพัสดุ',
+    'ทั่วไป',
+    'อาหาร/เครื่องดื่ม',
+    'ยา/เวชภัณฑ์',
+    'เครื่องสำอาง',
+    'ของใช้',
+    'เนื้อสัตว์/ของสด',
+    'เชื้อเพลิง/พลังงาน',
+    'สัตว์เลี้ยง'
+  ];
+
+  const existingCats = new Set(products.map(p => p.category || 'ทั่วไป'));
+  
+  // ดึงเฉพาะหมวดที่มีสินค้าจริง โดยเรียงตาม masterOrder
+  let cats = masterOrder.filter(c => c === 'ทั้งหมด' || existingCats.has(c));
+
+  // หากมีหมวดหมู่อื่นๆ นอกเหนือจากนี้ ให้นำมาต่อท้ายแบบเรียงตามอักษร ก-ฮ
+  const extraCats = Array.from(existingCats).filter(c => !masterOrder.includes(c)).sort((a, b) => a.localeCompare(b, 'th'));
+  cats = [...cats, ...extraCats];
+
+  const posFilter = document.getElementById('posCategoryFilter');
+  if (posFilter) {
+    posFilter.innerHTML = cats.map(c => {
+      const isActive = (c === selectedPosCategory);
+      return `
+        <button onclick="setPosCategory('${c}')" class="px-4 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition ${isActive ? 'bg-[#0F5C52] text-white shadow-md' : 'bg-[#F5F3EE] text-[#6B6A61] hover:bg-[#DEDACB]'}">
           ${c}
         </button>
-      `).join('');
+      `;
+    }).join('');
+  }
 
-      const stockSelect = document.getElementById('stockCategorySelect');
-      const lowStockSelect = document.getElementById('lowStockCatSelect');
+  const stockSelect = document.getElementById('stockCategorySelect');
+  const lowStockSelect = document.getElementById('lowStockCatSelect');
 
-      const curStockVal = stockSelect ? stockSelect.value : 'ทั้งหมด';
-      const curLowStockVal = lowStockSelect ? lowStockSelect.value : 'ทั้งหมด';
+  const curStockVal = stockSelect ? stockSelect.value : 'ทั้งหมด';
+  const curLowStockVal = lowStockSelect ? lowStockSelect.value : 'ทั้งหมด';
 
-      const optionsHtml = `<option value="ทั้งหมด">หมวดหมู่ทั้งหมด</option>` + 
-        cats.filter(c => c !== 'ทั้งหมด').map(c => `<option value="${c}">${c}</option>`).join('');
+  const optionsHtml = `<option value="ทั้งหมด">หมวดหมู่ทั้งหมด</option>` +
+    cats.filter(c => c !== 'ทั้งหมด').map(c => `<option value="${c}">${c}</option>`).join('');
 
-      if (stockSelect) { stockSelect.innerHTML = optionsHtml; stockSelect.value = curStockVal || 'ทั้งหมด'; }
-      if (lowStockSelect) { lowStockSelect.innerHTML = optionsHtml; lowStockSelect.value = curLowStockVal || 'ทั้งหมด'; }
-    }
+  if (stockSelect) { stockSelect.innerHTML = optionsHtml; stockSelect.value = curStockVal || 'ทั้งหมด'; }
+  if (lowStockSelect) { lowStockSelect.innerHTML = optionsHtml; lowStockSelect.value = curLowStockVal || 'ทั้งหมด'; }
+}
 
     function setPosCategory(cat) {
       selectedPosCategory = cat;
@@ -2772,6 +2787,21 @@
         return;
       }
 
+// 🧠 จัดเรียงฉลาด: เอาของหมดไปไว้ท้ายสุด + เรียงชื่อตามภาษาไทย/ขนาดตัวอักษร
+      displayProducts.sort((a, b) => {
+        const aStock = (a.isSubProduct && a.parentId) ? (products.find(p => p.id === a.parentId)?.stock || 0) : a.stock;
+        const bStock = (b.isSubProduct && b.parentId) ? (products.find(p => p.id === b.parentId)?.stock || 0) : b.stock;
+
+        const aOut = aStock <= 0;
+        const bOut = bStock <= 0;
+
+        // 1. ถ้าอันไหนหมด ให้ดันไปอยู่ข้างหลัง
+        if (aOut !== bOut) return aOut ? 1 : -1;
+
+        // 2. ถ้าสถานะสต็อกเหมือนกัน ให้เรียงตามชื่อสินค้า (ก-ฮ / A-Z)
+        return a.name.localeCompare(b.name, 'th');
+      });
+
       const totalPages = Math.ceil(displayProducts.length / itemsPerPage);
       if (currentPage > totalPages) currentPage = totalPages;
       if (currentPage < 1) currentPage = 1;
@@ -2781,25 +2811,39 @@
 
       grid.innerHTML = paginatedItems.map(p => {
         let stockLabel = '';
-    if (p.isSubProduct && p.parentId) {
-      const parent = products.find(prod => prod.id === p.parentId);
-      const parentStock = parent ? parent.stock : 0;
-      stockLabel = parentStock <= 0 ? 'หมด' : `คลังหลักเหลือ ${fmtStk(parentStock)}`;
-    } else {
-      stockLabel = p.stock <= 0 ? 'หมด' : `เหลือ ${fmtStk(p.stock)}`;
-    }
+        let isOutOfStock = false;
+
+        if (p.isSubProduct && p.parentId) {
+          const parent = products.find(prod => prod.id === p.parentId);
+          const parentStock = parent ? parent.stock : 0;
+          isOutOfStock = parentStock <= 0;
+          stockLabel = isOutOfStock ? 'หมด' : `คลังหลักเหลือ ${fmtStk(parentStock)}`;
+        } else {
+          isOutOfStock = p.stock <= 0;
+          stockLabel = isOutOfStock ? 'หมด' : `เหลือ ${fmtStk(p.stock)}`;
+        }
 
         return `
           <button onclick="addToCart('${p.id}')" class="text-left bg-[#F5F3EE] p-3.5 rounded-2xl border-2 border-[#DEDACB] hover:border-[#0F5C52] transition flex flex-col items-center justify-between relative shadow-sm">
-            <span class="absolute top-2.5 left-2.5 bg-[#1C2321]/80 text-white text-xs px-2.5 py-0.5 rounded-full font-bold">${p.category || 'ทั่วไป'}</span>
-            ${p.isSubProduct ? `<span class="absolute top-2.5 right-2.5 bg-amber-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">แบ่งขาย</span>` : ''}
-            <div class="w-full aspect-square bg-white rounded-xl mb-2.5 overflow-hidden flex items-center justify-center border border-[#DEDACB]">
-              ${p.imageUrl ? `<img src="${p.imageUrl}" class="w-full h-full object-cover">` : `<i data-lucide="package" class="w-12 h-12 text-gray-400"></i>`}
+            <span class="absolute top-2.5 left-2.5 bg-[#1C2321]/80 text-white text-xs px-2.5 py-0.5 rounded-full font-bold z-10">${p.category || 'ทั่วไป'}</span>
+            ${p.isSubProduct ? `<span class="absolute top-2.5 right-2.5 bg-amber-600 text-white text-xs px-2 py-0.5 rounded-full font-bold z-10">แบ่งขาย</span>` : ''}
+            
+            <div class="w-full aspect-square bg-white rounded-xl mb-2.5 overflow-hidden flex items-center justify-center border border-[#DEDACB] relative">
+              ${p.imageUrl 
+                ? `<img src="${p.imageUrl}" class="w-full h-full object-cover ${isOutOfStock ? 'grayscale opacity-60' : ''}">` 
+                : `<i data-lucide="package" class="w-12 h-12 text-gray-400 ${isOutOfStock ? 'grayscale opacity-60' : ''}"></i>`}
+              
+              ${isOutOfStock ? `
+                <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
+                  <span class="bg-[#B3432B] text-white text-base font-bold px-3.5 py-1 rounded-xl shadow-md font-display tracking-wide">หมด</span>
+                </div>
+              ` : ''}
             </div>
+
             <div class="text-base font-normal text-black truncate w-full mb-1 text-center font-body">${p.name}</div>
             <div class="flex justify-between items-center w-full px-1">
               <span class="text-2xl font-bold text-[#0284C7] font-display">฿${p.price.toFixed(2)}</span>
-              <span class="text-xs font-normal ${stockLabel === 'หมด' ? 'text-[#B3432B]' : 'text-[#6B6A61]'}">${stockLabel}</span>
+              <span class="text-xs font-normal ${isOutOfStock ? 'text-[#B3432B] font-bold' : 'text-[#6B6A61]'}">${stockLabel}</span>
             </div>
           </button>
         `;
@@ -3684,6 +3728,49 @@ function toggleChildProductBox() {
       document.getElementById('productModal').classList.add('hidden'); 
       focusScanInput();
     }
+
+// 🔄 ฟังก์ชันกลางสำหรับคืนสินค้ากลับเข้าสต็อกและคืนลงลอตย่อยให้อัตโนมัติ
+function refundStockToProduct(productId, qtyToRefund) {
+  const p = products.find(prod => prod.id === productId);
+  if (!p) return;
+
+  let targetId = productId;
+  let actualQty = qtyToRefund;
+
+  // ถ้าเป็นสินค้าแบ่งขาย ให้ไปคืนที่ตัวสินค้าหลัก
+  if (p.isSubProduct && p.parentId) {
+    const parent = products.find(prod => prod.id === p.parentId);
+    if (parent) {
+      targetId = parent.id;
+      actualQty = qtyToRefund / (p.ratio || 1);
+    }
+  }
+
+  const targetProd = products.find(prod => prod.id === targetId);
+  if (!targetProd) return;
+
+  let batches = targetProd.batches ? JSON.parse(JSON.stringify(targetProd.batches)) : [];
+
+  if (batches.length > 0) {
+    // คืนจำนวนสินค้ากลับเข้าไปในลอตล่าสุด
+    batches[batches.length - 1].qty += actualQty;
+  } else {
+    // ถ้าไม่มีลอตเหลืออยู่เลย ให้สร้างลอตใหม่เพื่อรับสินค้าคืน
+    batches.push({
+      qty: actualQty,
+      cost: targetProd.cost || 0,
+      ts: Date.now()
+    });
+  }
+
+  const newTotalStock = batches.reduce((sum, b) => sum + b.qty, 0);
+
+  // อัปเดตทั้ง batches และ stock ลง Firebase Firestore พร้อมกัน
+  db.collection("products").doc(targetId).update({
+    batches: batches,
+    stock: newTotalStock
+  });
+}
 
     function saveProduct() {
       const barcode = document.getElementById('p-barcode').value.trim();
@@ -4858,6 +4945,42 @@ document.getElementById('p-sales-drawer-cash').innerText = fmtMoney(netCashInDra
         alert('เกิดข้อผิดพลาด: ' + err.message);
       });
     }
+    
+    // 🔔 เปลี่ยน alert ปกติของเบราว์เซอร์ให้แสดงผลกลางจอสวยงาม
+window.alert = function(message) {
+  const modal = document.getElementById('customAlertModal');
+  const textEl = document.getElementById('customAlertText');
+  if (modal && textEl) {
+    textEl.innerText = message;
+    modal.classList.remove('hidden');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  } else {
+    console.log(message);
+  }
+};
+
+// ❌ ปิดป๊อปอัปแจ้งเตือน
+function closeCustomAlert() {
+  const modal = document.getElementById('customAlertModal');
+  if (modal) modal.classList.add('hidden');
+}
   </script>
+
+  <!-- Modal แจ้งเตือนกลางจอ (Custom Alert) -->
+  <div id="customAlertModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9999] transition-opacity">
+    <div class="bg-white p-6 rounded-3xl max-w-sm w-full text-center space-y-4 shadow-2xl border-2 border-[#DEDACB]">
+      <div class="w-14 h-14 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+        <i data-lucide="alert-triangle" class="w-8 h-8"></i>
+      </div>
+      
+      <div id="customAlertText" class="text-xl font-bold text-gray-800 font-body px-2">
+        <!-- ข้อความแจ้งเตือนจะแสดงตรงนี้ -->
+      </div>
+
+      <button onclick="closeCustomAlert()" class="w-full bg-[#0F5C52] hover:bg-[#0c4941] text-white py-3 rounded-2xl font-bold font-display text-lg shadow-md transition active:scale-95">
+        ตกลง
+      </button>
+    </div>
+  </div>
 </body>
 </html>

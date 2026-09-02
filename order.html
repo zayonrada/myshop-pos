@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- 🔄 บังคับโหลดเวอร์ชันล่าสุดเสมอ ห้ามเบราว์เซอร์จำ Cache เก่า -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>ร้านค้าขวัญใจ — Delivery & Rewards</title>
 
   <!-- 🖼️ Favicon แสดงโลโก้ร้านบนแท็บเบราว์เซอร์ -->
@@ -114,7 +118,7 @@
 
       <div class="p-3 md:p-6">
         <div class="text-xs md:text-sm font-bold text-gray-500 mb-2 font-display">หมวดหมู่สินค้า</div>
-        <div class="flex items-center gap-3 md:gap-5 overflow-x-auto no-scrollbar pb-1" id="custCatFilter"></div>
+        <div class="flex items-start gap-2 md:gap-3 overflow-x-auto no-scrollbar pb-2 pt-1" id="custCatFilter"></div>
       </div>
 
       <main class="p-3 md:p-6 pt-1 flex-1">
@@ -498,20 +502,26 @@
       return String(str).normalize('NFC').toLowerCase().trim();
     }
 
-    db.collection("products").onSnapshot(s => {
-      let freshProducts = [];
-      s.forEach(doc => {
-        const d = doc.data();
-        let batches = d.batches || [];
-        const totalStock = batches.reduce((sum, b) => sum + b.qty, 0);
-        freshProducts.push({ id: doc.id, ...d, stock: d.stock !== undefined ? d.stock : totalStock });
-      });
-      products = freshProducts;
-      renderCategoryFilters();
-      renderCustomerProducts();
-    }, err => {
-      console.error("Firebase fetch error:", err);
-    });
+   db.collection("products").onSnapshot(s => {
+  let freshProducts = [];
+  s.forEach(doc => {
+    const d = doc.data();
+    let batches = d.batches || [];
+    const totalStock = batches.reduce((sum, b) => sum + b.qty, 0);
+    freshProducts.push({ id: doc.id, ...d, stock: d.stock !== undefined ? d.stock : totalStock });
+  });
+
+  // 🔥 จัดเรียงชื่อสินค้าตามตัวอักษร ก-ฮ
+  freshProducts.sort((a, b) => {
+    return a.name.localeCompare(b.name, 'th');
+  });
+
+  products = freshProducts;
+  renderCategoryFilters();
+  renderCustomerProducts();
+}, err => {
+  console.error("Firebase fetch error:", err);
+});
 
     db.collection("rewards").onSnapshot(s => {
       rewards = [];
@@ -830,19 +840,45 @@
     }
 
     function renderCategoryFilters() {
-      const cats = ['ทั้งหมด', ...new Set(products.map(p => p.category || 'ทั่วไป'))];
-      const container = document.getElementById('custCatFilter');
-      
-      container.innerHTML = cats.map(c => `
-        <button onclick="selectCustCategory('${c}')" class="flex flex-col items-center gap-1 flex-shrink-0 group">
-          <div class="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center border-2 transition ${selectedCategory === c ? 'bg-[#008B47] text-white border-[#008B47] shadow-md scale-105' : 'bg-white text-gray-600 border-gray-200 hover:border-[#008B47]'}">
-            <i data-lucide="${getCategoryIcon(c)}" class="w-5 h-5 md:w-6 md:h-6"></i>
-          </div>
-          <span class="text-[11px] md:text-xs font-bold ${selectedCategory === c ? 'text-[#008B47]' : 'text-gray-600'}">${c}</span>
-        </button>
-      `).join('');
-      if (window.lucide) lucide.createIcons();
-    }
+  // 📌 ล็อกลำดับหมวดหมู่ให้เรียงสวยงามถาวร
+  const masterOrder = [
+    'ทั้งหมด',
+    'กล่องพัสดุ',
+    'ทั่วไป',
+    'อาหาร/เครื่องดื่ม',
+    'ยา/เวชภัณฑ์',
+    'เครื่องสำอาง',
+    'ของใช้',
+    'เนื้อสัตว์/ของสด',
+    'เชื้อเพลิง/พลังงาน'
+  ];
+
+  const existingCats = new Set(products.map(p => p.category || 'ทั่วไป'));
+  let cats = masterOrder.filter(c => c === 'ทั้งหมด' || existingCats.has(c));
+  const extraCats = Array.from(existingCats).filter(c => !masterOrder.includes(c)).sort((a, b) => a.localeCompare(b, 'th'));
+  cats = [...cats, ...extraCats];
+
+  const container = document.getElementById('custCatFilter');
+  if (!container) return;
+  
+  container.innerHTML = cats.map(c => {
+    // ✂️ ตัดคำที่มีเครื่องหมาย / ให้ขึ้นบรรทัดใหม่อัตโนมัติเพื่อความสวยงาม
+    const formattedName = c.replace('/', '/<br>');
+
+    return `
+      <button onclick="selectCustCategory('${c}')" class="flex flex-col items-center gap-1.5 flex-shrink-0 w-16 md:w-20 group text-center">
+        <div class="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center border-2 transition-all duration-200 ${selectedCategory === c ? 'bg-[#008B47] text-white border-[#008B47] shadow-md scale-105' : 'bg-white text-gray-600 border-gray-200 hover:border-[#008B47] hover:shadow-sm'}">
+          <i data-lucide="${getCategoryIcon(c)}" class="w-5 h-5 md:w-6 md:h-6"></i>
+        </div>
+        <span class="text-[10px] md:text-xs font-bold leading-tight ${selectedCategory === c ? 'text-[#008B47]' : 'text-gray-600'} w-full break-words">
+          ${formattedName}
+        </span>
+      </button>
+    `;
+  }).join('');
+
+  if (window.lucide) lucide.createIcons();
+}
 
     function getCategoryIcon(cat) {
       if (cat.includes('ยา') || cat.includes('เวชภัณฑ์')) return 'pill';
@@ -869,7 +905,7 @@
       const searchRaw = document.getElementById('custSearchInput')?.value || '';
       const searchVal = normalizeThaiText(searchRaw);
 
-      let displayList = products;
+      let displayList = [...products];
       if (selectedCategory !== 'ทั้งหมด') {
         displayList = displayList.filter(p => p.category === selectedCategory);
       }
@@ -880,6 +916,21 @@
           return pNameNorm.includes(searchVal) || searchVal.includes(pNameNorm);
         });
       }
+
+      // 🧠 Smart Sort: เอาของหมดไปไว้ท้ายสุด + สินค้าพร้อมขายเรียง ก-ฮ
+      displayList.sort((a, b) => {
+        const aStock = (a.isSubProduct && a.parentId) ? (products.find(p => p.id === a.parentId)?.stock || 0) : a.stock;
+        const bStock = (b.isSubProduct && b.parentId) ? (products.find(p => p.id === b.parentId)?.stock || 0) : b.stock;
+
+        const aOut = aStock <= 0;
+        const bOut = bStock <= 0;
+
+        // 1. ถ้าอันไหนหมด ให้ดันไปอยู่ข้างหลัง
+        if (aOut !== bOut) return aOut ? 1 : -1;
+
+        // 2. ถ้าสถานะสต็อกเหมือนกัน ให้เรียงตามชื่อสินค้า (ก-ฮ / A-Z)
+        return a.name.localeCompare(b.name, 'th');
+      });
 
       if (displayList.length === 0) {
         grid.innerHTML = `<p class="col-span-full text-center py-12 text-gray-400 font-bold">ไม่พบสินค้าที่คุณค้นหา</p>`;

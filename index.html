@@ -3535,7 +3535,7 @@ function showReceipt(s) {
     discountBox.classList.add('hidden');
   }
 
-  // 🟧 กล่องเงินทอนสีส้มอมทอง (ตัวใหญ่ อ่านง่าย ใช้ฟอนต์หลักของระบบที่ไม่หนาเตอะ)
+  // 🟧 กล่องเงินทอนสีส้มอมทอง
   const changeOrangeBox = (received, change) => `
     <div class="flex justify-between items-center text-gray-700 text-base font-display pt-2 border-t border-dashed border-gray-300">
       <span>รับเงินมา:</span>
@@ -3548,7 +3548,22 @@ function showReceipt(s) {
   `;
 
   if (s.isDebtPayment) {
-    document.getElementById('r-items').innerHTML = `<div class="py-2 text-center font-bold font-display">รับชำระหนี้สินเชื่อค้างชำระ</div>`;
+    let itemsHtml = `<div class="text-xs font-bold text-[#0F5C52] mb-2 border-b pb-1 font-display">รายการสินค้าที่ชำระหนี้:</div>`;
+    if (s.items && s.items.length > 0) {
+      itemsHtml += s.items.map(i => `
+        <div class="grid grid-cols-[1fr_auto] gap-2 items-start border-b border-dashed border-gray-200 pb-1.5 font-display">
+          <div class="break-words font-medium text-base text-gray-900 leading-snug">
+            ${i.name} <span class="font-bold text-black ml-1">x${i.qty}</span>
+            ${i.billDate ? `<span class="text-xs text-gray-400 block font-normal">(บิลวันที่ ${i.billDate})</span>` : ''}
+          </div>
+          <div class="font-semibold text-lg text-black text-right whitespace-nowrap pl-2">${fmtMoney(i.price * i.qty)}</div>
+        </div>
+      `).join('');
+    } else {
+      itemsHtml += `<div class="py-2 text-center font-bold font-display">รับชำระหนี้สินเชื่อค้างชำระ</div>`;
+    }
+    document.getElementById('r-items').innerHTML = itemsHtml;
+
     document.getElementById('r-total').innerText = fmtMoney(s.total);
     document.getElementById('r-doc-type').innerText = 'ใบเสร็จรับเงิน (ชำระหนี้)';
     document.getElementById('r-doc-type').className = 'text-sm font-bold text-white bg-[#0F5C52] py-1 rounded-xl my-2 font-display';
@@ -3556,8 +3571,19 @@ function showReceipt(s) {
     document.getElementById('r-total').className = 'font-display text-2xl text-[#0F5C52]';
     document.getElementById('r-method').innerText = `รับชำระหนี้จาก: คุณ ${s.debtorName}`;
     
+    let detailsHtml = changeOrangeBox(s.cashReceived || s.total, s.change || 0);
+
+    if (s.remainingDebt !== undefined) {
+      detailsHtml += `
+        <div class="flex justify-between items-center text-base font-bold text-[#B3432B] pt-2 mt-2 border-t border-dashed border-gray-300 font-display">
+          <span>ยอดหนี้คงเหลือยกไป:</span>
+          <span class="text-xl font-bold">${fmtMoney(s.remainingDebt)}</span>
+        </div>
+      `;
+    }
+
     cashDetailBox.classList.remove('hidden');
-    cashDetailBox.innerHTML = changeOrangeBox(s.cashReceived || s.total, s.change || 0);
+    cashDetailBox.innerHTML = detailsHtml;
   } else {
     document.getElementById('r-items').innerHTML = s.items.map(i => `
       <div class="grid grid-cols-[1fr_auto] gap-3 items-start border-b border-dashed border-gray-200 pb-1.5 font-display">
@@ -4226,62 +4252,127 @@ function closeDebtDetailModal() {
       document.getElementById('debtSelectedCount').innerText = `เลือก ${selectedDebtDocIds.size} รายการ`;
     }
 
+    // 🟢 สคริปต์เปิด-ปิด ป๊อปอัปยืนยันกลางจอ
+    let customConfirmCallback = null;
+
+    function openCustomConfirm(message, onConfirm) {
+      document.getElementById('customConfirmText').innerText = message;
+      customConfirmCallback = onConfirm;
+      document.getElementById('customConfirmModal').classList.remove('hidden');
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function closeCustomConfirm(isConfirmed) {
+      document.getElementById('customConfirmModal').classList.add('hidden');
+      if (isConfirmed && typeof customConfirmCallback === 'function') {
+        customConfirmCallback();
+      }
+      customConfirmCallback = null;
+    }
+
+    // 🟢 ฟังก์ชันกดรับชำระหนี้ (เรียกใช้ป๊อปอัปกลางจอ + ตัดยอด FIFO)
     function confirmSettleSelectedDebts() {
       const personBills = sales.filter(s => (s.creditPart > 0 || s.method === 'credit') && !s.settled && (s.debtorName || "ไม่ระบุชื่อ") === activeDebtorName).sort((a,b) => a.ts - b.ts);
 
       let selectedBills = personBills.filter(s => selectedDebtDocIds.has(s.id));
-      
-      if (selectedBills.length === 0) {
-        selectedBills = personBills;
-      }
+      if (selectedBills.length === 0) selectedBills = personBills;
 
       let debtTotalVal = selectedBills.reduce((sum, s) => sum + (s.creditPart || s.total), 0);
+      const allDebtsOfPerson = personBills.reduce((sum, s) => sum + (s.creditPart || s.total), 0);
       const recVal = Number(document.getElementById('debtCashReceived').value) || debtTotalVal;
 
       if (recVal <= 0) return alert('กรุณากรอกจำนวนเงินสดที่รับมา');
 
-      if (confirm(`ยืนยันการรับเงินสดจำนวน ฿${recVal.toFixed(2)} จากคุณ ${activeDebtorName} ใช่หรือไม่?`)) {
-        let remainingPaidMoney = recVal;
-        const batch = db.batch();
+      openCustomConfirm(`ยืนยันการรับเงินสดจำนวน ฿${recVal.toFixed(2)} จากคุณ ${activeDebtorName} ใช่หรือไม่?`, () => {
+        executeSettleSelectedDebts(selectedBills, debtTotalVal, allDebtsOfPerson, recVal);
+      });
+    }
 
-        selectedBills.forEach(bill => {
-          if (remainingPaidMoney <= 0) return;
+    function executeSettleSelectedDebts(selectedBills, debtTotalVal, allDebtsOfPerson, recVal) {
+      let remainingPaidMoney = recVal;
+      const batch = db.batch();
+      let paidItems = [];
+      let settledRecords = []; 
 
-          const currentBillDebt = bill.creditPart || bill.total;
+      selectedBills.forEach(bill => {
+        if (remainingPaidMoney <= 0) return;
 
-          if (remainingPaidMoney >= currentBillDebt) {
-            remainingPaidMoney -= currentBillDebt;
-            const docRef = db.collection("sales").doc(bill.id);
-            batch.update(docRef, { settled: true, creditPart: 0 });
-          } else {
-            const newRemainingBillDebt = currentBillDebt - remainingPaidMoney;
-            remainingPaidMoney = 0;
-            const docRef = db.collection("sales").doc(bill.id);
-            batch.update(docRef, { creditPart: newRemainingBillDebt, settled: false });
-          }
+        const currentBillDebt = bill.creditPart || bill.total;
+
+        if (remainingPaidMoney >= currentBillDebt) {
+          settledRecords.push({ saleId: bill.id, paidAmt: currentBillDebt });
+          remainingPaidMoney -= currentBillDebt;
+          const docRef = db.collection("sales").doc(bill.id);
+          batch.update(docRef, { settled: true, creditPart: 0 });
+        } else {
+          settledRecords.push({ saleId: bill.id, paidAmt: remainingPaidMoney });
+          const newRemainingBillDebt = currentBillDebt - remainingPaidMoney;
+          remainingPaidMoney = 0;
+          const docRef = db.collection("sales").doc(bill.id);
+          batch.update(docRef, { creditPart: newRemainingBillDebt, settled: false });
+        }
+
+        if (bill.items && bill.items.length > 0) {
+          bill.items.forEach(i => {
+            paidItems.push({
+              name: i.name, qty: i.qty, price: i.price,
+              billDate: new Date(bill.ts).toLocaleDateString('th-TH')
+            });
+          });
+        }
+      });
+
+      const changeVal = Math.max(0, remainingPaidMoney);
+      const actualPaidAmt = Math.min(recVal, debtTotalVal);
+      const remainingDebt = Math.max(0, allDebtsOfPerson - actualPaidAmt);
+      const staffName = currentSelectedStaff || "ไม่ระบุพนักงาน";
+
+      const debtPaymentDoc = {
+        ts: Date.now(),
+        items: paidItems,
+        settledRecords: settledRecords,
+        total: actualPaidAmt,
+        cashReceived: recVal,
+        change: changeVal,
+        debtorName: activeDebtorName,
+        remainingDebt: remainingDebt,
+        cashierName: staffName,
+        isDebtPayment: true
+      };
+
+      db.collection("debt_payments").add(debtPaymentDoc).then(() => {
+        batch.commit().then(() => {
+          closeDebtDetailModal();
+          showReceipt(debtPaymentDoc);
+          selectedDebtDocIds.clear();
         });
+      });
+    }
 
-        const changeVal = Math.max(0, remainingPaidMoney);
-        const staffName = currentSelectedStaff || "ไม่ระบุพนักงาน";
-        
-        const debtPaymentDoc = {
-          ts: Date.now(),
-          total: Math.min(recVal, debtTotalVal),
-          cashReceived: recVal,
-          change: changeVal,
-          debtorName: activeDebtorName,
-          cashierName: staffName,
-          isDebtPayment: true
-        };
+    function deleteDebtPayment(id) {
+      openCustomConfirm('คุณต้องการลบประวัติการรับชำระหนี้นี้ใช่หรือไม่?\n(ยอดหนี้จะเด้งกลับไปค้างชำระในสมุดบัญชีเชื่อเหมือนเดิม)', () => {
+        db.collection("debt_payments").doc(id).get().then(doc => {
+          if (!doc.exists) return;
+          const data = doc.data();
+          const batch = db.batch();
 
-        db.collection("debt_payments").add(debtPaymentDoc).then(() => {
+          if (data.settledRecords && data.settledRecords.length > 0) {
+            data.settledRecords.forEach(rec => {
+              const saleRef = db.collection("sales").doc(rec.saleId);
+              batch.update(saleRef, {
+                creditPart: firebase.firestore.FieldValue.increment(rec.paidAmt),
+                settled: false
+              });
+            });
+          }
+
+          batch.delete(db.collection("debt_payments").doc(id));
+
           batch.commit().then(() => {
-            closeDebtDetailModal();
-            showReceipt(debtPaymentDoc);
-            selectedDebtDocIds.clear();
+            alert('ลบรายการชำระหนี้ และดึงยอดหนี้กลับมาค้างชำระเรียบร้อยครับ!');
           });
         });
-      }
+      });
     }
 
     function openSetFloatModal() {
@@ -4800,11 +4891,16 @@ document.getElementById('p-sales-drawer-cash').innerText = fmtMoney(netCashInDra
           itemsText = `<div class="text-xs text-[#6B6A61] font-medium mt-1 truncate max-w-md">📦 รายการ: <span class="text-[#1C2321] font-semibold">${namesStr}</span></div>`;
         }
 
-        const deleteBtnHtml = (item.type === 'sale') 
-          ? `<button onclick="openDeleteSaleModal('${item.id}')" class="text-gray-400 hover:text-[#B3432B] p-1 transition" title="ยกเลิก/ลบบิลนี้">
-              <i data-lucide="trash-2" class="w-5 h-5"></i>
-             </button>` 
-          : '';
+        let deleteBtnHtml = '';
+if (item.type === 'sale') {
+  deleteBtnHtml = `<button onclick="openDeleteSaleModal('${item.id}')" class="text-gray-400 hover:text-[#B3432B] p-1 transition" title="ยกเลิก/ลบบิลนี้">
+    <i data-lucide="trash-2" class="w-5 h-5"></i>
+  </button>`;
+} else if (item.type === 'debt_payment') {
+  deleteBtnHtml = `<button onclick="deleteDebtPayment('${item.id}')" class="text-gray-400 hover:text-[#B3432B] p-1 transition" title="ลบรายการรับชำระหนี้">
+    <i data-lucide="trash-2" class="w-5 h-5"></i>
+  </button>`;
+}
 
         return `
           <div class="flex justify-between items-center py-4 text-base">
@@ -5001,5 +5097,27 @@ function closeCustomAlert() {
       });
     }
   </script>
+
+  <!-- Modal ยืนยันกลางจอ (Custom Confirm) -->
+  <div id="customConfirmModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[9999]">
+    <div class="bg-white p-6 rounded-3xl max-w-sm w-full text-center space-y-4 shadow-2xl border-2 border-[#DEDACB] animate-pop-in">
+      <div class="w-14 h-14 bg-emerald-100 text-[#0F5C52] rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+        <i data-lucide="help-circle" class="w-8 h-8"></i>
+      </div>
+      
+      <div id="customConfirmText" class="text-xl font-bold text-gray-800 font-body px-2">
+        <!-- ข้อความยืนยันจะแสดงตรงนี้ -->
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 pt-2">
+        <button onclick="closeCustomConfirm(false)" class="py-3 bg-gray-200 text-gray-800 rounded-xl font-bold font-display hover:bg-gray-300 transition">
+          ยกเลิก
+        </button>
+        <button onclick="closeCustomConfirm(true)" class="py-3 bg-[#0F5C52] text-white rounded-xl font-bold font-display hover:opacity-90 transition shadow-md">
+          ตกลง
+        </button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

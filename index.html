@@ -1654,32 +1654,53 @@
     };
 
     document.addEventListener('keydown', function(e) {
-      const activeEl = document.activeElement;
-      if (activeEl && (activeEl.id === 'quickNameInput' || activeEl.id === 'quickPriceInput' || activeEl.id === 'cartDiscount' || activeEl.id === 'deletePinInput' || activeEl.id === 'posCustomerPhone' || activeEl.classList.contains('cart-qty-input') || activeEl.classList.contains('exp-sub-input') || activeEl.classList.contains('edit-batch-qty') || activeEl.classList.contains('edit-batch-cost'))) return;
-      if (activeEl && activeEl.id !== 'scanInput') return;
+  const activeEl = document.activeElement;
 
-      const currentTime = Date.now();
-      if (currentTime - lastKeyTime > 100) {
-        barcodeBuffer = '';
-      }
-      lastKeyTime = currentTime;
+  // ป้องกันการสแกนถ้ากำลังพิมพ์ในช่องอื่นอยู่
+  if (activeEl && (
+    activeEl.id === 'quickNameInput' || 
+    activeEl.id === 'quickPriceInput' || 
+    activeEl.id === 'cartDiscount' || 
+    activeEl.id === 'deletePinInput' || 
+    activeEl.id === 'posCustomerPhone' || 
+    activeEl.classList.contains('cart-qty-input') || 
+    activeEl.classList.contains('exp-sub-input') || 
+    activeEl.classList.contains('edit-batch-qty') || 
+    activeEl.classList.contains('edit-batch-cost')
+  )) return;
 
-      if (e.code in keyToDigitMap) {
-        barcodeBuffer += keyToDigitMap[e.code];
-      }
+  // ⚡ ถ้ายิงสแกนบาร์โค้ดลงในช่อง scanInput โดยตรง พอกด Enter ให้ประมวลผลทันที
+  if (e.key === 'Enter' && activeEl && activeEl.id === 'scanInput') {
+    e.preventDefault();
+    clearTimeout(searchTimeout); // ยกเลิกการค้นหาแบบพิมพ์
+    handleScan();
+    return;
+  }
 
-      if (e.key === 'Enter') {
-        if (barcodeBuffer.length >= 8) {
-          e.preventDefault();
-          const scanInput = document.getElementById('scanInput');
-          scanInput.value = barcodeBuffer;
-          processBarcodeData(barcodeBuffer);
-          barcodeBuffer = '';
-        } else {
-          handleScan();
-        }
-      }
-    });
+  // ระบบสำรองกรณีไม่ได้โฟกัสช่องป้อนข้อมูล
+  const currentTime = Date.now();
+  if (currentTime - lastKeyTime > 100) {
+    barcodeBuffer = '';
+  }
+  lastKeyTime = currentTime;
+
+  if (e.code in keyToDigitMap) {
+    barcodeBuffer += keyToDigitMap[e.code];
+  }
+
+  if (e.key === 'Enter') {
+    if (barcodeBuffer.length >= 8) {
+      e.preventDefault();
+      clearTimeout(searchTimeout);
+      const scanInput = document.getElementById('scanInput');
+      scanInput.value = barcodeBuffer;
+      processBarcodeData(barcodeBuffer);
+      barcodeBuffer = '';
+    } else if (!activeEl || activeEl.id !== 'scanInput') {
+      handleScan();
+    }
+  }
+});
 
     function cleanBarcodeInput(str) {
       if (!str) return '';
@@ -1705,31 +1726,34 @@
     }
 
     function processBarcodeData(code) {
-      const errorMsg = document.getElementById('scanErrorMsg');
-      const input = document.getElementById('scanInput');
+  const errorMsg = document.getElementById('scanErrorMsg');
+  if (!code) return;
 
-      const p = products.find(i => {
-        const itemCodeClean = cleanBarcodeInput(String(i.barcode));
-        return (
-          String(i.barcode).trim() === code ||
-          (itemCodeClean && itemCodeClean === code)
-        );
-      });
+  // ⚡ ค้นหาแบบเร่งด่วน: เช็คตรงๆ ก่อน ถ้ารหัสตรงกันให้ดึงมาใส่ตะกร้าทันทีใน 0.001 วินาที
+  let p = products.find(i => String(i.barcode).trim() === code);
 
-      if (p) {
-        addToCart(p.id);
-        clearSearchInput();
-        if (errorMsg) errorMsg.classList.add('hidden');
-      } else {
-        if (errorMsg) {
-          errorMsg.innerText = `❌ ไม่พบสินค้ารหัส: ${code}`;
-          errorMsg.classList.remove('hidden');
-        }
-        clearSearchInput();
-      }
-      renderProducts();
-      focusScanInput();
+  // ถ้าหาไม่เจอ ค่อยลองแปลงรหัสแป้นภาษาไทย
+  if (!p) {
+    p = products.find(i => {
+      const itemCodeClean = cleanBarcodeInput(String(i.barcode));
+      return itemCodeClean && itemCodeClean === code;
+    });
+  }
+
+  if (p) {
+    addToCart(p.id);
+    clearSearchInput();
+    if (errorMsg) errorMsg.classList.add('hidden');
+  } else {
+    if (errorMsg) {
+      errorMsg.innerText = `❌ ไม่พบสินค้ารหัส: ${code}`;
+      errorMsg.classList.remove('hidden');
     }
+    clearSearchInput();
+  }
+  renderProducts();
+  focusScanInput();
+}
 
     function handleScan() {
       const input = document.getElementById('scanInput');
@@ -1739,12 +1763,18 @@
       processBarcodeData(code || rawCode);
     }
 
-    function handleSearchInput() {
-      currentPage = 1;
-      const val = document.getElementById('scanInput').value;
-      document.getElementById('btnClearSearch').classList.toggle('hidden', !val);
-      renderProducts();
-    }
+    let searchTimeout = null;
+function handleSearchInput() {
+  currentPage = 1;
+  const val = document.getElementById('scanInput').value;
+  document.getElementById('btnClearSearch').classList.toggle('hidden', !val);
+
+  // ⚡ หน่วงเวลา 150ms ให้สแกนเสร็จก่อนค่อยค้นหา ป้องกันเครื่องค้างกระตุก
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    renderProducts();
+  }, 150);
+}
 
     function clearSearchInput() {
       const input = document.getElementById('scanInput');

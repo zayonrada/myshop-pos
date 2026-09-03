@@ -2663,42 +2663,65 @@ function handleSearchInput() {
   const currentSelectedVal = parentSelect.value;
   const typedName = (document.getElementById('p-name')?.value || '').trim().toLowerCase();
 
-  const cleanTyped = typedName.replace(/มวน|กั๊ก|แบ่งขาย|ซอง|ขวด/g, '').trim();
-  const keywords = cleanTyped.split(/\s+/).filter(k => k.length > 0);
-
+  // 1. ดึงเฉพาะสินค้าหลักทั้งหมดในระบบ (ที่ไม่ใช่สินค้าแบ่งขาย)
   const mainProducts = products.filter(p => !p.isSubProduct);
-  let matchedProducts = mainProducts;
+
+  // 2. ตัดคำขยะ ตัวเลข และหน่วยแบ่งขายออก เพื่อให้เหลือเฉพาะชื่อสินค้าจริงๆ
+  const cleanTyped = typedName
+    .replace(/มวน|กั๊ก|แบ่งขาย|ซอง|ขวด|กล่อง|แพ็ค|ชิ้น|\d+/g, '')
+    .trim();
+  const keywords = cleanTyped.split(/\s+/).filter(k => k.length > 1);
+
+  let matchedProducts = [];
+  let otherProducts = [...mainProducts];
 
   if (keywords.length > 0) {
+    // ค้นหาเฉพาะสินค้าที่ชื่อมีคีย์เวิร์ดตรงกันจริง
     matchedProducts = mainProducts.filter(p => {
       const pName = p.name.toLowerCase();
       return keywords.some(kw => pName.includes(kw));
     });
+
+    // สินค้าหลักอื่นๆ ที่เหลือ นำมาเก็บไว้ต่อท้ายเป็นทางเลือกสำรอง
+    otherProducts = mainProducts.filter(p => !matchedProducts.includes(p));
+  } else {
+    matchedProducts = mainProducts;
+    otherProducts = [];
   }
 
-  // ฟังก์ชันช่วยปัดทศนิยมให้อ่านง่าย (ถ้าเป็นจำนวนเต็มไม่แสดง .00 ถ้ามีเศษปัดเหลือ 2 ตำแหน่ง)
   const formatStock = (stk) => {
     const num = Number(stk) || 0;
     return (num % 1 === 0) ? num : num.toFixed(2);
   };
 
-  if (matchedProducts.length > 0 && keywords.length > 0) {
-    if (matchBadge) matchBadge.innerText = `พบ ${matchedProducts.length} รายการที่เกี่ยวข้องกัน`;
-    
-    parentSelect.innerHTML = `<option value="">-- พบสินค้าหลักที่เกี่ยวข้อง (${matchedProducts.length} รายการ) --</option>` + 
-      matchedProducts.map(p => `<option value="${p.id}">${p.name} (คงเหลือ: ${formatStock(p.stock)})</option>`).join('');
+  // 3. จัดกลุ่มรายการแสดงผล (นำสินค้าที่ตรงไว้กลุ่มบน และสินค้าทั้งหมดไว้กลุ่มล่าง)
+  let html = `<option value="">-- เลือกรายชื่อสินค้าหลัก --</option>`;
 
-    if (matchedProducts.length === 1 && !currentSelectedVal) {
-      parentSelect.value = matchedProducts[0].id;
-    } else if (currentSelectedVal) {
-      parentSelect.value = currentSelectedVal;
-    }
-  } else {
-    if (matchBadge) matchBadge.innerText = `แสดงสินค้าหลักทั้งหมด (${mainProducts.length})`;
-    parentSelect.innerHTML = `<option value="">-- เลือกรายชื่อสินค้าหลัก --</option>` + 
-      mainProducts.map(p => `<option value="${p.id}">${p.name} (คงเหลือ: ${formatStock(p.stock)})</option>`).join('');
-    
-    if (currentSelectedVal) parentSelect.value = currentSelectedVal;
+  if (matchedProducts.length > 0) {
+    html += `<optgroup label="🎯 สินค้าหลักที่คาดว่าเกี่ยวข้อง (${matchedProducts.length} รายการ)">`;
+    html += matchedProducts.map(p => `<option value="${p.id}">${p.name} (คงเหลือ: ${formatStock(p.stock)})</option>`).join('');
+    html += `</optgroup>`;
+  }
+
+  if (otherProducts.length > 0) {
+    html += `<optgroup label="📦 สินค้าหลักทั้งหมดในร้าน (${otherProducts.length} รายการ)">`;
+    html += otherProducts.map(p => `<option value="${p.id}">${p.name} (คงเหลือ: ${formatStock(p.stock)})</option>`).join('');
+    html += `</optgroup>`;
+  }
+
+  parentSelect.innerHTML = html;
+
+  if (matchBadge) {
+    matchBadge.innerText = matchedProducts.length > 0 
+      ? `พบที่เกี่ยวข้อง ${matchedProducts.length} รายการ` 
+      : `สินค้าหลักทั้งหมด (${mainProducts.length})`;
+  }
+
+  // คืนค่ารายการที่เคยเลือกไว้เดิม
+  if (currentSelectedVal) {
+    parentSelect.value = currentSelectedVal;
+  } else if (matchedProducts.length === 1) {
+    parentSelect.value = matchedProducts[0].id;
   }
 }
 

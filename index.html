@@ -4154,8 +4154,9 @@ function refundStockToProduct(productId, qtyToRefund) {
     }
 
     function printExpenseReport() {
-      const filtered = getFilteredExpenses();
-      const totalAmount = filtered.reduce((sum, e) => sum + e.amount, 0);
+  const filtered = getFilteredExpenses();
+  filtered.sort((a, b) => (a.ts || 0) - (b.ts || 0)); // 👈 แทรกบรรทัดนี้เพิ่มเข้าไปครับ
+  const totalAmount = filtered.reduce((sum, e) => sum + e.amount, 0);
 
       document.getElementById('p-exp-print-date').innerText = new Date().toLocaleString('th-TH');
       

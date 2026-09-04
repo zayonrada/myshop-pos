@@ -249,25 +249,51 @@
 
     <!-- Modal ตะกร้าสินค้า & ชำระเงิน -->
     <div id="custCartModal" class="hidden fixed inset-0 bg-black/60 flex items-end md:items-center justify-center z-50 p-0 md:p-4">
-      <div class="bg-white p-5 md:p-7 rounded-t-3xl md:rounded-3xl max-w-lg w-full max-h-[92vh] md:max-h-[85vh] overflow-y-auto space-y-4 shadow-2xl animate-in slide-in-from-bottom duration-200">
+      <!-- 📌 เติม no-scrollbar ซ่อนแถบเลื่อนสีเทาด้านข้าง -->
+      <div class="bg-white p-5 md:p-7 rounded-t-3xl md:rounded-3xl max-w-lg w-full max-h-[92vh] md:max-h-[85vh] overflow-y-auto space-y-4 shadow-2xl relative no-scrollbar">
         
-        <div class="flex justify-between items-center border-b pb-3">
+        <!-- 📌 ล็อกปุ่ม X และหัวข้อติดมุมบนตลอดเวลาแม้เลื่อนลงล่าง -->
+        <div class="sticky top-0 bg-white z-20 -mx-5 -mt-5 px-5 pt-5 md:-mx-7 md:-mt-7 md:px-7 md:pt-7 pb-3 border-b flex justify-between items-center">
           <h3 class="font-bold text-xl font-display flex items-center gap-2 text-[#008B47]">
             <i data-lucide="shopping-bag"></i> ตรวจสอบรายการสั่งซื้อ
           </h3>
-          <button onclick="closeCustomerCartModal()" class="p-1 rounded-full bg-gray-100"><i data-lucide="x" class="w-5 h-5 text-gray-500"></i></button>
+          <button type="button" onclick="closeCustomerCartModal()" class="p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition active:scale-95 shadow-sm">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
         </div>
 
+        <!-- 🛒 กล่องแสดงรายการสินค้าในตะกร้า (ที่แก้ไขดึงกลับมา) -->
         <div id="custCartItems" class="bg-gray-50 p-3 rounded-2xl border divide-y divide-gray-200 space-y-2 max-h-48 overflow-y-auto"></div>
 
         <div class="bg-gray-50 p-3 rounded-2xl border space-y-2">
-          <div class="text-xs font-bold text-gray-700 font-display">รูปแบบการรับสินค้า</div>
+          <div class="text-xs font-bold text-gray-700 font-display flex justify-between items-center">
+            <span>รูปแบบการรับสินค้า</span>
+          </div>
+          
+          <!-- 🔔 กล่องแจ้งเตือน (จะเด้งขึ้นมาเตือนอีกรอบเมื่อเกิน 18:00 น.) -->
+          <div id="after18Notice" class="hidden"></div>
+
           <div class="grid grid-cols-2 gap-2">
-            <button type="button" onclick="setDeliveryType('delivery')" id="btnTypeDelivery" class="py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm border-2 border-[#008B47] bg-[#008B47] text-white flex items-center justify-center gap-1.5 transition">
-              <i data-lucide="bike" class="w-4 h-4"></i> ให้ไปส่งที่บ้าน
+            <!-- ปุ่มให้ไปส่งที่บ้าน -->
+            <button type="button" onclick="setDeliveryType('delivery')" id="btnTypeDelivery" class="py-2.5 px-3 rounded-xl border-2 border-[#008B47] bg-[#008B47] text-white flex flex-col items-center justify-center gap-0.5 transition">
+              <div class="flex items-center gap-1.5 font-bold text-xs md:text-sm">
+                <i data-lucide="bike" class="w-4 h-4"></i> ให้ไปส่งที่บ้าน
+              </div>
+              <!-- 🎯 ปรับใช้ opacity-80 ให้อ่านออกทั้งพื้นเขียวและพื้นขาว -->
+              <div class="text-[10px] opacity-80 font-normal leading-tight text-center mt-0.5">
+                สั่งหลัง 18:00 น.<br>ส่งเช้าวันถัดไป
+              </div>
             </button>
-            <button type="button" onclick="setDeliveryType('pickup')" id="btnTypePickup" class="py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm border-2 border-gray-200 bg-white text-gray-700 flex items-center justify-center gap-1.5 transition">
-              <i data-lucide="store" class="w-4 h-4"></i> มารับเองที่ร้าน
+
+            <!-- ปุ่มมารับเองที่ร้าน -->
+            <button type="button" onclick="setDeliveryType('pickup')" id="btnTypePickup" class="py-2.5 px-3 rounded-xl border-2 border-gray-200 bg-white text-gray-700 flex flex-col items-center justify-center gap-0.5 transition">
+              <div class="flex items-center gap-1.5 font-bold text-xs md:text-sm">
+                <i data-lucide="store" class="w-4 h-4"></i> มารับเองที่ร้าน
+              </div>
+              <!-- 🎯 ปรับใช้ opacity-70 ให้อ่านออกทั้งพื้นเขียวและพื้นขาว -->
+              <div class="text-[10px] opacity-70 font-normal leading-tight text-center mt-0.5">
+                มารับหน้าร้านได้ถึง<br>เวลา 20:00 น.
+              </div>
             </button>
           </div>
         </div>
@@ -298,7 +324,7 @@
                     <i data-lucide="copy" class="w-3.5 h-3.5"></i> ก๊อปปี้เลขบัญชี
                   </button>
                 </div>
-                <div class="text-gray-700 text-xs font-bold pt-1">ชื่อบัญชี: ยลรดา Chimphali / ฉิมพาลี</div>
+                <div class="text-gray-700 text-xs font-bold pt-1">ชื่อบัญชี: ยลรดา ฉิมพาลี</div>
               </div>
             </div>
 
@@ -502,26 +528,26 @@
       return String(str).normalize('NFC').toLowerCase().trim();
     }
 
-   db.collection("products").onSnapshot(s => {
-  let freshProducts = [];
-  s.forEach(doc => {
-    const d = doc.data();
-    let batches = d.batches || [];
-    const totalStock = batches.reduce((sum, b) => sum + b.qty, 0);
-    freshProducts.push({ id: doc.id, ...d, stock: d.stock !== undefined ? d.stock : totalStock });
-  });
+    db.collection("products").onSnapshot(s => {
+      let freshProducts = [];
+      s.forEach(doc => {
+        const d = doc.data();
+        let batches = d.batches || [];
+        const totalStock = batches.reduce((sum, b) => sum + b.qty, 0);
+        freshProducts.push({ id: doc.id, ...d, stock: d.stock !== undefined ? d.stock : totalStock });
+      });
 
-  // 🔥 จัดเรียงชื่อสินค้าตามตัวอักษร ก-ฮ
-  freshProducts.sort((a, b) => {
-    return a.name.localeCompare(b.name, 'th');
-  });
+      // 🔥 จัดเรียงชื่อสินค้าตามตัวอักษร ก-ฮ
+      freshProducts.sort((a, b) => {
+        return a.name.localeCompare(b.name, 'th');
+      });
 
-  products = freshProducts;
-  renderCategoryFilters();
-  renderCustomerProducts();
-}, err => {
-  console.error("Firebase fetch error:", err);
-});
+      products = freshProducts;
+      renderCategoryFilters();
+      renderCustomerProducts();
+    }, err => {
+      console.error("Firebase fetch error:", err);
+    });
 
     db.collection("rewards").onSnapshot(s => {
       rewards = [];
@@ -818,6 +844,29 @@
       }
     }
 
+    // ⚡ ฟังก์ชันเช็กเวลาสั่งหลัง 18:00 น.
+    function checkDeliveryTimeNotice() {
+      const currentHour = new Date().getHours();
+      const isAfter18 = currentHour >= 18;
+      const noticeEl = document.getElementById('after18Notice');
+      const dType = (typeof deliveryType !== 'undefined') ? deliveryType : 'delivery';
+
+      if (noticeEl) {
+        if (isAfter18 && dType === 'delivery') {
+          noticeEl.innerHTML = `
+            <div class="bg-amber-50 border-2 border-amber-400 p-3 rounded-2xl text-amber-900 text-xs font-bold my-1 space-y-1">
+              <div class="text-amber-800 font-bold text-sm">🌙 ขณะนี้เกินเวลา 18:00 น. แล้ว:</div>
+              <div>• 🛵 <strong>ให้ไปส่งที่บ้าน:</strong> ทางร้านจะจัดส่งให้ใน<strong>วันถัดไป ตั้งแต่เวลา 08:00 น.</strong> เป็นต้นไปครับ</div>
+              <div>• 🏪 หากต้องการรับสินค้าทันทีคืนนี้: แนะนำให้เลือก <strong>"มารับเองที่ร้าน"</strong> ได้เลยครับ</div>
+            </div>
+          `;
+          noticeEl.classList.remove('hidden');
+        } else {
+          noticeEl.classList.add('hidden');
+        }
+      }
+    }
+
     function setDeliveryType(type) {
       deliveryType = type;
       const btnDelivery = document.getElementById('btnTypeDelivery');
@@ -825,61 +874,62 @@
       const addrBox = document.getElementById('addressInputBox');
 
       if (type === 'delivery') {
-        btnDelivery.className = "py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm border-2 border-[#008B47] bg-[#008B47] text-white flex items-center justify-center gap-1.5 transition";
-        btnPickup.className = "py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm border-2 border-gray-200 bg-white text-gray-700 flex items-center justify-center gap-1.5 transition";
+        btnDelivery.className = "py-2.5 px-3 rounded-xl border-2 border-[#008B47] bg-[#008B47] text-white flex flex-col items-center justify-center gap-0.5 transition";
+        btnPickup.className = "py-2.5 px-3 rounded-xl border-2 border-gray-200 bg-white text-gray-700 flex flex-col items-center justify-center gap-0.5 transition";
         addrBox.classList.remove('hidden');
         setTimeout(() => { 
           if (leafletMap) leafletMap.invalidateSize(); 
         }, 300);
       } else {
-        btnPickup.className = "py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm border-2 border-[#008B47] bg-[#008B47] text-white flex items-center justify-center gap-1.5 transition";
-        btnDelivery.className = "py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm border-2 border-gray-200 bg-white text-gray-700 flex items-center justify-center gap-1.5 transition";
+        btnPickup.className = "py-2.5 px-3 rounded-xl border-2 border-[#008B47] bg-[#008B47] text-white flex flex-col items-center justify-center gap-0.5 transition";
+        btnDelivery.className = "py-2.5 px-3 rounded-xl border-2 border-gray-200 bg-white text-gray-700 flex flex-col items-center justify-center gap-0.5 transition";
         addrBox.classList.add('hidden');
       }
+      
+      checkDeliveryTimeNotice();
       updateCartSummaryUI();
     }
 
     function renderCategoryFilters() {
-  // 📌 ล็อกลำดับหมวดหมู่ให้เรียงสวยงามถาวร
-  const masterOrder = [
-    'ทั้งหมด',
-    'กล่องพัสดุ',
-    'ทั่วไป',
-    'อาหาร/เครื่องดื่ม',
-    'ยา/เวชภัณฑ์',
-    'เครื่องสำอาง',
-    'ของใช้',
-    'เนื้อสัตว์/ของสด',
-    'เชื้อเพลิง/พลังงาน'
-  ];
+      // 📌 ล็อกลำดับหมวดหมู่ให้เรียงสวยงามถาวร
+      const masterOrder = [
+        'ทั้งหมด',
+        'กล่องพัสดุ',
+        'ทั่วไป',
+        'อาหาร/เครื่องดื่ม',
+        'ยา/เวชภัณฑ์',
+        'เครื่องสำอาง',
+        'ของใช้',
+        'เนื้อสัตว์/ของสด',
+        'เชื้อเพลิง/พลังงาน'
+      ];
 
-  const visibleProds = products.filter(p => !p.hideInDelivery);
-const existingCats = new Set(visibleProds.map(p => p.category || 'ทั่วไป'));
-  let cats = masterOrder.filter(c => c === 'ทั้งหมด' || existingCats.has(c));
-  const extraCats = Array.from(existingCats).filter(c => !masterOrder.includes(c)).sort((a, b) => a.localeCompare(b, 'th'));
-  cats = [...cats, ...extraCats];
+      const visibleProds = products.filter(p => !p.hideInDelivery);
+      const existingCats = new Set(visibleProds.map(p => p.category || 'ทั่วไป'));
+      let cats = masterOrder.filter(c => c === 'ทั้งหมด' || existingCats.has(c));
+      const extraCats = Array.from(existingCats).filter(c => !masterOrder.includes(c)).sort((a, b) => a.localeCompare(b, 'th'));
+      cats = [...cats, ...extraCats];
 
-  const container = document.getElementById('custCatFilter');
-  if (!container) return;
-  
-  container.innerHTML = cats.map(c => {
-    // ✂️ ตัดคำที่มีเครื่องหมาย / ให้ขึ้นบรรทัดใหม่อัตโนมัติเพื่อความสวยงาม
-    const formattedName = c.replace('/', '/<br>');
+      const container = document.getElementById('custCatFilter');
+      if (!container) return;
+      
+      container.innerHTML = cats.map(c => {
+        const formattedName = c.replace('/', '/<br>');
 
-    return `
-      <button onclick="selectCustCategory('${c}')" class="flex flex-col items-center gap-1.5 flex-shrink-0 w-16 md:w-20 group text-center">
-        <div class="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center border-2 transition-all duration-200 ${selectedCategory === c ? 'bg-[#008B47] text-white border-[#008B47] shadow-md scale-105' : 'bg-white text-gray-600 border-gray-200 hover:border-[#008B47] hover:shadow-sm'}">
-          <i data-lucide="${getCategoryIcon(c)}" class="w-5 h-5 md:w-6 md:h-6"></i>
-        </div>
-        <span class="text-[10px] md:text-xs font-bold leading-tight ${selectedCategory === c ? 'text-[#008B47]' : 'text-gray-600'} w-full break-words">
-          ${formattedName}
-        </span>
-      </button>
-    `;
-  }).join('');
+        return `
+          <button onclick="selectCustCategory('${c}')" class="flex flex-col items-center gap-1.5 flex-shrink-0 w-16 md:w-20 group text-center">
+            <div class="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center border-2 transition-all duration-200 ${selectedCategory === c ? 'bg-[#008B47] text-white border-[#008B47] shadow-md scale-105' : 'bg-white text-gray-600 border-gray-200 hover:border-[#008B47] hover:shadow-sm'}">
+              <i data-lucide="${getCategoryIcon(c)}" class="w-5 h-5 md:w-6 md:h-6"></i>
+            </div>
+            <span class="text-[10px] md:text-xs font-bold leading-tight ${selectedCategory === c ? 'text-[#008B47]' : 'text-gray-600'} w-full break-words">
+              ${formattedName}
+            </span>
+          </button>
+        `;
+      }).join('');
 
-  if (window.lucide) lucide.createIcons();
-}
+      if (window.lucide) lucide.createIcons();
+    }
 
     function getCategoryIcon(cat) {
       if (cat.includes('ยา') || cat.includes('เวชภัณฑ์')) return 'pill';
@@ -888,7 +938,7 @@ const existingCats = new Set(visibleProds.map(p => p.category || 'ทั่ว�
       if (cat.includes('เครื่องสำอาง')) return 'sparkles';
       if (cat.includes('เชื้อเพลิง') || cat.includes('พลังงาน')) return 'flame';
       if (cat.includes('เนื้อสัตว์') || cat.includes('ของสด')) return 'beef';
-      if (cat.includes('กล่องพัสดุ')) return 'box'; // เพิ่มไอคอน box สำหรับกล่องพัสดุ
+      if (cat.includes('กล่องพัสดุ')) return 'box';
       if (cat.includes('ทั่วไป')) return 'box';
       return 'grid';
     }
@@ -918,7 +968,7 @@ const existingCats = new Set(visibleProds.map(p => p.category || 'ทั่ว�
         });
       }
 
-      // 🧠 Smart Sort: เอาของหมดไปไว้ท้ายสุด + สินค้าพร้อมขายเรียง ก-ฮ
+      // Smart Sort: เอาของหมดไปไว้ท้ายสุด + สินค้าพร้อมขายเรียง ก-ฮ
       displayList.sort((a, b) => {
         const aStock = (a.isSubProduct && a.parentId) ? (products.find(p => p.id === a.parentId)?.stock || 0) : a.stock;
         const bStock = (b.isSubProduct && b.parentId) ? (products.find(p => p.id === b.parentId)?.stock || 0) : b.stock;
@@ -926,10 +976,7 @@ const existingCats = new Set(visibleProds.map(p => p.category || 'ทั่ว�
         const aOut = aStock <= 0;
         const bOut = bStock <= 0;
 
-        // 1. ถ้าอันไหนหมด ให้ดันไปอยู่ข้างหลัง
         if (aOut !== bOut) return aOut ? 1 : -1;
-
-        // 2. ถ้าสถานะสต็อกเหมือนกัน ให้เรียงตามชื่อสินค้า (ก-ฮ / A-Z)
         return a.name.localeCompare(b.name, 'th');
       });
 
@@ -939,16 +986,23 @@ const existingCats = new Set(visibleProds.map(p => p.category || 'ทั่ว�
       }
 
       grid.innerHTML = displayList.map(p => {
-        let isOutOfStock = false;
+        let availStock = 0;
         if (p.isSubProduct && p.parentId) {
           const parent = products.find(prod => prod.id === p.parentId);
-          isOutOfStock = !parent || parent.stock <= 0;
+          availStock = parent ? Math.floor((parent.stock || 0) * (p.ratio || 1)) : 0;
         } else {
-          isOutOfStock = p.stock <= 0;
+          availStock = p.stock || 0;
         }
+
+        const isOutOfStock = availStock <= 0;
 
         return `
           <div class="bg-white p-2.5 md:p-3.5 rounded-2xl border border-gray-100 flex flex-col justify-between shadow-sm relative overflow-hidden">
+            <!-- 🏷️ ป้ายแสดงจำนวนสต็อกคงเหลือมุมขวาบน -->
+            <span class="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] md:text-xs font-bold z-10 ${isOutOfStock ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'}">
+              ${isOutOfStock ? 'สินค้าหมด' : `เหลือ ${availStock} ชิ้น`}
+            </span>
+
             <div>
               <div class="w-full aspect-square bg-gray-50 rounded-xl mb-2 overflow-hidden flex items-center justify-center border border-gray-100 relative">
                 ${p.imageUrl ? `<img src="${p.imageUrl}" loading="lazy" class="w-full h-full object-contain p-1">` : `<i data-lucide="package" class="w-10 h-10 md:w-12 md:h-12 text-gray-300"></i>`}
@@ -976,17 +1030,51 @@ const existingCats = new Set(visibleProds.map(p => p.category || 'ทั่ว�
       const p = products.find(prod => prod.id === id);
       if (!p) return;
 
+      let availStock = 0;
+      if (p.isSubProduct && p.parentId) {
+        const parent = products.find(prod => prod.id === p.parentId);
+        availStock = parent ? Math.floor((parent.stock || 0) * (p.ratio || 1)) : 0;
+      } else {
+        availStock = p.stock || 0;
+      }
+
       const idx = custCart.findIndex(c => c.productId === id);
+      const currentQtyInCart = idx >= 0 ? custCart[idx].qty : 0;
+
+      // 🛑 เช็กไม่ให้หยิบเกินสต็อกที่มี
+      if (currentQtyInCart + 1 > availStock) {
+        return alert(`ขออภัยครับ สินค้านี้ในสต็อกเหลือเพียง ${availStock} ชิ้นเท่านั้น`);
+      }
+
       if (idx >= 0) {
         custCart[idx].qty++;
       } else {
-        custCart.push({ productId: p.id, name: p.name, price: p.price, imageUrl: p.imageUrl || '', qty: 1 });
+        custCart.push({ productId: p.id, name: p.name, price: p.price, imageUrl: p.imageUrl || '', qty: 1, maxStock: availStock });
       }
 
       updateCartSummaryUI();
     }
 
     function changeCustQty(idx, delta) {
+      const item = custCart[idx];
+      if (!item) return;
+
+      const p = products.find(prod => prod.id === item.productId);
+      let availStock = item.maxStock || 999;
+      if (p) {
+        if (p.isSubProduct && p.parentId) {
+          const parent = products.find(prod => prod.id === p.parentId);
+          availStock = parent ? Math.floor((parent.stock || 0) * (p.ratio || 1)) : 0;
+        } else {
+          availStock = p.stock || 0;
+        }
+      }
+
+      // 🛑 เช็กไม่ให้บวกจำนวนเกินสต็อก
+      if (delta > 0 && item.qty + delta > availStock) {
+        return alert(`ขออภัยครับ สินค้านี้ในสต็อกเหลือเพียง ${availStock} ชิ้นเท่านั้น`);
+      }
+
       custCart[idx].qty += delta;
       if (custCart[idx].qty <= 0) custCart.splice(idx, 1);
       updateCartSummaryUI();
@@ -1038,23 +1126,33 @@ const existingCats = new Set(visibleProds.map(p => p.category || 'ทั่ว�
       document.getElementById('custModalTotal').innerText = '฿' + totalNet.toFixed(2);
     }
 
+    // ⚡ 2. ฟังก์ชันเปิดหน้าป๊อบอัพตะกร้าสินค้า
     function openCustomerCartModal() {
       if (custCart.length === 0) return alert('กรุณาเลือกสินค้าใส่ตะกร้าก่อนครับ');
       
-      if (currentMember) {
-        document.getElementById('custPhone').value = currentMember.phone || '';
-        document.getElementById('custName').value = currentMember.name || '';
-        document.getElementById('custAddress').value = currentMember.address || '';
+      if (typeof currentMember !== 'undefined' && currentMember) {
+        const pEl = document.getElementById('custPhone');
+        const nEl = document.getElementById('custName');
+        const aEl = document.getElementById('custAddress');
+        if (pEl) pEl.value = currentMember.phone || '';
+        if (nEl) nEl.value = currentMember.name || '';
+        if (aEl) aEl.value = currentMember.address || '';
       }
 
-      renderCartModalItems();
-      document.getElementById('custCartModal').classList.remove('hidden');
+      if (typeof renderCartModalItems === 'function') renderCartModalItems();
+      checkDeliveryTimeNotice();
+
+      const modal = document.getElementById('custCartModal');
+      if (modal) modal.classList.remove('hidden');
 
       setTimeout(() => {
-        initLeafletMap(userLocation.lat, userLocation.lng);
-        if (leafletMap) leafletMap.invalidateSize();
-        // 🚀 ออโต้จับพิกัด GPS ทันทีเมื่อเปิดหน้าตะกร้าสินค้า
-        getCurrentLocation();
+        if (typeof initLeafletMap === 'function' && typeof userLocation !== 'undefined') {
+          initLeafletMap(userLocation.lat, userLocation.lng);
+        }
+        if (typeof leafletMap !== 'undefined' && leafletMap) {
+          leafletMap.invalidateSize();
+        }
+        if (typeof getCurrentLocation === 'function') getCurrentLocation();
       }, 350);
     }
 
@@ -1064,6 +1162,8 @@ const existingCats = new Set(visibleProds.map(p => p.category || 'ทั่ว�
 
     function renderCartModalItems() {
       const container = document.getElementById('custCartItems');
+      if (!container) return; // 🛑 ตัวกันสะดุดหากยังหาองค์ประกอบใน DOM ไม่เจอ
+
       container.innerHTML = custCart.map((c, i) => `
         <div class="flex justify-between items-center py-1.5">
           <div class="flex items-center gap-2">
@@ -1125,12 +1225,18 @@ const existingCats = new Set(visibleProds.map(p => p.category || 'ทั่ว�
       const totalNet = subtotal + deliveryFee;
       const shortOrderId = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
 
+      // ⚡ กำกับหมายเหตุติดไปกับที่อยู่ทันทีเมื่อสั่งหลัง 18:00 น.
+      let finalAddress = address;
+      if (deliveryType === 'delivery' && new Date().getHours() >= 18) {
+        finalAddress += " ⚠️ (สั่งหลัง 18:00 น. - จัดส่งรอบเช้าวันถัดไป)";
+      }
+
       const orderData = {
         ts: Date.now(),
         orderCode: shortOrderId,
         customerName: name,
         customerPhone: phone,
-        customerAddress: address,
+        customerAddress: finalAddress,
         customerLineId: customerLineUserId || '',
         deliveryType: deliveryType,
         deliveryFee: deliveryFee,

@@ -4233,20 +4233,134 @@ function refundStockToProduct(productId, qtyToRefund) {
       });
 
       list.innerHTML = Object.values(debtorGroups).map(g => `
-        <div onclick="openDebtDetailModal('${g.name}')" class="flex justify-between items-center py-4 px-4 hover:bg-[#F5F3EE] rounded-2xl cursor-pointer transition">
-          <div>
+        <div class="flex justify-between items-center py-4 px-4 hover:bg-[#F5F3EE] rounded-2xl transition border-b border-gray-100">
+          <div onclick="openDebtDetailModal('${g.name}')" class="cursor-pointer flex-1">
             <div class="font-bold text-xl font-display text-[#1C2321]">${g.name}</div>
             <div class="text-sm text-[#6B6A61] font-medium mt-0.5">ติดหนี้สะสมไว้ ${g.billsCount} รายการ (ล่าสุด: ${new Date(g.lastTs).toLocaleDateString('th-TH')})</div>
           </div>
-          <div class="flex items-center gap-4">
-            <div class="font-bold text-[#B3432B] font-display text-2xl">฿${g.total.toFixed(2)}</div>
-            <button class="bg-[#0F5C52] text-white text-base px-5 py-2.5 rounded-xl font-bold font-display hover:opacity-90 shadow-sm">
+          
+          <div class="flex items-center gap-2">
+            <div class="font-bold text-[#B3432B] font-display text-2xl mr-2">฿${g.total.toFixed(2)}</div>
+            
+            <!-- ✏️ ปุ่มกดแก้ไขชื่อรวดเดียวทุกบิล -->
+            <button onclick="renameDebtorGlobal('${g.name}')" class="bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 font-display" title="แก้ไขชื่อนี้ทุกบิล">
+              ✏️ แก้ชื่อ
+            </button>
+
+            <!-- 🗑️ ปุ่มกดลบชื่อออกจากระบบ -->
+            <button onclick="deleteDebtorGlobal('${g.name}')" class="bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded-xl text-xs font-bold transition" title="ลบชื่อนี้ออกจากระบบ">
+              🗑️
+            </button>
+
+            <button onclick="openDebtDetailModal('${g.name}')" class="bg-[#0F5C52] text-white text-base px-4 py-2 rounded-xl font-bold font-display hover:opacity-90 shadow-sm ml-1">
               ดูรายการ / รับชำระ
             </button>
           </div>
         </div>
       `).join('');
     }
+
+// ✏️ ฟังก์ชันแก้ไขยอดเงิน/ชื่อลูกหนี้ ในบิลติดหนี้
+function editDebtSale(saleId, currentDebtorName) {
+  const s = sales.find(item => item.id === saleId);
+  if (!s) return;
+
+  const currentAmt = s.creditPart || s.total;
+  const newName = prompt("แก้ไขชื่อลูกหนี้:", currentDebtorName);
+  if (newName === null) return;
+
+  const newAmtStr = prompt("แก้ไขยอดเงินติดหนี้ (บาท):", currentAmt);
+  if (newAmtStr === null) return;
+  const newAmt = parseFloat(newAmtStr);
+
+  if (isNaN(newAmt) || newAmt < 0) {
+    return alert("กรุณากรอกยอดเงินให้ถูกต้องครับ");
+  }
+
+  const updateData = {
+    debtorName: newName.trim() || currentDebtorName,
+    creditPart: newAmt,
+    total: newAmt,
+    settled: newAmt === 0
+  };
+
+  db.collection("sales").doc(saleId).update(updateData).then(() => {
+    alert("แก้ไขรายการติดหนี้เรียบร้อยแล้วครับ");
+    if (newName.trim() && newName.trim() !== currentDebtorName) {
+      closeDebtDetailModal();
+    } else {
+      renderDebtItemsForPerson(currentDebtorName);
+    }
+  }).catch(err => {
+    alert("เกิดข้อผิดพลาดในการแก้ไข: " + err.message);
+  });
+}
+
+// 🗑️ ฟังก์ชันลบบิลติดหนี้ (กรณีคีย์ซ้ำ/ลงผิด)
+function deleteDebtSale(saleId, debtorName) {
+  const s = sales.find(item => item.id === saleId);
+  if (!s) return;
+
+  if (confirm(`ต้องการลบบิลติดหนี้ของ คุณ${debtorName} รายการนี้ใช่หรือไม่?\n\nระบบจะคืนสต็อกสินค้าในบิลกลับเข้าคลังให้อัตโนมัติ`)) {
+    if (s.items && s.items.length > 0) {
+      s.items.forEach(item => {
+        if (!item.isCustom && item.productId) {
+          refundStockToProduct(item.productId, item.qty);
+        }
+      });
+    }
+
+    db.collection("sales").doc(saleId).delete().then(() => {
+      selectedDebtDocIds.delete(saleId);
+      alert("ลบบิลติดหนี้ซ้ำเรียบร้อยแล้วครับ");
+      renderDebtItemsForPerson(debtorName);
+    }).catch(err => {
+      alert("เกิดข้อผิดพลาดในการลบ: " + err.message);
+    });
+  }
+}
+
+// ✏️ เปลี่ยนชื่อลูกหนี้รวดเดียวทุกบิล (แก้ไขชื่อที่พิมพ์ผิดใน Dropdown)
+function renameDebtorGlobal(oldName) {
+  const newName = prompt(`แก้ไขชื่อลูกหนี้ "${oldName}" เป็นชื่อใหม่:`, oldName);
+  if (newName === null || newName.trim() === "" || newName.trim() === oldName) return;
+
+  const cleanNewName = newName.trim();
+  const matchingSales = sales.filter(s => (s.debtorName || "ไม่ระบุชื่อ") === oldName);
+
+  if (matchingSales.length === 0) return alert("ไม่พบบิลของลูกหนี้นี้ในระบบ");
+
+  const batch = db.batch();
+  matchingSales.forEach(s => {
+    const ref = db.collection("sales").doc(s.id);
+    batch.update(ref, { debtorName: cleanNewName });
+  });
+
+  batch.commit().then(() => {
+    alert(`เปลี่ยนชื่อจาก "${oldName}" เป็น "${cleanNewName}" เรียบร้อยแล้วทุกบิลครับ`);
+  }).catch(err => {
+    alert("เกิดข้อผิดพลาด: " + err.message);
+  });
+}
+
+// 🗑️ ลบชื่อลูกหนี้ออกจาก Dropdown (เคลียร์ชื่อออกจากบิลขาย)
+function deleteDebtorGlobal(debtorName) {
+  if (!confirm(`คุณต้องการลบชื่อลูกหนี้ "${debtorName}" ออกจากระบบใช่หรือไม่?\n\n(ชื่อนี้จะหายไปจากช่องเลือก Dropdown ทันที)`)) return;
+
+  const matchingSales = sales.filter(s => (s.debtorName || "ไม่ระบุชื่อ") === debtorName);
+  const batch = db.batch();
+
+  matchingSales.forEach(s => {
+    const ref = db.collection("sales").doc(s.id);
+    batch.update(ref, { debtorName: null });
+  });
+
+  batch.commit().then(() => {
+    alert(`ลบชื่อ "${debtorName}" ออกจากช่องเลือกระบบเรียบร้อยแล้วครับ`);
+  }).catch(err => {
+    alert("เกิดข้อผิดพลาด: " + err.message);
+  });
+}
 
     function openDebtDetailModal(debtorName) {
       activeDebtorName = debtorName;
@@ -4277,20 +4391,31 @@ function closeDebtDetailModal() {
 
       container.innerHTML = personBills.map(s => {
         const isChecked = selectedDebtDocIds.has(s.id);
-        const itemNames = s.items.map(i => `${i.name} x${i.qty}`).join(', ');
+        const itemNames = s.items ? s.items.map(i => `${i.name} x${i.qty}`).join(', ') : 'รายการติดหนี้';
         const debtAmt = s.creditPart || s.total;
 
         return `
-          <div class="py-3.5 flex items-start gap-4">
-            <input type="checkbox" onchange="toggleDebtSelection('${s.id}', this.checked)" ${isChecked ? 'checked' : ''} 
-              class="w-6 h-6 accent-[#0F5C52] rounded mt-1 cursor-pointer">
-            <div class="flex-1">
-              <div class="flex justify-between items-start">
-                <div>
-                  <div class="font-bold text-base text-[#1C2321]">${new Date(s.ts).toLocaleString('th-TH')}</div>
-                  <div class="text-sm text-[#6B6A61] font-semibold mt-0.5">${itemNames}</div>
-                </div>
-                <div class="font-bold font-display text-xl text-[#B3432B]">฿${debtAmt.toFixed(2)}</div>
+          <div class="py-3.5 flex items-center justify-between gap-3 border-b border-gray-200">
+            <div class="flex items-start gap-3 flex-1 min-w-0">
+              <input type="checkbox" onchange="toggleDebtSelection('${s.id}', this.checked)" ${isChecked ? 'checked' : ''} 
+                class="w-6 h-6 accent-[#0F5C52] rounded mt-1 cursor-pointer flex-shrink-0">
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-base text-[#1C2321]">${new Date(s.ts).toLocaleString('th-TH')}</div>
+                <div class="text-sm text-[#6B6A61] font-semibold mt-0.5 truncate">${itemNames}</div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <div class="font-bold font-display text-xl text-[#B3432B]">฿${debtAmt.toFixed(2)}</div>
+              
+              <!-- 🔘 ปุ่มแก้ไข และ ลบ รายการติดหนี้ -->
+              <div class="flex gap-1">
+                <button onclick="editDebtSale('${s.id}', '${s.debtorName || debtorName}')" class="bg-amber-100 hover:bg-amber-200 text-amber-800 p-1.5 rounded-lg text-xs font-bold transition" title="แก้ไขบิลนี้">
+                  ✏️
+                </button>
+                <button onclick="deleteDebtSale('${s.id}', '${s.debtorName || debtorName}')" class="bg-red-100 hover:bg-red-200 text-red-700 p-1.5 rounded-lg text-xs font-bold transition" title="ลบบิลนี้">
+                  🗑️
+                </button>
               </div>
             </div>
           </div>

@@ -743,6 +743,7 @@
   <!-- Modal ดูรายละเอียดสมุดบัญชีเชื่อประจำตัวลูกหนี้ -->
   <div id="debtDetailModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 no-print">
     <div class="bg-white p-6 md:p-7 rounded-3xl max-w-2xl w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <!-- ส่วนหัว Modal สมุดบัญชีเชื่อ (ฝังปุ่มพิมพ์ไว้มุมขวาบนถาวร) -->
       <div class="flex justify-between items-center border-b pb-3">
         <div>
           <div class="text-xs font-bold text-gray-400">สมุดบัญชีเชื่อประจำตัว</div>
@@ -750,7 +751,24 @@
             คุณลูกหนี้
           </h3>
         </div>
-        <button onclick="closeDebtDetailModal()" class="p-1 rounded-full bg-gray-100"><i data-lucide="x" class="w-6 h-6 text-gray-500"></i></button>
+        <div class="flex items-center gap-1.5">
+          <!-- 🧾 ปุ่ม 1: บิลสรุปยอดหนี้ทั่วไป -->
+          <button type="button" onclick="printDebtorStatement(activeDebtorName)" class="bg-gray-800 hover:bg-black text-white px-3 py-2 rounded-xl font-bold text-xs font-display flex items-center gap-1 shadow-sm transition" title="พิมพ์ใบแจ้งยอดหนี้ทั่วไป">
+            🧾 บิลสรุปยอด
+          </button>
+
+          <!-- ✍️ ปุ่ม 2: ใบทวงหนี้ (มีช่องเซ็นชื่อ) -->
+          <button type="button" onclick="printDebtorAcknowledgement(activeDebtorName)" class="bg-[#B3432B] hover:bg-[#8B321E] text-white px-3 py-2 rounded-xl font-bold text-xs font-display flex items-center gap-1 shadow-sm transition" title="พิมพ์ใบทวงหนี้พร้อมช่องเซ็นรับทราบ">
+            ✍️ ใบทวงหนี้ (เซ็นชื่อ)
+          </button>
+
+          <!-- 📱 ปุ่ม 3: ผูกเบอร์สมาชิกย้อนหลัง -->
+          <button type="button" onclick="bindPhoneToDebtor(activeDebtorName)" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded-xl font-bold text-xs font-display flex items-center gap-1 shadow-sm transition" title="ผูกเบอร์โทรศัพท์สมาชิกเข้ากับลูกหนี้คนนี้ทุกบิล">
+            📱 ผูกเบอร์สมาชิก
+          </button>
+
+          <button onclick="closeDebtDetailModal()" class="p-1 rounded-full bg-gray-100 hover:bg-gray-200 transition ml-1"><i data-lucide="x" class="w-6 h-6 text-gray-500"></i></button>
+        </div>
       </div>
 
       <div class="flex justify-between items-center bg-emerald-50 p-3 rounded-2xl border border-emerald-200">
@@ -3507,28 +3525,65 @@ document.getElementById('cashChange').innerText = fmtMoney(0);
       }
 
       const posPhoneVal = document.getElementById('posCustomerPhone').value.trim();
-      const earnedPoints = Math.floor(netTotal / 100); // 100 บาท = 1 แต้ม
+      const earnedPoints = Math.floor(netTotal / 100);
 
-      if (posPhoneVal.length === 10 && earnedPoints > 0) {
-        db.collection("members").doc(posPhoneVal).get().then(mDoc => {
-          if (mDoc.exists) {
-            db.collection("members").doc(posPhoneVal).update({
-              points: firebase.firestore.FieldValue.increment(earnedPoints)
-            });
-          } else {
-            db.collection("members").doc(posPhoneVal).set({
-              phone: posPhoneVal,
-              name: 'ลูกค้าหน้าร้าน',
-              points: earnedPoints,
-              ts: Date.now()
-            });
-          }
-        });
+      let oldMemberPts = 0;
+      if (currentPosMemberObj && currentPosMemberObj.phone === posPhoneVal) {
+        oldMemberPts = currentPosMemberObj.points || 0;
       }
 
-      const totalCartCost = calculateTotalCostAndDeductStock(cart);
       const staffName = currentSelectedStaff || "ไม่ระบุพนักงาน";
       
+      // 1. คำนวณต้นทุน และเตรียมรายการ Batch ตัดสต็อก
+      const batch = db.batch();
+      let totalCartCost = 0;
+
+      cart.forEach(c => {
+        if (c.isCustom) {
+          totalCartCost += (c.qty * (c.cost || 0));
+          return;
+        }
+
+        const p = products.find(prod => prod.id === c.productId);
+        if (p) {
+          let targetProduct = p;
+          let actualDeductQty = c.qty;
+
+          if (p.isSubProduct && p.parentId) {
+            const parent = products.find(prod => prod.id === p.parentId);
+            if (parent) {
+              targetProduct = parent;
+              actualDeductQty = c.qty / (p.ratio || 1);
+            }
+          }
+
+          let neededQty = actualDeductQty;
+          let batches = targetProduct.batches ? JSON.parse(JSON.stringify(targetProduct.batches)) : [];
+          
+          if (batches.length === 0) {
+            totalCartCost += (actualDeductQty * (targetProduct.cost || 0));
+          } else {
+            for (let i = 0; i < batches.length; i++) {
+              if (neededQty <= 0) break;
+              if (batches[i].qty > 0) {
+                const takeQty = Math.min(batches[i].qty, neededQty);
+                totalCartCost += (takeQty * (batches[i].cost || 0));
+                batches[i].qty -= takeQty;
+                neededQty -= takeQty;
+              }
+            }
+          }
+
+          const remainingBatches = batches.filter(b => b.qty > 0);
+          const pRef = db.collection("products").doc(targetProduct.id);
+
+          batch.update(pRef, {
+            batches: remainingBatches,
+            stock: firebase.firestore.FieldValue.increment(-actualDeductQty)
+          });
+        }
+      });
+
       const sale = {
         ts: Date.now(),
         items: [...cart],
@@ -3542,22 +3597,48 @@ document.getElementById('cashChange').innerText = fmtMoney(0);
         method: currentMethod,
         cashReceived: cashRecInput,
         change: changeVal,
-        debtorName: creditPart > 0 ? debtor : null,
+        debtorName: creditPart > 0 ? debtor : (debtor || null),
         settled: creditPart === 0,
         cashierName: staffName,
         customerPhone: posPhoneVal || null,
-        earnedPoints: earnedPoints
+        earnedPoints: earnedPoints,
+        oldMemberPoints: oldMemberPts,
+        totalMemberPoints: oldMemberPts + earnedPoints
       };
 
-      db.collection("sales").add(sale).then(() => {
-        closeCheckoutModal();
-        showReceipt(sale);
-        cart = []; 
-        document.getElementById('hasDiscountCheck').checked = false;
-        toggleDiscountInput();
-        clearSearchInput();
-        renderCart();
-      });
+      // 2. Optimistic UI: เปิดใบเสร็จและเคลียร์หน้าจอทันที ไม่ต้องรอคลาวด์ตอบกลับ
+      closeCheckoutModal();
+      showReceipt(sale);
+      cart = []; 
+      document.getElementById('hasDiscountCheck').checked = false;
+      toggleDiscountInput();
+      clearSearchInput();
+      renderCart();
+
+      // 3. ส่งคำสั่งบันทึกเข้า Firestore อยู่เบื้องหลัง (Background Write)
+      const newSaleRef = db.collection("sales").doc();
+      batch.set(newSaleRef, sale);
+
+      if (posPhoneVal.length === 10) {
+        const memberRef = db.collection("members").doc(posPhoneVal);
+        memberRef.get().then(mDoc => {
+          if (mDoc.exists) {
+            if (earnedPoints > 0) {
+              batch.update(memberRef, { points: firebase.firestore.FieldValue.increment(earnedPoints) });
+            }
+          } else {
+            batch.set(memberRef, {
+              phone: posPhoneVal,
+              name: debtor || 'ลูกค้าหน้าร้าน',
+              points: earnedPoints,
+              ts: Date.now()
+            });
+          }
+          batch.commit();
+        });
+      } else {
+        batch.commit();
+      }
     }
 
 // ฟังก์ชันจัดฟอร์แมตเงินให้อ่านง่าย (เว้นวรรค ฿ / ตัด .00 ถ้าไม่มีเศษ)
@@ -3587,121 +3668,170 @@ function closeReceiptModal() {
 }
 
 function showReceipt(s) {
-  document.getElementById('r-date').innerText = new Date(s.ts).toLocaleString('th-TH');
-  document.getElementById('r-staff').innerText = 'พนักงาน: ' + (s.cashierName || 'ไม่ระบุพนักงาน');
-  
-  const cashDetailBox = document.getElementById('r-cash-details');
-  const subtotalBox = document.getElementById('r-subtotal-box');
-  const discountBox = document.getElementById('r-discount-box');
-  const totalQty = (s.items || []).reduce((sum, item) => sum + Number(item.qty || 1), 0);
-const rQtyEl = document.getElementById('r-total-qty');
-if (rQtyEl) rQtyEl.innerText = `${totalQty} ชิ้น`;
+      document.getElementById('r-date').innerText = new Date(s.ts).toLocaleString('th-TH');
+      document.getElementById('r-staff').innerText = 'พนักงาน: ' + (s.cashierName || 'ไม่ระบุพนักงาน');
+      
+      const cashDetailBox = document.getElementById('r-cash-details');
+      const subtotalBox = document.getElementById('r-subtotal-box');
+      const discountBox = document.getElementById('r-discount-box');
+      const totalQty = (s.items || []).reduce((sum, item) => sum + Number(item.qty || 1), 0);
+      const rQtyEl = document.getElementById('r-total-qty');
+      if (rQtyEl) rQtyEl.innerText = `${totalQty} ชิ้น`;
 
-  if (s.discount > 0) {
-    subtotalBox.classList.remove('hidden');
-    discountBox.classList.remove('hidden');
-    document.getElementById('r-subtotal').innerText = fmtMoney(s.subtotal || s.total);
-    document.getElementById('r-discount').innerText = '-' + fmtMoney(s.discount);
-  } else {
-    subtotalBox.classList.add('hidden');
-    discountBox.classList.add('hidden');
-  }
+      if (s.discount > 0) {
+        subtotalBox.classList.remove('hidden');
+        discountBox.classList.remove('hidden');
+        document.getElementById('r-subtotal').innerText = fmtMoney(s.subtotal || s.total);
+        document.getElementById('r-discount').innerText = '-' + fmtMoney(s.discount);
+      } else {
+        subtotalBox.classList.add('hidden');
+        discountBox.classList.add('hidden');
+      }
 
-  // 🟧 กล่องเงินทอนสีส้มอมทอง
-  const changeOrangeBox = (received, change) => `
-    <div class="flex justify-between items-center text-gray-700 text-base font-display pt-2 border-t border-dashed border-gray-300">
-      <span>รับเงินมา:</span>
-      <span class="font-bold text-lg text-gray-800 font-display">${fmtMoney(received)}</span>
-    </div>
-    <div class="bg-amber-100 border-2 border-amber-400 p-3.5 rounded-2xl flex justify-between items-center mt-2 shadow-sm font-display">
-      <span class="text-xl font-bold text-amber-950">เงินทอน:</span>
-      <span class="text-3xl font-bold text-amber-800 tracking-wider">${fmtMoney(change)}</span>
-    </div>
-  `;
-
-  if (s.isDebtPayment) {
-    let itemsHtml = `<div class="text-xs font-bold text-[#0F5C52] mb-2 border-b pb-1 font-display">รายการสินค้าที่ชำระหนี้:</div>`;
-    if (s.items && s.items.length > 0) {
-      itemsHtml += s.items.map(i => `
-        <div class="grid grid-cols-[1fr_auto] gap-2 items-start border-b border-dashed border-gray-200 pb-1.5 font-display">
-          <div class="break-words font-medium text-base text-gray-900 leading-snug">
-            ${i.name} <span class="font-bold text-black ml-1">x${i.qty}</span>
-            ${i.billDate ? `<span class="text-xs text-gray-400 block font-normal">(บิลวันที่ ${i.billDate})</span>` : ''}
-          </div>
-          <div class="font-semibold text-lg text-black text-right whitespace-nowrap pl-2">${fmtMoney(i.price * i.qty)}</div>
+      // 🟧 กล่องเงินทอนสีส้มอมทอง
+      const changeOrangeBox = (received, change) => `
+        <div class="flex justify-between items-center text-gray-700 text-base font-display pt-2 border-t border-dashed border-gray-300">
+          <span>รับเงินมา:</span>
+          <span class="font-bold text-lg text-gray-800 font-display">${fmtMoney(received)}</span>
         </div>
-      `).join('');
-    } else {
-      itemsHtml += `<div class="py-2 text-center font-bold font-display">รับชำระหนี้สินเชื่อค้างชำระ</div>`;
-    }
-    document.getElementById('r-items').innerHTML = itemsHtml;
-
-    document.getElementById('r-total').innerText = fmtMoney(s.total);
-    document.getElementById('r-doc-type').innerText = 'ใบเสร็จรับเงิน (ชำระหนี้)';
-    document.getElementById('r-doc-type').className = 'text-sm font-bold text-white bg-[#0F5C52] py-1 rounded-xl my-2 font-display';
-    document.getElementById('r-total-label').innerText = 'ยอดรับชำระเงินสด';
-    document.getElementById('r-total').className = 'font-display text-2xl text-[#0F5C52]';
-    document.getElementById('r-method').innerText = `รับชำระหนี้จาก: คุณ ${s.debtorName}`;
-    
-    let detailsHtml = changeOrangeBox(s.cashReceived || s.total, s.change || 0);
-
-    if (s.remainingDebt !== undefined) {
-      detailsHtml += `
-        <div class="flex justify-between items-center text-base font-bold text-[#B3432B] pt-2 mt-2 border-t border-dashed border-gray-300 font-display">
-          <span>ยอดหนี้คงเหลือยกไป:</span>
-          <span class="text-xl font-bold">${fmtMoney(s.remainingDebt)}</span>
+        <div class="bg-amber-100 border-2 border-amber-400 p-3.5 rounded-2xl flex justify-between items-center mt-2 shadow-sm font-display">
+          <span class="text-xl font-bold text-amber-950">เงินทอน:</span>
+          <span class="text-3xl font-bold text-amber-800 tracking-wider">${fmtMoney(change)}</span>
         </div>
       `;
-    }
 
-    cashDetailBox.classList.remove('hidden');
-    cashDetailBox.innerHTML = detailsHtml;
-  } else {
-    document.getElementById('r-items').innerHTML = s.items.map(i => `
-      <div class="grid grid-cols-[1fr_auto] gap-3 items-start border-b border-dashed border-gray-200 pb-1.5 font-display">
-        <div class="break-words font-medium text-base text-gray-900 leading-snug">${i.name} <span class="font-bold text-black ml-1">x${i.qty}</span></div>
-        <div class="font-semibold text-lg text-black text-right whitespace-nowrap pl-2">${fmtMoney(i.price * i.qty)}</div>
-      </div>
-    `).join('');
+      if (s.isDebtPayment) {
+        let itemsHtml = `<div class="text-xs font-bold text-[#0F5C52] mb-2 border-b pb-1 font-display">รายการสินค้าที่ชำระหนี้:</div>`;
+        if (s.items && s.items.length > 0) {
+          itemsHtml += s.items.map(i => `
+            <div class="grid grid-cols-[1fr_auto] gap-2 items-start border-b border-dashed border-gray-200 pb-1.5 font-display">
+              <div class="break-words font-medium text-base text-gray-900 leading-snug">
+                ${i.name} <span class="font-bold text-black ml-1">x${i.qty}</span>
+                ${i.billDate ? `<span class="text-xs text-gray-400 block font-normal">(บิลวันที่ ${i.billDate})</span>` : ''}
+              </div>
+              <div class="font-semibold text-lg text-black text-right whitespace-nowrap pl-2">${fmtMoney(i.price * i.qty)}</div>
+            </div>
+          `).join('');
+        } else {
+          itemsHtml += `<div class="py-2 text-center font-bold font-display">รับชำระหนี้สินเชื่อค้างชำระ</div>`;
+        }
+        document.getElementById('r-items').innerHTML = itemsHtml;
 
-    document.getElementById('r-total').innerText = fmtMoney(s.isHomeUse || s.isWorkerUse ? 0 : s.total);
+        document.getElementById('r-total').innerText = fmtMoney(s.total);
+        document.getElementById('r-doc-type').innerText = 'ใบเสร็จรับเงิน (ชำระหนี้)';
+        document.getElementById('r-doc-type').className = 'text-sm font-bold text-white bg-[#0F5C52] py-1 rounded-xl my-2 font-display';
+        document.getElementById('r-total-label').innerText = 'ยอดรับชำระเงินสด';
+        document.getElementById('r-total').className = 'font-display text-2xl text-[#0F5C52]';
+        document.getElementById('r-method').innerText = `รับชำระหนี้จาก: คุณ ${s.debtorName}`;
+        
+        let detailsHtml = changeOrangeBox(s.cashReceived || s.total, s.change || 0);
 
-    const isCreditOnly = (s.creditPart > 0 && s.cashPart === 0 && s.transferPart === 0);
-    document.getElementById('r-doc-type').innerText = isCreditOnly ? 'ใบบันทึกการติดหนี้ / สินเชื่อ' : 'ใบเสร็จรับเงิน';
-    document.getElementById('r-doc-type').className = isCreditOnly ? 'text-sm font-bold text-white bg-[#B3432B] py-1 rounded-xl my-2 font-display' : 'text-sm font-bold text-white bg-black py-1 rounded-xl my-2 font-display';
-    document.getElementById('r-total-label').innerText = isCreditOnly ? 'ยอดค้างชำระ' : 'รวมทั้งสิ้น';
-    document.getElementById('r-total').className = isCreditOnly ? 'font-display text-2xl text-[#B3432B]' : 'font-display text-2xl text-[#0F5C52]';
-    
-    let methodText = "";
-    let detailsHtml = "";
+        if (s.remainingDebt !== undefined) {
+          detailsHtml += `
+            <div class="flex justify-between items-center text-base font-bold text-[#B3432B] pt-2 mt-2 border-t border-dashed border-gray-300 font-display">
+              <span>ยอดหนี้คงเหลือยกไป:</span>
+              <span class="text-xl font-bold">${fmtMoney(s.remainingDebt)}</span>
+            </div>
+          `;
+        }
 
-    if (s.creditPart > 0) {
-      methodText = `ลูกหนี้: คุณ ${s.debtorName}`;
-      if (s.cashPart > 0) detailsHtml += `<div class="flex justify-between text-[#0F5C52] font-display"><span>รับเงินสดมา:</span><span class="font-bold">${fmtMoney(s.cashPart)}</span></div>`;
-      if (s.transferPart > 0) detailsHtml += `<div class="flex justify-between text-blue-800 font-display"><span>จ่ายโอนเงิน:</span><span class="font-bold">${fmtMoney(s.transferPart)}</span></div>`;
-      detailsHtml += `<div class="flex justify-between text-[#B3432B] font-display"><span>ยอดคงเหลือติดหนี้:</span><span class="font-bold">${fmtMoney(s.creditPart)}</span></div>`;
-    } else {
-      methodText = "ชำระเรียบร้อยแล้ว";
-      if (s.method === 'cash' || s.cashPart > 0) {
-        detailsHtml += changeOrangeBox(s.cashReceived || s.total, s.change || 0);
+        cashDetailBox.classList.remove('hidden');
+        cashDetailBox.innerHTML = detailsHtml;
+      } else {
+        document.getElementById('r-items').innerHTML = s.items.map(i => `
+          <div class="grid grid-cols-[1fr_auto] gap-3 items-start border-b border-dashed border-gray-200 pb-1.5 font-display">
+            <div class="break-words font-medium text-base text-gray-900 leading-snug">${i.name} <span class="font-bold text-black ml-1">x${i.qty}</span></div>
+            <div class="font-semibold text-lg text-black text-right whitespace-nowrap pl-2">${fmtMoney(i.price * i.qty)}</div>
+          </div>
+        `).join('');
+
+        document.getElementById('r-total').innerText = fmtMoney(s.isHomeUse || s.isWorkerUse ? 0 : s.total);
+
+        const isCreditOnly = (s.creditPart > 0 && s.cashPart === 0 && s.transferPart === 0);
+        document.getElementById('r-doc-type').innerText = isCreditOnly ? 'ใบบันทึกการติดหนี้ / สินเชื่อ' : 'ใบเสร็จรับเงิน';
+        document.getElementById('r-doc-type').className = isCreditOnly ? 'text-sm font-bold text-white bg-[#B3432B] py-1 rounded-xl my-2 font-display' : 'text-sm font-bold text-white bg-black py-1 rounded-xl my-2 font-display';
+        document.getElementById('r-total-label').innerText = isCreditOnly ? 'ยอดค้างชำระ' : 'รวมทั้งสิ้น';
+        document.getElementById('r-total').className = isCreditOnly ? 'font-display text-2xl text-[#B3432B]' : 'font-display text-2xl text-[#0F5C52]';
+        
+        let methodText = "";
+        let detailsHtml = "";
+
+        if (s.creditPart > 0) {
+          methodText = `ลูกหนี้: คุณ ${s.debtorName}`;
+          if (s.cashPart > 0) detailsHtml += `<div class="flex justify-between text-[#0F5C52] font-display"><span>รับเงินสดมา:</span><span class="font-bold">${fmtMoney(s.cashPart)}</span></div>`;
+          if (s.transferPart > 0) detailsHtml += `<div class="flex justify-between text-blue-800 font-display"><span>จ่ายโอนเงิน:</span><span class="font-bold">${fmtMoney(s.transferPart)}</span></div>`;
+          detailsHtml += `<div class="flex justify-between text-[#B3432B] font-display"><span>ยอดคงเหลือติดหนี้บิลนี้:</span><span class="font-bold">${fmtMoney(s.creditPart)}</span></div>`;
+        } else {
+          methodText = "ชำระเรียบร้อยแล้ว";
+          if (s.method === 'cash' || s.cashPart > 0) {
+            detailsHtml += changeOrangeBox(s.cashReceived || s.total, s.change || 0);
+          }
+          if (s.transferPart > 0 && s.cashPart > 0) {
+            detailsHtml += `<div class="flex justify-between text-blue-800 font-display"><span>ส่วนของโอนเงิน:</span><span class="font-bold">${fmtMoney(s.transferPart)}</span></div>`;
+          }
+        }
+
+        // 🎁 1. กล่องแต้มสะสมสมาชิกสไตล์ 7-11 ท้ายสลิป
+        if (s.customerPhone) {
+          const oldPts = s.oldMemberPoints || 0;
+          const totalPts = s.totalMemberPoints !== undefined ? s.totalMemberPoints : (oldPts + (s.earnedPoints || 0));
+          const memberName = (currentPosMemberObj && currentPosMemberObj.name) ? currentPosMemberObj.name : 'สมาชิก';
+
+          detailsHtml += `
+            <div class="mt-3 p-3 bg-amber-50 border border-amber-300 rounded-2xl text-left space-y-1 font-display">
+              <div class="text-xs font-bold text-amber-900 border-b border-amber-200 pb-1 flex justify-between">
+                <span>👤 สมาชิก: คุณ${memberName}</span>
+                <span>📱 ${s.customerPhone}</span>
+              </div>
+              <div class="flex justify-between text-xs text-amber-800 font-semibold pt-1">
+                <span>แต้มที่ได้รับรอบนี้:</span>
+                <span class="text-emerald-700 font-bold">+${s.earnedPoints || 0} แต้ม</span>
+              </div>
+              <div class="flex justify-between text-xs text-amber-900 font-bold">
+                <span>แต้มสะสมคงเหลือรวม:</span>
+                <span class="text-amber-700 text-sm font-extrabold">${totalPts} แต้ม</span>
+              </div>
+            </div>
+          `;
+        }
+
+        // ⚠️ 2. กล่องแจ้งยอดหนี้ค้างชำระสะสม (คำนวณรวมยอดเก่า + ยอดบิลนี้ให้อัตโนมัติ)
+        const targetDebtorName = s.debtorName;
+        if (targetDebtorName) {
+          const unpaidSales = sales.filter(saleDoc => 
+            saleDoc.id !== s.id && 
+            !saleDoc.settled && 
+            (saleDoc.creditPart > 0 || saleDoc.method === 'credit') && 
+            (saleDoc.debtorName === targetDebtorName)
+          );
+          const previousDebt = unpaidSales.reduce((sum, saleDoc) => sum + (saleDoc.creditPart || saleDoc.total), 0);
+          const currentBillDebt = s.settled ? 0 : (s.creditPart || 0);
+          const totalAccumulatedDebt = previousDebt + currentBillDebt;
+
+          if (totalAccumulatedDebt > 0) {
+            detailsHtml += `
+              <div class="mt-2 p-3 bg-red-50 border-2 border-red-300 rounded-2xl text-left space-y-1 font-display">
+                <div class="text-xs font-bold text-red-900 flex items-center justify-between border-b border-red-200 pb-1">
+                  <span>⚠️ ยอดหนี้ค้างชำระสะสม</span>
+                  <span class="text-[10px] bg-red-200 text-red-900 px-2 py-0.5 rounded-full font-bold">คุณ ${targetDebtorName}</span>
+                </div>
+                <div class="flex justify-between items-center text-sm font-bold text-[#B3432B] pt-1">
+                  <span>ยอดหนี้ค้างชำระรวมทั้งหมด:</span>
+                  <span class="text-lg font-extrabold">${fmtMoney(totalAccumulatedDebt)}</span>
+                </div>
+              </div>
+            `;
+          }
+        }
+
+        document.getElementById('r-method').innerText = methodText;
+        cashDetailBox.classList.remove('hidden');
+        cashDetailBox.innerHTML = detailsHtml;
       }
-      if (s.transferPart > 0 && s.cashPart > 0) {
-        detailsHtml += `<div class="flex justify-between text-blue-800 font-display"><span>ส่วนของโอนเงิน:</span><span class="font-bold">${fmtMoney(s.transferPart)}</span></div>`;
-      }
+
+      const receiptModal = document.getElementById('receiptModal');
+      if (receiptModal) receiptModal.classList.remove('hidden');
     }
-
-    if (s.earnedPoints > 0) {
-      detailsHtml += `<div class="flex justify-between text-amber-800 pt-1 font-bold border-t border-dashed font-display"><span>แต้มสะสมได้รับรอบนี้:</span><span class="text-amber-600">+${s.earnedPoints} แต้ม</span></div>`;
-    }
-
-    document.getElementById('r-method').innerText = methodText;
-    cashDetailBox.classList.remove('hidden');
-    cashDetailBox.innerHTML = detailsHtml;
-  }
-
-  const receiptModal = document.getElementById('receiptModal');
-  if (receiptModal) receiptModal.classList.remove('hidden');
-}
 
 function toggleChildProductBox() {
   const isSub = document.getElementById('p-isSubProduct').checked;
@@ -4260,16 +4390,13 @@ function refundStockToProduct(productId, qtyToRefund) {
       `).join('');
     }
 
-// ✏️ ฟังก์ชันแก้ไขยอดเงิน/ชื่อลูกหนี้ ในบิลติดหนี้
-function editDebtSale(saleId, currentDebtorName) {
+// ✏️ ฟังก์ชันแก้ไขยอดเงินบิลติดหนี้ (แก้ไขเฉพาะยอดเงินของบิลนี้)
+function editDebtSale(saleId, debtorName) {
   const s = sales.find(item => item.id === saleId);
   if (!s) return;
 
   const currentAmt = s.creditPart || s.total;
-  const newName = prompt("แก้ไขชื่อลูกหนี้:", currentDebtorName);
-  if (newName === null) return;
-
-  const newAmtStr = prompt("แก้ไขยอดเงินติดหนี้ (บาท):", currentAmt);
+  const newAmtStr = prompt(`แก้ไขยอดเงินติดหนี้ของบิลนี้ (ปัจจุบัน ฿${currentAmt}):`, currentAmt);
   if (newAmtStr === null) return;
   const newAmt = parseFloat(newAmtStr);
 
@@ -4277,20 +4404,13 @@ function editDebtSale(saleId, currentDebtorName) {
     return alert("กรุณากรอกยอดเงินให้ถูกต้องครับ");
   }
 
-  const updateData = {
-    debtorName: newName.trim() || currentDebtorName,
+  db.collection("sales").doc(saleId).update({
     creditPart: newAmt,
     total: newAmt,
     settled: newAmt === 0
-  };
-
-  db.collection("sales").doc(saleId).update(updateData).then(() => {
-    alert("แก้ไขรายการติดหนี้เรียบร้อยแล้วครับ");
-    if (newName.trim() && newName.trim() !== currentDebtorName) {
-      closeDebtDetailModal();
-    } else {
-      renderDebtItemsForPerson(currentDebtorName);
-    }
+  }).then(() => {
+    alert("แก้ไขยอดเงินเรียบร้อยแล้วครับ");
+    renderDebtItemsForPerson(debtorName);
   }).catch(err => {
     alert("เกิดข้อผิดพลาดในการแก้ไข: " + err.message);
   });
@@ -4381,6 +4501,10 @@ function closeDebtDetailModal() {
 
     function renderDebtItemsForPerson(debtorName) {
       const personBills = sales.filter(s => (s.creditPart > 0 || s.method === 'credit') && !s.settled && (s.debtorName || "ไม่ระบุชื่อ") === debtorName);
+      
+      // 🎯 1. เรียงลำดับตามวันเวลาจาก เก่า -> ใหม่ (อดีตไปปัจจุบัน)
+      personBills.sort((a, b) => (a.ts || 0) - (b.ts || 0));
+
       const container = document.getElementById('debtItemsList');
 
       if (personBills.length === 0) {
@@ -4408,7 +4532,6 @@ function closeDebtDetailModal() {
             <div class="flex items-center gap-3 flex-shrink-0">
               <div class="font-bold font-display text-xl text-[#B3432B]">฿${debtAmt.toFixed(2)}</div>
               
-              <!-- 🔘 ปุ่มแก้ไข และ ลบ รายการติดหนี้ -->
               <div class="flex gap-1">
                 <button onclick="editDebtSale('${s.id}', '${s.debtorName || debtorName}')" class="bg-amber-100 hover:bg-amber-200 text-amber-800 p-1.5 rounded-lg text-xs font-bold transition" title="แก้ไขบิลนี้">
                   ✏️
@@ -4421,6 +4544,23 @@ function closeDebtDetailModal() {
           </div>
         `;
       }).join('');
+
+      // 🎯 2. เพิ่มปุ่มปริ้นใบสรุปยอดหนี้ ไว้ตรงแถบเลือกชำระเงิน
+      const selectBox = document.querySelector('#debtDetailModal .bg-emerald-50');
+      if (selectBox) {
+        selectBox.innerHTML = `
+          <label class="flex items-center gap-2 cursor-pointer font-bold text-sm text-[#0F5C52]">
+            <input type="checkbox" id="selectAllDebts" onchange="toggleSelectAllDebts(this.checked)" class="w-5 h-5 accent-[#0F5C52] rounded cursor-pointer">
+            <span>เลือกชำระทั้งหมด</span>
+          </label>
+          <div class="flex items-center gap-3">
+            <span id="debtSelectedCount" class="text-xs font-bold text-gray-500">เลือก 0 รายการ</span>
+            <button type="button" onclick="printDebtorStatement('${debtorName}')" class="bg-[#1C2321] hover:bg-black text-white px-3 py-1.5 rounded-xl font-bold text-xs font-display flex items-center gap-1 shadow-sm transition">
+              🖨️ พิมพ์ใบสรุปยอดหนี้
+            </button>
+          </div>
+        `;
+      }
 
       updateSelectedDebtTotal();
     }
@@ -5299,8 +5439,316 @@ function closeCustomAlert() {
         });
       });
     }
-  </script>
 
+// 🖨️ ฟังก์ชันพิมพ์ใบสรุปยอดหนี้ค้างชำระให้ลูกค้า
+function printDebtorStatement(debtorName) {
+  const personBills = sales.filter(s => (s.creditPart > 0 || s.method === 'credit') && !s.settled && (s.debtorName || "ไม่ระบุชื่อ") === debtorName).sort((a, b) => (a.ts || 0) - (b.ts || 0));
+  
+  if (personBills.length === 0) return alert('ลูกค้ารายนี้ไม่มียอดหนี้ค้างชำระแล้วครับ');
+
+  const totalDebt = personBills.reduce((sum, s) => sum + (s.creditPart || s.total), 0);
+  
+  const billRows = personBills.map((s, idx) => {
+    const d = new Date(s.ts);
+    const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()+543} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const itemsStr = s.items ? s.items.map(i => `${i.name} x${i.qty}`).join(', ') : 'รายการติดหนี้';
+    const debtAmt = s.creditPart || s.total;
+
+    return `
+      <tr style="border-bottom: 1px dashed #ccc;">
+        <td style="padding: 6px 0; text-align: left;">
+          <div style="font-weight: bold; font-size: 13px;">${idx + 1}. ${itemsStr}</div>
+          <div style="font-size: 11px; color: #666;">วันที่: ${dateStr}</div>
+        </td>
+        <td style="padding: 6px 0; text-align: right; font-weight: bold; font-size: 14px; vertical-align: top;">
+          ฿${debtAmt.toFixed(2)}
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  const now = new Date();
+  const printDateStr = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()+543} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+  const printWin = window.open('', '_blank');
+  printWin.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>ใบสรุปยอดหนี้ - ${debtorName}</title>
+      <style>
+        body { font-family: 'Sarabun', 'Kanit', sans-serif; width: 80mm; margin: 0 auto; padding: 10px; color: #000; }
+        .text-center { text-align: center; }
+        .border-top { border-top: 2px dashed #000; padding-top: 8px; margin-top: 8px; }
+        .border-bottom { border-bottom: 2px dashed #000; padding-bottom: 8px; margin-bottom: 8px; }
+        table { width: 100%; border-collapse: collapse; }
+        @media print {
+          @page { margin: 0; size: auto; }
+          body { padding: 5mm; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="text-center">
+        <h2 style="margin: 0; font-size: 20px;">ร้านค้าขวัญใจ</h2>
+        <div style="font-size: 13px; font-weight: bold; background: #000; color: #fff; padding: 4px; margin: 6px 0; border-radius: 4px;">
+          ใบสรุปรายการยอดหนี้ค้างชำระ
+        </div>
+        <div style="font-size: 15px; font-weight: bold; margin-top: 4px;">ลูกหนี้: คุณ ${debtorName}</div>
+        <div style="font-size: 11px; color: #555;">วันที่พิมพ์: ${printDateStr}</div>
+      </div>
+
+      <div class="border-top border-bottom">
+        <table>
+          <tbody>
+            ${billRows}
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display: flex; justify-between; font-size: 16px; font-weight: bold; margin-top: 8px;" class="border-bottom">
+        <span>ยอดหนี้ค้างชำระรวม:</span>
+        <span style="color: #c00;">฿${totalDebt.toFixed(2)}</span>
+      </div>
+
+      <div class="text-center" style="margin-top: 15px; font-size: 12px; color: #444;">
+        กรุณาตรวจสอบรายการยอดหนี้ค้างชำระ<br>
+        ขอบคุณที่อุดหนุนครับ / โอกาสหน้าเชิญใหม่ครับ
+      </div>
+
+      <script>
+        window.onload = function() { window.print(); }
+      <\/script>
+    </body>
+    </html>
+  `);
+  printWin.document.close();
+}
+
+// 🟢 สคริปต์ควบคุมป๊อปอัปกรอกข้อมูลกลางจอ (Custom Prompt)
+let customPromptCallback = null;
+
+function openCustomPrompt(title, defaultValue, callback) {
+  document.getElementById('customPromptTitle').innerText = title;
+  const inputEl = document.getElementById('customPromptInput');
+  inputEl.value = defaultValue || '';
+  customPromptCallback = callback;
+  document.getElementById('customPromptModal').classList.remove('hidden');
+  setTimeout(() => {
+    inputEl.focus();
+    inputEl.select();
+  }, 100);
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function closeCustomPrompt(isConfirmed) {
+  const inputVal = document.getElementById('customPromptInput').value;
+  document.getElementById('customPromptModal').classList.add('hidden');
+  if (isConfirmed && typeof customPromptCallback === 'function') {
+    customPromptCallback(inputVal);
+  }
+  customPromptCallback = null;
+}
+
+
+
+// ✏️ แก้ไขยอดเงินติดหนี้ (แสดงป๊อปอัปกลางจอ)
+function editDebtSale(saleId, debtorName) {
+  const s = sales.find(item => item.id === saleId);
+  if (!s) return;
+
+  const currentAmt = s.creditPart || s.total;
+  
+  openCustomPrompt(`แก้ไขยอดเงินติดหนี้ (ปัจจุบัน ฿${currentAmt})`, currentAmt, (newAmtStr) => {
+    if (newAmtStr === null || newAmtStr.trim() === '') return;
+    const newAmt = parseFloat(newAmtStr);
+
+    if (isNaN(newAmt) || newAmt < 0) {
+      return alert("กรุณากรอกยอดเงินให้ถูกต้องครับ");
+    }
+
+    db.collection("sales").doc(saleId).update({
+      creditPart: newAmt,
+      total: newAmt,
+      settled: newAmt === 0
+    }).then(() => {
+      alert("แก้ไขยอดเงินเรียบร้อยแล้วครับ");
+      renderDebtItemsForPerson(debtorName);
+    }).catch(err => {
+      alert("เกิดข้อผิดพลาดในการแก้ไข: " + err.message);
+    });
+  });
+}
+
+// ✏️ เปลี่ยนชื่อลูกหนี้รวดเดียวทุกบิล (แสดงป๊อปอัปกลางจอ)
+function renameDebtorGlobal(oldName) {
+  openCustomPrompt(`แก้ไขชื่อลูกหนี้ "${oldName}" เป็นชื่อใหม่:`, oldName, (newName) => {
+    if (!newName || newName.trim() === "" || newName.trim() === oldName) return;
+
+    const cleanNewName = newName.trim();
+    const matchingSales = sales.filter(s => (s.debtorName || "ไม่ระบุชื่อ") === oldName);
+
+    if (matchingSales.length === 0) return alert("ไม่พบบิลของลูกหนี้นี้ในระบบ");
+
+    const batch = db.batch();
+    matchingSales.forEach(s => {
+      const ref = db.collection("sales").doc(s.id);
+      batch.update(ref, { debtorName: cleanNewName });
+    });
+
+    batch.commit().then(() => {
+      alert(`เปลี่ยนชื่อจาก "${oldName}" เป็น "${cleanNewName}" เรียบร้อยแล้วทุกบิลครับ`);
+    }).catch(err => {
+      alert("เกิดข้อผิดพลาด: " + err.message);
+    });
+  });
+}
+
+// ✍️ ฟังก์ชันพิมพ์ใบทวงหนี้ / หนังสือยืนยันรับสภาพหนี้ (มีช่องให้ลูกค้าเซ็นชื่อ)
+function printDebtorAcknowledgement(debtorName) {
+  const personBills = sales.filter(s => (s.creditPart > 0 || s.method === 'credit') && !s.settled && (s.debtorName || "ไม่ระบุชื่อ") === debtorName).sort((a, b) => (a.ts || 0) - (b.ts || 0));
+  
+  if (personBills.length === 0) return alert('ลูกค้ารายนี้ไม่มียอดหนี้ค้างชำระแล้วครับ');
+
+  const totalDebt = personBills.reduce((sum, s) => sum + (s.creditPart || s.total), 0);
+  
+  const billRows = personBills.map((s, idx) => {
+    const d = new Date(s.ts);
+    const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()+543} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const itemsStr = s.items ? s.items.map(i => `${i.name} x${i.qty}`).join(', ') : 'รายการติดหนี้';
+    const debtAmt = s.creditPart || s.total;
+
+    return `
+      <tr style="border-bottom: 1px dashed #ccc;">
+        <td style="padding: 6px 0; text-align: left;">
+          <div style="font-weight: bold; font-size: 13px;">${idx + 1}. ${itemsStr}</div>
+          <div style="font-size: 11px; color: #666;">วันที่: ${dateStr}</div>
+        </td>
+        <td style="padding: 6px 0; text-align: right; font-weight: bold; font-size: 14px; vertical-align: top;">
+          ฿${debtAmt.toFixed(2)}
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  const now = new Date();
+  const printDateStr = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()+543}`;
+
+  const printWin = window.open('', '_blank');
+  printWin.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>ใบทวงหนี้ - ${debtorName}</title>
+      <style>
+        body { font-family: 'Sarabun', 'Kanit', sans-serif; width: 80mm; margin: 0 auto; padding: 10px; color: #000; }
+        .text-center { text-align: center; }
+        .border-top { border-top: 2px dashed #000; padding-top: 8px; margin-top: 8px; }
+        .border-bottom { border-bottom: 2px dashed #000; padding-bottom: 8px; margin-bottom: 8px; }
+        table { width: 100%; border-collapse: collapse; }
+        .signature-box { margin-top: 20px; text-align: center; font-size: 12px; }
+        @media print {
+          @page { margin: 0; size: auto; }
+          body { padding: 5mm; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="text-center">
+        <h2 style="margin: 0; font-size: 20px;">ร้านค้าขวัญใจ</h2>
+        <div style="font-size: 13px; font-weight: bold; background: #B3432B; color: #fff; padding: 4px; margin: 6px 0; border-radius: 4px;">
+          หนังสือยืนยันรับสภาพหนี้ / ใบทวงหนี้
+        </div>
+        <div style="font-size: 15px; font-weight: bold; margin-top: 4px;">ลูกหนี้: คุณ ${debtorName}</div>
+        <div style="font-size: 11px; color: #555;">วันที่ออกเอกสาร: ${printDateStr}</div>
+      </div>
+
+      <div class="border-top border-bottom">
+        <table>
+          <tbody>
+            ${billRows}
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display: flex; justify-between; font-size: 16px; font-weight: bold; margin-top: 8px;" class="border-bottom">
+        <span>ยอดหนี้ค้างชำระรวม:</span>
+        <span style="color: #B3432B;">฿${totalDebt.toFixed(2)}</span>
+      </div>
+
+      <div style="font-size: 13px; font-weight: bold; margin-top: 12px; line-height: 1.6; text-align: center; background: #f9f9f9; padding: 10px 6px; border-radius: 6px; color: #000;">
+        ข้าพเจ้าขอรับรองว่าได้ซื้อสินค้า<br>
+        และมียอดค้างชำระจริง<br>
+        โดยขอสัญญาว่าจะนำเงินมาชำระหนี้ให้ครบถ้วน<br>
+        <span style="font-size: 14px; display: inline-block; margin-top: 6px; color: #B3432B;">ภายในวันที่ ...... / ...... / ..........</span>
+      </div>
+
+      <div class="signature-box">
+        <div style="margin-top: 25px;">ลงชื่อ ....................................................... ลูกหนี้</div>
+        <div style="margin-top: 4px; color: #555;">( คุณ ${debtorName} )</div>
+        <div style="margin-top: 6px; font-size: 11px; color: #666;">วันที่ ...... / ...... / ..........</div>
+      </div>
+
+      <div class="signature-box" style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px;">
+        <div>ลงชื่อ ....................................................... ผู้รับเรื่อง</div>
+        <div style="margin-top: 4px; color: #555;">( เจ้าหน้าที่ / เจ้าของร้าน )</div>
+      </div>
+
+      <script>
+        window.onload = function() { window.print(); }
+      <\/script>
+    </body>
+    </html>
+  `);
+  printWin.document.close();
+}
+
+// 📱 ฟังก์ชันผูกเบอร์โทรสมาชิกเข้ากับบัญชีลูกหนี้เดิม (อัปเดตย้อนหลังทุกบิล)
+function bindPhoneToDebtor(debtorName) {
+  if (!debtorName) return;
+
+  openCustomPrompt(`ระบุเบอร์โทรศัพท์สมาชิกที่จะผูกกับ "คุณ ${debtorName}":`, '', (phoneVal) => {
+    if (!phoneVal || phoneVal.trim().length !== 10) {
+      return alert('กรุณากรอกเบอร์โทรศัพท์ 10 หลักให้ถูกต้องครับ');
+    }
+
+    const cleanPhone = phoneVal.trim();
+    const matchingSales = sales.filter(s => (s.debtorName || "ไม่ระบุชื่อ") === debtorName);
+
+    if (matchingSales.length === 0) return alert("ไม่พบบิลของลูกหนี้นี้ในระบบ");
+
+    const batch = db.batch();
+    matchingSales.forEach(s => {
+      const ref = db.collection("sales").doc(s.id);
+      batch.update(ref, { customerPhone: cleanPhone });
+    });
+
+    // ตรวจสอบฐานข้อมูลสมาชิก ถ้ายังไม่มี ให้สร้างสมาชิกให้อัตโนมัติ
+    db.collection("members").doc(cleanPhone).get().then(mDoc => {
+      if (!mDoc.exists) {
+        db.collection("members").doc(cleanPhone).set({
+          phone: cleanPhone,
+          name: debtorName,
+          points: 0,
+          ts: Date.now()
+        });
+      } else {
+        db.collection("members").doc(cleanPhone).update({
+          name: debtorName
+        });
+      }
+
+      batch.commit().then(() => {
+        alert(`ผูกเบอร์ ${cleanPhone} เข้ากับบัญชีของคุณ "${debtorName}" เรียบร้อยแล้วทุกบิลครับ!`);
+        renderDebtItemsForPerson(debtorName);
+      }).catch(err => {
+        alert("เกิดข้อผิดพลาด: " + err.message);
+      });
+    });
+  });
+}
+
+  </script>
   <!-- Modal ยืนยันกลางจอ (Custom Confirm) -->
   <div id="customConfirmModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[9999]">
     <div class="bg-white p-6 rounded-3xl max-w-sm w-full text-center space-y-4 shadow-2xl border-2 border-[#DEDACB] animate-pop-in">
@@ -5317,6 +5765,32 @@ function closeCustomAlert() {
           ยกเลิก
         </button>
         <button onclick="closeCustomConfirm(true)" class="py-3 bg-[#0F5C52] text-white rounded-xl font-bold font-display hover:opacity-90 transition shadow-md">
+          ตกลง
+        </button>
+      </div>
+    </div>
+  </div>
+
+<!-- Modal กล่องกรอกข้อมูลกลางจอ (Custom Prompt) -->
+  <div id="customPromptModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[9999]">
+    <div class="bg-white p-6 rounded-3xl max-w-sm w-full text-center space-y-4 shadow-2xl border-2 border-[#DEDACB] animate-pop-in">
+      <div class="w-14 h-14 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+        <i data-lucide="edit-3" class="w-8 h-8"></i>
+      </div>
+      
+      <div id="customPromptTitle" class="text-xl font-bold text-gray-800 font-display">
+        <!-- หัวข้อจะแสดงตรงนี้ -->
+      </div>
+
+      <div>
+        <input type="text" id="customPromptInput" onkeydown="if(event.key==='Enter') closeCustomPrompt(true)" class="w-full p-3.5 rounded-2xl border-2 border-[#0F5C52] text-center text-xl font-bold font-display focus:outline-none bg-gray-50 focus:bg-white">
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 pt-1">
+        <button type="button" onclick="closeCustomPrompt(false)" class="py-3 bg-gray-200 text-gray-800 rounded-xl font-bold font-display hover:bg-gray-300 transition">
+          ยกเลิก
+        </button>
+        <button type="button" onclick="closeCustomPrompt(true)" class="py-3 bg-[#0F5C52] text-white rounded-xl font-bold font-display hover:opacity-90 transition shadow-md">
           ตกลง
         </button>
       </div>

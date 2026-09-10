@@ -67,23 +67,31 @@
 
     @media print {
       body * { visibility: hidden !important; }
-      .print-area, .print-area * { 
-        visibility: visible !important; 
-        color: black !important; /* 🎯 บังคับตัวหนังสือบนสลิปให้เป็นสีดำเข้มเวลากดสั่งพิมพ์ */
-      }
+      .print-area, .print-area * { visibility: visible !important; }
       
+      /* 🎯 ปลดล็อกป๊อปอัปสลิป ให้ยืดขยายยาวหลายหน้าได้ไม่โดนตัดขาด */
+      #debtSlipModal, #receiptModal {
+        position: static !important;
+        inset: auto !important;
+        padding: 0 !important;
+        background: transparent !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+      }
+
       .receipt-print-box {
-        position: absolute !important;
-        left: 0 !important;
-        top: 0 !important;
+        position: static !important; /* ❌ เปลี่ยนจาก absolute เป็น static เพื่อให้เบราว์เซอร์แบ่งขึ้นหน้า 2 ได้ */
         margin: 0 auto !important;
         padding: 0 !important;
         width: 100% !important;
-        max-width: 58mm !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
         box-shadow: none !important;
         border: none !important;
         background: white !important;
         color: black !important;
+        height: auto !important;
         max-height: none !important;
         overflow: visible !important;
       }

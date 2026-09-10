@@ -1290,6 +1290,24 @@
     </div>
   </div>
 
+<!-- Modal สลิปใบทวงหนี้ / สรุปยอด (Print) -->
+  <div id="debtSlipModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9999]">
+    <div class="bg-white p-7 rounded-3xl max-w-[440px] w-full space-y-4 print-area receipt-print-box text-center text-lg shadow-2xl max-h-[90vh] overflow-y-auto relative">
+      <!-- ปุ่มปิดหน้าต่าง -->
+      <button onclick="document.getElementById('debtSlipModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-black p-1.5 rounded-full no-print transition">
+        <i data-lucide="x" class="w-6 h-6"></i>
+      </button>
+      
+      <!-- พื้นที่แสดงข้อมูลสลิป -->
+      <div id="debtSlipContent" class="text-left font-sans text-lg"></div>
+      
+      <button onclick="window.print()" class="w-full bg-[#0F5C52] text-[#FFFFFF] py-3.5 rounded-2xl font-bold no-print flex items-center justify-center gap-2 mt-5 text-xl font-display shadow-md">
+        <i data-lucide="printer" class="w-6 h-6"></i> พิมพ์สลิป
+      </button>
+      <button onclick="document.getElementById('debtSlipModal').classList.add('hidden')" class="w-full border-2 py-2.5 rounded-2xl text-base no-print font-bold text-[#6B6A61]">ปิดหน้าต่าง</button>
+    </div>
+  </div>
+
   <!-- Modal เพิ่ม/แก้ไข/เติมสต็อกสินค้า -->
   <div id="productModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 no-print">
     <div class="bg-[#F5F3EE] p-6 rounded-3xl max-w-md w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
@@ -5441,6 +5459,7 @@ function closeCustomAlert() {
     }
 
 // 🖨️ ฟังก์ชันพิมพ์ใบสรุปยอดหนี้ค้างชำระให้ลูกค้า
+// 🖨️ ฟังก์ชันพิมพ์ใบสรุปยอดหนี้ค้างชำระให้ลูกค้า (แบบป๊อปอัปสลิป)
 function printDebtorStatement(debtorName) {
   const personBills = sales.filter(s => (s.creditPart > 0 || s.method === 'credit') && !s.settled && (s.debtorName || "ไม่ระบุชื่อ") === debtorName).sort((a, b) => (a.ts || 0) - (b.ts || 0));
   
@@ -5455,74 +5474,46 @@ function printDebtorStatement(debtorName) {
     const debtAmt = s.creditPart || s.total;
 
     return `
-      <tr style="border-bottom: 1px dashed #ccc;">
-        <td style="padding: 6px 0; text-align: left;">
-          <div style="font-weight: bold; font-size: 13px;">${idx + 1}. ${itemsStr}</div>
-          <div style="font-size: 11px; color: #666;">วันที่: ${dateStr}</div>
-        </td>
-        <td style="padding: 6px 0; text-align: right; font-weight: bold; font-size: 14px; vertical-align: top;">
-          ฿${debtAmt.toFixed(2)}
-        </td>
-      </tr>
+      <div class="grid grid-cols-[1fr_auto] gap-3 items-start border-b border-dashed border-gray-300 pb-2 mb-2 font-display">
+        <div class="break-words font-medium text-base text-gray-900 leading-snug text-left">
+          ${idx + 1}. ${itemsStr}
+          <div class="text-xs text-gray-500 mt-0.5">วันที่: ${dateStr}</div>
+        </div>
+        <div class="font-bold text-lg text-black text-right whitespace-nowrap pl-2">
+          ${fmtMoney(debtAmt)}
+        </div>
+      </div>
     `;
   }).join('');
 
   const now = new Date();
   const printDateStr = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()+543} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
-  const printWin = window.open('', '_blank');
-  printWin.document.write(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>ใบสรุปยอดหนี้ - ${debtorName}</title>
-      <style>
-        body { font-family: 'Sarabun', 'Kanit', sans-serif; width: 80mm; margin: 0 auto; padding: 10px; color: #000; }
-        .text-center { text-align: center; }
-        .border-top { border-top: 2px dashed #000; padding-top: 8px; margin-top: 8px; }
-        .border-bottom { border-bottom: 2px dashed #000; padding-bottom: 8px; margin-bottom: 8px; }
-        table { width: 100%; border-collapse: collapse; }
-        @media print {
-          @page { margin: 0; size: auto; }
-          body { padding: 5mm; }
-        }
-      </style>
-    </head>
-    <body>
-      <div class="text-center">
-        <h2 style="margin: 0; font-size: 20px;">ร้านค้าขวัญใจ</h2>
-        <div style="font-size: 13px; font-weight: bold; background: #000; color: #fff; padding: 4px; margin: 6px 0; border-radius: 4px;">
-          ใบสรุปรายการยอดหนี้ค้างชำระ
-        </div>
-        <div style="font-size: 15px; font-weight: bold; margin-top: 4px;">ลูกหนี้: คุณ ${debtorName}</div>
-        <div style="font-size: 11px; color: #555;">วันที่พิมพ์: ${printDateStr}</div>
-      </div>
+  const htmlContent = `
+    <div class="text-center space-y-1 mb-4">
+      <div class="font-bold text-3xl font-display">ร้านค้าขวัญใจ</div>
+      <div class="text-sm font-bold text-white bg-black py-1 rounded-xl my-2 font-display">ใบสรุปยอดหนี้ค้างชำระ</div>
+      <div class="text-sm text-[#6B6A61] font-medium font-display">ลูกหนี้: คุณ ${debtorName}</div>
+      <div class="text-sm text-[#6B6A61] font-medium">พิมพ์เมื่อ: ${printDateStr}</div>
+    </div>
 
-      <div class="border-top border-bottom">
-        <table>
-          <tbody>
-            ${billRows}
-          </tbody>
-        </table>
-      </div>
+    <div class="border-t-2 border-b-2 border-dashed border-black py-4 space-y-1">
+      ${billRows}
+    </div>
 
-      <div style="display: flex; justify-between; font-size: 16px; font-weight: bold; margin-top: 8px;" class="border-bottom">
-        <span>ยอดหนี้ค้างชำระรวม:</span>
-        <span style="color: #c00;">฿${totalDebt.toFixed(2)}</span>
-      </div>
+    <div class="flex justify-between items-center font-bold text-2xl pt-3 border-t-2 border-dashed border-gray-300 font-display">
+      <span class="text-gray-800">ยอดหนี้รวมทั้งสิ้น</span>
+      <span class="text-3xl font-extrabold text-[#B3432B] tracking-wide">${fmtMoney(totalDebt)}</span>
+    </div>
 
-      <div class="text-center" style="margin-top: 15px; font-size: 12px; color: #444;">
-        กรุณาตรวจสอบรายการยอดหนี้ค้างชำระ<br>
-        ขอบคุณที่อุดหนุนครับ / โอกาสหน้าเชิญใหม่ครับ
-      </div>
+    <div class="border-t-2 border-dashed border-black pt-3 mt-4 text-center text-sm font-bold text-[#6B6A61] font-display">
+      กรุณาตรวจสอบรายการยอดหนี้ค้างชำระ<br>ขอบคุณที่ใช้บริการครับ
+    </div>
+  `;
 
-      <script>
-        window.onload = function() { window.print(); }
-      <\/script>
-    </body>
-    </html>
-  `);
-  printWin.document.close();
+  document.getElementById('debtSlipContent').innerHTML = htmlContent;
+  document.getElementById('debtSlipModal').classList.remove('hidden');
+  lucide.createIcons();
 }
 
 // 🟢 สคริปต์ควบคุมป๊อปอัปกรอกข้อมูลกลางจอ (Custom Prompt)
@@ -5605,6 +5596,7 @@ function renameDebtorGlobal(oldName) {
 }
 
 // ✍️ ฟังก์ชันพิมพ์ใบทวงหนี้ / หนังสือยืนยันรับสภาพหนี้ (มีช่องให้ลูกค้าเซ็นชื่อ)
+// ✍️ ฟังก์ชันพิมพ์ใบทวงหนี้ / หนังสือยืนยันรับสภาพหนี้ (แบบป๊อปอัปสลิป)
 function printDebtorAcknowledgement(debtorName) {
   const personBills = sales.filter(s => (s.creditPart > 0 || s.method === 'credit') && !s.settled && (s.debtorName || "ไม่ระบุชื่อ") === debtorName).sort((a, b) => (a.ts || 0) - (b.ts || 0));
   
@@ -5614,93 +5606,75 @@ function printDebtorAcknowledgement(debtorName) {
   
   const billRows = personBills.map((s, idx) => {
     const d = new Date(s.ts);
-    const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()+543} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()+543}`;
     const itemsStr = s.items ? s.items.map(i => `${i.name} x${i.qty}`).join(', ') : 'รายการติดหนี้';
     const debtAmt = s.creditPart || s.total;
 
     return `
-      <tr style="border-bottom: 1px dashed #ccc;">
-        <td style="padding: 6px 0; text-align: left;">
-          <div style="font-weight: bold; font-size: 13px;">${idx + 1}. ${itemsStr}</div>
-          <div style="font-size: 11px; color: #666;">วันที่: ${dateStr}</div>
-        </td>
-        <td style="padding: 6px 0; text-align: right; font-weight: bold; font-size: 14px; vertical-align: top;">
-          ฿${debtAmt.toFixed(2)}
-        </td>
-      </tr>
+      <div class="grid grid-cols-[1fr_auto] gap-3 items-start border-b border-dashed border-gray-300 pb-2 mb-2 font-display">
+        <div class="break-words font-medium text-base text-gray-900 leading-snug text-left">
+          ${idx + 1}. ${itemsStr}
+          <div class="text-xs text-gray-500 mt-0.5">วันที่: ${dateStr}</div>
+        </div>
+        <div class="font-bold text-lg text-black text-right whitespace-nowrap pl-2">
+          ${fmtMoney(debtAmt)}
+        </div>
+      </div>
     `;
   }).join('');
 
   const now = new Date();
   const printDateStr = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()+543}`;
 
-  const printWin = window.open('', '_blank');
-  printWin.document.write(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>ใบทวงหนี้ - ${debtorName}</title>
-      <style>
-        body { font-family: 'Sarabun', 'Kanit', sans-serif; width: 80mm; margin: 0 auto; padding: 10px; color: #000; }
-        .text-center { text-align: center; }
-        .border-top { border-top: 2px dashed #000; padding-top: 8px; margin-top: 8px; }
-        .border-bottom { border-bottom: 2px dashed #000; padding-bottom: 8px; margin-bottom: 8px; }
-        table { width: 100%; border-collapse: collapse; }
-        .signature-box { margin-top: 20px; text-align: center; font-size: 12px; }
-        @media print {
-          @page { margin: 0; size: auto; }
-          body { padding: 5mm; }
-        }
-      </style>
-    </head>
-    <body>
-      <div class="text-center">
-        <h2 style="margin: 0; font-size: 20px;">ร้านค้าขวัญใจ</h2>
-        <div style="font-size: 13px; font-weight: bold; background: #B3432B; color: #fff; padding: 4px; margin: 6px 0; border-radius: 4px;">
-          หนังสือยืนยันรับสภาพหนี้ / ใบทวงหนี้
+  const htmlContent = `
+    <div class="text-center space-y-1 mb-4">
+      <div class="font-bold text-3xl font-display">ร้านค้าขวัญใจ</div>
+      <div class="text-sm font-bold text-white bg-[#B3432B] py-1 rounded-xl my-2 font-display">หนังสือยืนยันรับสภาพหนี้</div>
+      <div class="text-sm text-[#6B6A61] font-medium font-display">ลูกหนี้: คุณ ${debtorName}</div>
+      <div class="text-sm text-[#6B6A61] font-medium">ออกเอกสาร: ${printDateStr}</div>
+    </div>
+
+    <div class="border-t-2 border-b-2 border-dashed border-black py-4 space-y-1">
+      ${billRows}
+    </div>
+
+    <div class="flex justify-between items-center font-bold text-2xl pt-3 font-display">
+      <span class="text-gray-800">ยอดหนี้ค้างชำระรวม</span>
+      <span class="text-3xl font-extrabold text-[#B3432B] tracking-wide">${fmtMoney(totalDebt)}</span>
+    </div>
+
+    <!-- 📜 กล่องข้อความสัญญา (เว้นระยะบรรทัด line-height: 1.8 สระไม่ชนไม่หาย) -->
+    <div style="font-family: 'Sarabun', 'TH Sarabun PSK', sans-serif; line-height: 1.8;" class="text-xl font-bold mt-4 text-center bg-gray-100 p-4 rounded-2xl text-black border-2 border-gray-300">
+      ข้าพเจ้าขอรับรองว่าได้ซื้อสินค้า<br>
+      และมียอดค้างชำระจริง<br>
+      โดยขอสัญญาว่าจะนำเงินมาชำระหนี้ให้ครบถ้วน<br>
+      <span class="text-xl font-black inline-block mt-2 text-[#B3432B]">ภายในวันที่ ...... / ...... / ..........</span>
+    </div>
+
+    <!-- ✍️ โซนลงชื่อ (ย่อจุดไข่ปลาให้พอดีแถวเดียว ไม่ตกบรรทัด) -->
+    <div style="font-family: 'Sarabun', 'TH Sarabun PSK', sans-serif;" class="mt-6 text-center space-y-3">
+      <div>
+        <div class="font-bold text-gray-900 text-xl whitespace-nowrap">
+          ลงชื่อ ........................................ ลูกหนี้
         </div>
-        <div style="font-size: 15px; font-weight: bold; margin-top: 4px;">ลูกหนี้: คุณ ${debtorName}</div>
-        <div style="font-size: 11px; color: #555;">วันที่ออกเอกสาร: ${printDateStr}</div>
+        <div class="text-gray-800 text-lg font-bold mt-1">( คุณ ${debtorName} )</div>
+        <div class="text-gray-600 text-base font-semibold mt-1">วันที่ ...... / ...... / ..........</div>
       </div>
+    </div>
 
-      <div class="border-top border-bottom">
-        <table>
-          <tbody>
-            ${billRows}
-          </tbody>
-        </table>
+    <div style="font-family: 'Sarabun', 'TH Sarabun PSK', sans-serif;" class="mt-5 border-t-2 border-dashed border-gray-400 pt-5 text-center space-y-3">
+      <div>
+        <div class="font-bold text-gray-900 text-xl whitespace-nowrap">
+          ลงชื่อ ........................................ ผู้รับเรื่อง
+        </div>
+        <div class="text-gray-800 text-lg font-bold mt-1">( เจ้าหน้าที่ / เจ้าของร้าน )</div>
       </div>
+    </div>
+  `;
 
-      <div style="display: flex; justify-between; font-size: 16px; font-weight: bold; margin-top: 8px;" class="border-bottom">
-        <span>ยอดหนี้ค้างชำระรวม:</span>
-        <span style="color: #B3432B;">฿${totalDebt.toFixed(2)}</span>
-      </div>
-
-      <div style="font-size: 13px; font-weight: bold; margin-top: 12px; line-height: 1.6; text-align: center; background: #f9f9f9; padding: 10px 6px; border-radius: 6px; color: #000;">
-        ข้าพเจ้าขอรับรองว่าได้ซื้อสินค้า<br>
-        และมียอดค้างชำระจริง<br>
-        โดยขอสัญญาว่าจะนำเงินมาชำระหนี้ให้ครบถ้วน<br>
-        <span style="font-size: 14px; display: inline-block; margin-top: 6px; color: #B3432B;">ภายในวันที่ ...... / ...... / ..........</span>
-      </div>
-
-      <div class="signature-box">
-        <div style="margin-top: 25px;">ลงชื่อ ....................................................... ลูกหนี้</div>
-        <div style="margin-top: 4px; color: #555;">( คุณ ${debtorName} )</div>
-        <div style="margin-top: 6px; font-size: 11px; color: #666;">วันที่ ...... / ...... / ..........</div>
-      </div>
-
-      <div class="signature-box" style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px;">
-        <div>ลงชื่อ ....................................................... ผู้รับเรื่อง</div>
-        <div style="margin-top: 4px; color: #555;">( เจ้าหน้าที่ / เจ้าของร้าน )</div>
-      </div>
-
-      <script>
-        window.onload = function() { window.print(); }
-      <\/script>
-    </body>
-    </html>
-  `);
-  printWin.document.close();
+  document.getElementById('debtSlipContent').innerHTML = htmlContent;
+  document.getElementById('debtSlipModal').classList.remove('hidden');
+  lucide.createIcons();
 }
 
 // 📱 ฟังก์ชันผูกเบอร์โทรสมาชิกเข้ากับบัญชีลูกหนี้เดิม (อัปเดตย้อนหลังทุกบิล)

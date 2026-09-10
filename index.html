@@ -1502,6 +1502,7 @@ function renderMembersList() {
 }
 
 function openMemberCardFromList(phone) {
+  isOpenedFromMembersList = true;
   const member = membersList.find(m => (m.phone || m.id) === phone);
   const memName = member ? (member.name || 'ลูกค้า') : 'ลูกค้า';
   const memPhone = member ? (member.phone || member.id || phone) : phone;
@@ -1548,10 +1549,19 @@ function openMemberCardFromList(phone) {
     focusScanInput();
   }
 
-  function closeMemberCardModal() {
-    document.getElementById('memberCardModal').classList.add('hidden');
+  let isOpenedFromMembersList = false;
+
+function closeMemberCardModal() {
+  document.getElementById('memberCardModal').classList.add('hidden');
+
+  if (isOpenedFromMembersList) {
+    // 🔄 ถ้าเปิดมาจากหน้ารายชื่อสมาชิก ให้เด้งกลับไปหน้ารายชื่อสมาชิกทันที
+    document.getElementById('allMembersModal').classList.remove('hidden');
+    isOpenedFromMembersList = false;
+  } else {
     focusScanInput();
   }
+}
 
   function saveAndGenerateMemberCard() {
     const phone = document.getElementById('regMemPhone').value.trim();

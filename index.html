@@ -22,6 +22,8 @@
   <!-- JsBarcode & html2canvas -->
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <!-- 📱 QRCode.js สำหรับสร้าง QR Code สมาชิก -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -179,6 +181,12 @@
 
     <nav class="flex items-center gap-1.5 bg-white/10 p-1.5 rounded-2xl text-base font-semibold flex-wrap">
       <button onclick="showTab('pos')" id="btn-pos" class="px-4 py-2 rounded-xl bg-[#F5F3EE] text-[#1C2321]">ขายสินค้า</button>
+      <button onclick="openRegisterMemberModal()" class="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-500 text-black font-bold flex items-center gap-1.5 shadow-sm transition">
+        <i data-lucide="user-plus" class="w-5 h-5"></i> สมัครสมาชิก
+      </button>
+      <button onclick="openAllMembersModal()" class="px-4 py-2 rounded-xl hover:bg-white/10 text-white font-semibold flex items-center gap-1.5 transition">
+        <span>👥 รายชื่อสมาชิก</span>
+      </button>
       <button onclick="openOnlineOrdersModal()" id="btn-online-orders" class="px-4 py-2 rounded-xl hover:bg-white/10 text-white flex items-center gap-1.5 relative">
         <span>🛒 ออเดอร์ออนไลน์</span>
         <span id="onlineOrdersBadge" class="bg-amber-500 text-black text-xs px-2 py-0.5 rounded-full font-bold hidden animate-pulse">0</span>
@@ -1423,7 +1431,191 @@
   </div>
 
   <script>
-    const CORRECT_PIN = "141615";
+  let currentCardPhone = "";
+
+  let membersList = [];
+let unsubscribeMembers = null;
+
+function openAllMembersModal() {
+  document.getElementById('memberSearchInput').value = '';
+  document.getElementById('allMembersModal').classList.remove('hidden');
+  listenMembersData();
+}
+
+function closeAllMembersModal() {
+  document.getElementById('allMembersModal').classList.add('hidden');
+  focusScanInput();
+}
+
+function listenMembersData() {
+  if (unsubscribeMembers) unsubscribeMembers();
+  unsubscribeMembers = db.collection("members").onSnapshot(snapshot => {
+    membersList = [];
+    snapshot.forEach(doc => {
+      membersList.push({ id: doc.id, ...doc.data() });
+    });
+    renderMembersList();
+  });
+}
+
+function renderMembersList() {
+  const searchVal = (document.getElementById('memberSearchInput')?.value || '').trim().toLowerCase();
+  const tbody = document.getElementById('membersListTableBody');
+  if (!tbody) return;
+
+  let filtered = membersList;
+  if (searchVal) {
+    filtered = membersList.filter(m => 
+      (m.name || '').toLowerCase().includes(searchVal) || 
+      (m.phone || m.id || '').includes(searchVal)
+    );
+  }
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-gray-400 font-bold">ไม่พบข้อมูลสมาชิกที่ค้นหา</td></tr>`;
+    return;
+  }
+
+  filtered.sort((a,b) => (b.points || 0) - (a.points || 0));
+
+  tbody.innerHTML = filtered.map(m => `
+    <tr class="border-b hover:bg-amber-50/50 transition">
+      <td class="py-3 font-bold text-gray-800">${m.name || 'ไม่ระบุชื่อ'}</td>
+      <td class="py-3 font-mono text-gray-600 font-bold">${m.phone || m.id}</td>
+      <td class="py-3 text-center">
+        <span class="bg-amber-100 text-amber-900 font-bold px-3 py-1 rounded-full text-xs font-display">
+          ⭐ ${m.points || 0} แต้ม
+        </span>
+      </td>
+      <td class="py-3 text-right">
+        <button onclick="openMemberCardFromList('${m.phone || m.id}', '${m.name || ''}')" class="bg-[#0F5C52] text-white px-3 py-1 rounded-xl text-xs font-bold font-display hover:opacity-90 shadow-sm">
+          🎴 ดูบัตร
+        </button>
+      </td>
+    </tr>
+  `).join('');
+
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function openMemberCardFromList(phone, name) {
+  currentCardPhone = phone;
+  document.getElementById('cardCustName').innerText = `คุณ ${name}`;
+  const formattedPhone = phone.replace(/(\d{3})(\d{3})(\d{4})/, '$1 - $2 - $3');
+  document.getElementById('cardCustPhone').innerText = formattedPhone;
+
+  const qrContainer = document.getElementById('memberCardQrCode');
+  qrContainer.innerHTML = '';
+  new QRCode(qrContainer, {
+          text: phone,
+          width: 155,
+          height: 155,
+          colorDark : "#2C302E", // 🎨 สี QR Code ชาโคลเข้ม เข้ากับดีไซน์ใหม่
+          colorLight : "#ffffff",
+          correctLevel : QRCode.CorrectLevel.H
+        });
+
+  closeAllMembersModal();
+  document.getElementById('memberCardModal').classList.remove('hidden');
+}
+
+  function openRegisterMemberModal() {
+    document.getElementById('regMemPhone').value = '';
+    document.getElementById('regMemName').value = '';
+    document.getElementById('regMemAddress').value = '';
+    document.getElementById('registerMemberModal').classList.remove('hidden');
+    setTimeout(() => document.getElementById('regMemPhone').focus(), 100);
+  }
+
+  function closeRegisterMemberModal() {
+    document.getElementById('registerMemberModal').classList.add('hidden');
+    focusScanInput();
+  }
+
+  function closeMemberCardModal() {
+    document.getElementById('memberCardModal').classList.add('hidden');
+    focusScanInput();
+  }
+
+  function saveAndGenerateMemberCard() {
+    const phone = document.getElementById('regMemPhone').value.trim();
+    const name = document.getElementById('regMemName').value.trim();
+    const address = document.getElementById('regMemAddress').value.trim();
+
+    if (!phone || phone.length !== 10 || isNaN(phone)) {
+      return alert('กรุณากรอกเบอร์โทรศัพท์ 10 หลักให้ถูกต้องครับ');
+    }
+    if (!name) {
+      return alert('กรุณากรอกชื่อ-นามสกุล ลูกค้าด้วยครับ');
+    }
+
+    currentCardPhone = phone;
+
+    db.collection("members").doc(phone).get().then(doc => {
+      const existingPoints = doc.exists ? (doc.data().points || 0) : 0;
+      
+      db.collection("members").doc(phone).set({
+        phone: phone,
+        name: name,
+        address: address || '',
+        points: existingPoints,
+        ts: Date.now()
+      }, { merge: true }).then(() => {
+        document.getElementById('cardCustName').innerText = `คุณ ${name}`;
+        const formattedPhone = phone.replace(/(\d{3})(\d{3})(\d{4})/, '$1 - $2 - $3');
+        document.getElementById('cardCustPhone').innerText = formattedPhone;
+
+        const qrContainer = document.getElementById('memberCardQrCode');
+        qrContainer.innerHTML = '';
+        new QRCode(qrContainer, {
+          text: phone,
+          width: 160,
+          height: 160,
+          colorDark : "#0F5C52",
+          colorLight : "#ffffff",
+          correctLevel : QRCode.CorrectLevel.H
+        });
+
+        closeRegisterMemberModal();
+        document.getElementById('memberCardModal').classList.remove('hidden');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+      });
+    });
+  }
+
+  // 📸 ฟังก์ชันเซฟรูปภาพบัตรสมาชิก (.png) เวอร์ชันแก้ไขอาการค้าง
+function downloadMemberCardImage() {
+  const cardElement = document.getElementById('memberCardPrintArea');
+  if (!cardElement) return alert('ไม่พบพื้นที่บัตรสมาชิกครับ');
+
+  const phone = currentCardPhone || 'VIP';
+
+  // ตั้งค่าแปลงหน้าบัตรเป็นรูปภาพ คมชัดระดับ HD
+  html2canvas(cardElement, {
+    scale: 3,
+    useCORS: true,
+    allowTaint: true,
+    backgroundColor: '#FAF7F2', // ล็อกสีพื้นหลังโทนครีมมินิมอลตามดีไซน์
+    logging: false
+  }).then(canvas => {
+    try {
+      const imageUri = canvas.toDataURL("image/png");
+      const link = document.createElement('a');
+      link.download = `บัตรสมาชิก_${phone}.png`;
+      link.href = imageUri;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      alert('ไม่สามารถเซฟรูปได้ เนื่องจากระบบความปลอดภัยของรูปโลโก้ แนะนำให้รันผ่าน Local Server หรือเปลี่ยนไปใช้รูปโลโก้อื่นครับ');
+    }
+  }).catch(err => {
+    console.error(err);
+    alert('เกิดข้อผิดพลาดในการเจนรูปภาพ: ' + err.message);
+  });
+}
+
+  const CORRECT_PIN = "141615";
 
     const THAI_MONTHS = [
       "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
@@ -5778,5 +5970,149 @@ function bindPhoneToDebtor(debtorName) {
       </div>
     </div>
   </div>
+
+  <!-- 📝 Modal 1: ฟอร์มสมัครสมาชิกใหม่ -->
+<div id="registerMemberModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[9999] no-print">
+  <div class="bg-white p-6 rounded-3xl max-w-md w-full space-y-4 shadow-2xl border-2 border-amber-300">
+    <div class="flex justify-between items-center border-b pb-3">
+      <h3 class="font-bold text-2xl font-display text-[#0F5C52] flex items-center gap-2">
+        <i data-lucide="sparkles" class="w-6 h-6 text-amber-500"></i> สมัครสมาชิกใหม่
+      </h3>
+      <button onclick="closeRegisterMemberModal()" class="text-gray-400 hover:text-black p-1"><i data-lucide="x" class="w-6 h-6"></i></button>
+    </div>
+
+    <div class="space-y-3">
+      <div>
+        <label class="text-xs font-bold text-gray-600 block mb-1">เบอร์โทรศัพท์ (ใช้เป็น ID สมาชิก 10 หลัก) *</label>
+        <input type="tel" id="regMemPhone" maxlength="10" placeholder="0812345678" class="w-full p-3 rounded-2xl border-2 border-amber-400 text-2xl font-bold font-mono tracking-wider text-center focus:outline-none focus:border-[#0F5C52] bg-amber-50/50">
+      </div>
+
+      <div>
+        <label class="text-xs font-bold text-gray-600 block mb-1">ชื่อ-นามสกุล ลูกค้า *</label>
+        <input type="text" id="regMemName" placeholder="เช่น คุณสมชาย ใจดี" class="w-full p-3 rounded-xl border-2 border-gray-200 text-base font-bold focus:outline-none focus:border-[#0F5C52]">
+      </div>
+
+      <div>
+        <label class="text-xs font-bold text-gray-600 block mb-1">ที่อยู่ / หมายเหตุ (เว้นได้)</label>
+        <input type="text" id="regMemAddress" placeholder="ระบุที่อยู่สั้นๆ หรือหมายเหตุ..." class="w-full p-3 rounded-xl border-2 border-gray-200 text-sm font-medium focus:outline-none">
+      </div>
+    </div>
+
+    <button onclick="saveAndGenerateMemberCard()" class="w-full bg-[#0F5C52] hover:bg-[#0c4941] text-white py-3.5 rounded-2xl font-bold font-display text-lg shadow-md transition flex items-center justify-center gap-2">
+      <i data-lucide="qr-code" class="w-5 h-5"></i> บันทึก & ออกบัตรสมาชิก
+    </button>
+  </div>
+</div>
+
+<!-- 🎴 Modal 2: แสดงบัตรสมาชิกสุดน่ารัก + โหลดรูปบัตร -->
+<div id="memberCardModal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[9999] no-print">
+  <div class="bg-white p-6 rounded-3xl max-w-sm w-full space-y-4 text-center shadow-2xl relative">
+    <button onclick="closeMemberCardModal()" class="absolute top-4 right-4 text-gray-400 hover:text-black p-1 rounded-full"><i data-lucide="x" class="w-6 h-6"></i></button>
+
+    <div class="text-lg font-bold font-display text-[#0F5C52]">✨ สมัครสมาชิกเรียบร้อยแล้ว!</div>
+
+    <!-- 🎴 ตัวบัตรสมาชิกแนวตั้ง มินิมอล มินิฮาร์ท อบอุ่นตามเรฟ -->
+    <div id="memberCardPrintArea" class="w-[320px] mx-auto p-5 bg-[#FAF7F2] rounded-[30px] text-[#2C302E] shadow-xl relative overflow-hidden border-2 border-[#E8E2D5] flex flex-col justify-between items-center min-h-[470px]">
+      
+      <!-- 🎨 แถบทองเมทัลลิกโค้งมนด้านล่างตามเรฟ -->
+      <div class="absolute -bottom-12 -right-10 w-52 h-24 bg-gradient-to-r from-[#C5A059] via-[#E8D08D] to-[#A38038] rounded-full -rotate-12 opacity-85 pointer-events-none"></div>
+
+      <!-- 1. Header: โลโก้ร้าน + ชื่อสไตล์มินิมอล -->
+      <div class="w-full flex justify-between items-center border-b border-[#E8E2D5] pb-3 relative z-10">
+        <div class="flex items-center gap-2.5 text-left">
+          <div class="w-10 h-10 rounded-2xl bg-white p-1 shadow-sm border border-[#E8E2D5] flex items-center justify-center">
+            <img src="logo.jpg.png" alt="โลโก้" class="w-full h-full rounded-xl object-cover">
+          </div>
+          <div>
+            <div class="font-extrabold text-base tracking-wider font-display text-[#2C302E]">ร้านค้าขวัญใจ</div>
+            <div class="text-[9px] text-[#8A8679] font-mono tracking-widest uppercase">KWANJAI GROCERY & POS</div>
+          </div>
+        </div>
+        <span class="bg-[#2C302E] text-[#F3E5C8] text-[10px] font-bold px-2.5 py-0.5 rounded-full tracking-widest font-mono shadow-sm">VIP</span>
+      </div>
+
+      <!-- 2. QR Code Container การ์ดขาวตรงกลาง -->
+      <div class="my-3 p-3.5 bg-white rounded-2xl shadow-sm border border-[#E8E2D5] relative z-10 flex flex-col items-center">
+        <div id="memberCardQrCode" class="flex justify-center p-1"></div>
+        <div class="text-[9px] font-bold text-[#9C988B] mt-1.5 font-mono tracking-widest uppercase">SCAN FOR MEMBER ID</div>
+      </div>
+
+      <!-- 3. ข้อมูลสมาชิก -->
+      <div class="w-full text-center space-y-1 relative z-10">
+        <div class="text-[10px] font-extrabold text-[#B89450] tracking-[0.25em] uppercase font-mono">M E M B E R</div>
+        <div class="text-xl font-bold font-display text-[#2C302E] truncate px-2" id="cardCustName">คุณลูกค้า</div>
+        
+        <div class="pt-1">
+          <div class="text-[10px] text-[#8A8679] font-bold">หมายเลขสมาชิก</div>
+          <!-- 📞 เลขเบอร์โทรศัพท์ กรอบขาวมินิมอล อ่านง่าย -->
+          <div class="text-lg font-black font-mono text-[#2C302E] tracking-widest bg-white/90 py-1.5 px-3 rounded-xl border border-[#E8E2D5] shadow-inner mt-0.5 inline-block" id="cardCustPhone">
+            08X - XXX - XXXX
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Footer สิทธิประโยชน์ไอคอนน่ารักตามเรฟ -->
+      <div class="w-full pt-2.5 border-t border-[#E8E2D5] grid grid-cols-3 gap-1 text-[9px] text-[#6B685C] font-semibold relative z-10 text-center">
+        <div class="flex flex-col items-center gap-0.5">
+          <span class="text-sm">🎁</span>
+          <span>สิทธิพิเศษ</span>
+        </div>
+        <div class="flex flex-col items-center gap-0.5 border-x border-[#E8E2D5]">
+          <span class="text-sm">🏷️</span>
+          <span>ส่วนลดพิเศษ</span>
+        </div>
+        <div class="flex flex-col items-center gap-0.5">
+          <span class="text-sm">🎂</span>
+          <span>ของขวัญวันเกิด</span>
+        </div>
+      </div>
+
+    </div>
+
+     <!-- ปุ่มแอ็กชัน -->
+    <div class="grid grid-cols-2 gap-2 pt-2">
+      <button onclick="downloadMemberCardImage()" class="bg-amber-500 hover:bg-amber-600 text-black py-3 rounded-2xl font-bold flex items-center justify-center gap-1.5 text-sm font-display shadow-md transition">
+        <i data-lucide="download" class="w-4 h-4"></i> โหลดรูปบัตร
+      </button>
+      <button onclick="closeMemberCardModal()" class="bg-[#0F5C52] text-white py-3 rounded-2xl font-bold text-sm font-display shadow-md hover:opacity-90 transition">
+        เสร็จสิ้น
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 👥 Modal 3: ดูรายชื่อสมาชิกทั้งหมด & เช็กแต้ม -->
+<div id="allMembersModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[9999] no-print">
+  <div class="bg-white p-6 rounded-3xl max-w-2xl w-full space-y-4 shadow-2xl max-h-[85vh] overflow-y-auto">
+    <div class="flex justify-between items-center border-b pb-3">
+      <h3 class="font-bold text-2xl font-display text-[#0F5C52] flex items-center gap-2">
+        <i data-lucide="users" class="w-6 h-6 text-amber-500"></i> รายชื่อสมาชิก & แต้มสะสม
+      </h3>
+      <button onclick="closeAllMembersModal()" class="text-gray-400 hover:text-black p-1"><i data-lucide="x" class="w-6 h-6"></i></button>
+    </div>
+
+    <!-- ช่องค้นหา -->
+    <div class="relative">
+      <input type="text" id="memberSearchInput" oninput="renderMembersList()" placeholder="🔍 ค้นหาด้วยชื่อ หรือเบอร์โทรศัพท์..." class="w-full p-3 rounded-2xl border-2 border-gray-200 font-bold bg-[#F5F3EE] focus:outline-none focus:bg-white text-base">
+    </div>
+
+    <!-- ตารางสมาชิก -->
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-base">
+        <thead>
+          <tr class="border-b-2 border-gray-200 text-gray-500 font-bold">
+            <th class="pb-2">ชื่อสมาชิก</th>
+            <th class="pb-2">เบอร์โทรศัพท์</th>
+            <th class="pb-2 text-center">แต้มสะสม</th>
+            <th class="pb-2 text-right">บัตรสมาชิก</th>
+          </tr>
+        </thead>
+        <tbody id="membersListTableBody">
+          <tr><td colspan="4" class="text-center py-8 text-gray-400 font-bold">กำลังโหลดข้อมูลสมาชิก...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 </body>
 </html>

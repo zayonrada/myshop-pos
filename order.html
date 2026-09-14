@@ -23,6 +23,9 @@
   <!-- QR Code Generator JS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
+  <!-- html2canvas สำหรับให้ลูกค้าเซฟรูปบัตรสมาชิก -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
   <!-- LINE LIFF SDK -->
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <!-- Firebase SDKs -->
@@ -175,7 +178,7 @@
 
     <!-- 👤 Modal สมาชิก -->
     <div id="memberModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div class="bg-white p-6 rounded-3xl max-w-md w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="bg-white p-6 rounded-3xl max-w-md w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar">
         <div class="flex justify-between items-center border-b pb-3">
           <h3 class="font-bold text-xl font-display flex items-center gap-2 text-[#008B47]">
             <i data-lucide="user-check"></i> เข้าสู่ระบบสมาชิก
@@ -199,6 +202,22 @@
             <input type="text" id="memberNameInput" placeholder="กรอกชื่อของคุณ" class="w-full p-2.5 rounded-xl border bg-gray-50 font-bold text-sm focus:outline-none focus:border-[#008B47]">
           </div>
 
+          <!-- 🎂 ดรอปดาวน์ วัน/เดือน/ปีเกิด (พ.ศ. ย้อนหลัง 100 ปี) -->
+          <div>
+            <label class="text-xs font-bold text-gray-600 block mb-1">วัน/เดือน/ปีเกิด (รับแต้ม x2 ในเดือนเกิด) 🎂</label>
+            <div class="grid grid-cols-3 gap-2">
+              <select id="birthDaySelect" class="p-2.5 rounded-xl border bg-gray-50 font-bold text-xs md:text-sm focus:outline-none focus:border-[#008B47]">
+                <option value="">วัน</option>
+              </select>
+              <select id="birthMonthSelect" class="p-2.5 rounded-xl border bg-gray-50 font-bold text-xs md:text-sm focus:outline-none focus:border-[#008B47]">
+                <option value="">เดือน</option>
+              </select>
+              <select id="birthYearSelect" class="p-2.5 rounded-xl border bg-gray-50 font-bold text-xs md:text-sm focus:outline-none focus:border-[#008B47]">
+                <option value="">ปี (พ.ศ.)</option>
+              </select>
+            </div>
+          </div>
+
           <div>
             <label class="text-xs font-bold text-gray-600 block mb-1">ที่อยู่จัดส่งประจำ</label>
             <textarea id="memberAddressInput" rows="2" placeholder="ระบุที่อยู่บ้านเลขที่ / จุดสังเกต..." class="w-full p-2.5 rounded-xl border bg-gray-50 font-bold text-sm focus:outline-none focus:border-[#008B47]"></textarea>
@@ -209,16 +228,75 @@
             <span class="text-xl font-bold font-display text-amber-600" id="modalMemberPoints">0 แต้ม</span>
           </div>
 
-          <!-- 📱 กล่องแสดง QR Code สมาชิกสำหรับเปิดยิงสแกนหน้าร้าน -->
-          <div id="qrCodeBox" class="hidden bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-center space-y-2">
-            <div class="text-xs font-bold text-[#008B47] font-display">📱 QR Code บัตรสมาชิกของคุณ</div>
-            <div class="text-[10px] text-gray-500">ยื่นหน้าจอนี้ให้พนักงานสแกนหน้าร้านเพื่อสะสมแต้มได้ทันที</div>
-            <div id="qrcodeCanvas" class="flex justify-center p-3 bg-white rounded-xl shadow-sm w-max mx-auto border border-emerald-100"></div>
+          <!-- 🎴 บัตรสมาชิกดิจิทัลแนวตั้ง & ปุ่มกดโหลดรูป -->
+          <div id="custCardPreviewBox" class="hidden pt-4 border-t border-gray-200 space-y-3">
+            <div class="text-sm font-bold text-[#008B47] font-display text-center">🎴 บัตรสมาชิกดิจิทัล</div>
+
+            <!-- ตัวบัตรสมาชิกแนวตั้ง -->
+            <div id="memberCardPrintArea" style="font-family: Tahoma, 'Leelawadee UI', 'Sarabun', sans-serif; width: 300px;" class="mx-auto p-4 bg-[#FAF7F2] rounded-[28px] text-[#2C302E] shadow-lg relative overflow-hidden border-2 border-[#E8E2D5] flex flex-col justify-between items-center min-h-[440px]">
+              
+              <!-- แถบทองเมทัลลิกโค้งมนด้านล่าง -->
+              <div class="absolute -bottom-12 -right-10 w-48 h-24 bg-gradient-to-r from-[#C5A059] via-[#E8D08D] to-[#A38038] rounded-full -rotate-12 opacity-85 pointer-events-none"></div>
+
+              <!-- 1. Header -->
+              <div class="w-full flex justify-between items-center border-b border-[#E8E2D5] pb-2.5 relative z-10">
+                <div class="flex items-center gap-2 text-left">
+                  <div class="w-9 h-9 rounded-2xl bg-white p-1 shadow-sm border border-[#E8E2D5] flex items-center justify-center">
+                    <img src="logo.jpg.png" alt="โลโก้" class="w-full h-full rounded-xl object-cover">
+                  </div>
+                  <div>
+                    <div style="font-weight: 700; line-height: 1.2;" class="text-sm text-[#2C302E]">ร้านค้าขวัญใจ</div>
+                    <div style="font-size: 8px; line-height: 1.2;" class="text-[#8A8679] font-mono">KWANJAI GROCERY & POS</div>
+                  </div>
+                </div>
+                <span style="font-weight: 700;" class="bg-[#2C302E] text-[#F3E5C8] text-[9px] px-2.5 py-0.5 rounded-full font-mono shadow-sm">VIP</span>
+              </div>
+
+              <!-- 2. QR Code Container -->
+              <div class="my-2 p-3 bg-white rounded-2xl shadow-sm border border-[#E8E2D5] relative z-10 flex flex-col items-center">
+                <div id="memberCardQrCode" class="flex justify-center p-1"></div>
+                <div style="font-size: 8px; font-weight: 700;" class="text-[#9C988B] mt-1 font-mono">SCAN FOR MEMBER ID</div>
+              </div>
+
+              <!-- 3. ข้อมูลสมาชิก -->
+              <div class="w-full text-center space-y-1 relative z-10 py-1">
+                <div style="font-size: 9px; font-weight: 700; letter-spacing: 2px;" class="text-[#B89450] font-mono uppercase">M E M B E R</div>
+                <div id="cardCustName" style="font-size: 18px; font-weight: 700; line-height: 1.3; color: #2C302E;" class="px-2 truncate">คุณลูกค้า</div>
+                
+                <div class="pt-0.5">
+                  <div style="font-size: 9px; font-weight: 700; color: #8A8679;">หมายเลขสมาชิก</div>
+                  <div id="cardCustPhone" style="font-size: 15px; font-weight: 700; color: #2C302E; line-height: 1.3;" class="bg-white py-1 px-3 rounded-xl border border-[#E8E2D5] shadow-inner mt-0.5 inline-block font-mono">
+                    08X - XXX - XXXX
+                  </div>
+                </div>
+              </div>
+
+              <!-- 4. Footer -->
+              <div style="font-size: 9px; font-weight: 700;" class="w-full pt-2 border-t border-[#E8E2D5] grid grid-cols-3 gap-1 text-[#6B685C] relative z-10 text-center">
+                <div class="flex flex-col items-center gap-0.5">
+                  <span class="text-xs">🎁</span>
+                  <span>สิทธิพิเศษ</span>
+                </div>
+                <div class="flex flex-col items-center gap-0.5 border-x border-[#E8E2D5]">
+                  <span class="text-xs">🏷️</span>
+                  <span>ส่วนลดพิเศษ</span>
+                </div>
+                <div class="flex flex-col items-center gap-0.5">
+                  <span class="text-xs">🎂</span>
+                  <span>แต้ม x2 เดือนเกิด</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ปุ่มกดเซฟรูปบัตร -->
+            <button type="button" onclick="downloadCustomerCardImage()" class="w-full bg-amber-500 hover:bg-amber-600 active:scale-95 text-black py-3 rounded-2xl font-bold text-sm font-display shadow-md transition flex items-center justify-center gap-2">
+              <i data-lucide="download" class="w-4 h-4"></i> เซฟรูปบัตรสมาชิก (.png)
+            </button>
           </div>
         </div>
 
-        <button onclick="saveMemberProfile()" class="w-full bg-[#008B47] hover:bg-[#007438] text-white py-3 rounded-2xl font-bold text-base font-display shadow-md transition active:scale-95">
-          💾 บันทึกข้อมูลสมาชิก
+        <button onclick="saveMemberProfile()" class="w-full bg-[#008B47] hover:bg-[#007438] text-white py-3 rounded-2xl font-bold text-base font-display shadow-md transition active:scale-95 mt-2">
+          💾 บันทึกการเปลี่ยนแปลง
         </button>
       </div>
     </div>
@@ -249,10 +327,8 @@
 
     <!-- Modal ตะกร้าสินค้า & ชำระเงิน -->
     <div id="custCartModal" class="hidden fixed inset-0 bg-black/60 flex items-end md:items-center justify-center z-50 p-0 md:p-4">
-      <!-- 📌 เติม no-scrollbar ซ่อนแถบเลื่อนสีเทาด้านข้าง -->
       <div class="bg-white p-5 md:p-7 rounded-t-3xl md:rounded-3xl max-w-lg w-full max-h-[92vh] md:max-h-[85vh] overflow-y-auto space-y-4 shadow-2xl relative no-scrollbar">
         
-        <!-- 📌 ล็อกปุ่ม X และหัวข้อติดมุมบนตลอดเวลาแม้เลื่อนลงล่าง -->
         <div class="sticky top-0 bg-white z-20 -mx-5 -mt-5 px-5 pt-5 md:-mx-7 md:-mt-7 md:px-7 md:pt-7 pb-3 border-b flex justify-between items-center">
           <h3 class="font-bold text-xl font-display flex items-center gap-2 text-[#008B47]">
             <i data-lucide="shopping-bag"></i> ตรวจสอบรายการสั่งซื้อ
@@ -262,7 +338,6 @@
           </button>
         </div>
 
-        <!-- 🛒 กล่องแสดงรายการสินค้าในตะกร้า (ที่แก้ไขดึงกลับมา) -->
         <div id="custCartItems" class="bg-gray-50 p-3 rounded-2xl border divide-y divide-gray-200 space-y-2 max-h-48 overflow-y-auto"></div>
 
         <div class="bg-gray-50 p-3 rounded-2xl border space-y-2">
@@ -270,27 +345,22 @@
             <span>รูปแบบการรับสินค้า</span>
           </div>
           
-          <!-- 🔔 กล่องแจ้งเตือน (จะเด้งขึ้นมาเตือนอีกรอบเมื่อเกิน 18:00 น.) -->
           <div id="after18Notice" class="hidden"></div>
 
           <div class="grid grid-cols-2 gap-2">
-            <!-- ปุ่มให้ไปส่งที่บ้าน -->
             <button type="button" onclick="setDeliveryType('delivery')" id="btnTypeDelivery" class="py-2.5 px-3 rounded-xl border-2 border-[#008B47] bg-[#008B47] text-white flex flex-col items-center justify-center gap-0.5 transition">
               <div class="flex items-center gap-1.5 font-bold text-xs md:text-sm">
                 <i data-lucide="bike" class="w-4 h-4"></i> ให้ไปส่งที่บ้าน
               </div>
-              <!-- 🎯 ปรับใช้ opacity-80 ให้อ่านออกทั้งพื้นเขียวและพื้นขาว -->
               <div class="text-[10px] opacity-80 font-normal leading-tight text-center mt-0.5">
                 สั่งหลัง 18:00 น.<br>ส่งเช้าวันถัดไป
               </div>
             </button>
 
-            <!-- ปุ่มมารับเองที่ร้าน -->
             <button type="button" onclick="setDeliveryType('pickup')" id="btnTypePickup" class="py-2.5 px-3 rounded-xl border-2 border-gray-200 bg-white text-gray-700 flex flex-col items-center justify-center gap-0.5 transition">
               <div class="flex items-center gap-1.5 font-bold text-xs md:text-sm">
                 <i data-lucide="store" class="w-4 h-4"></i> มารับเองที่ร้าน
               </div>
-              <!-- 🎯 ปรับใช้ opacity-70 ให้อ่านออกทั้งพื้นเขียวและพื้นขาว -->
               <div class="text-[10px] opacity-70 font-normal leading-tight text-center mt-0.5">
                 มารับหน้าร้านได้ถึง<br>เวลา 20:00 น.
               </div>
@@ -371,19 +441,16 @@
             <input type="text" id="custName" placeholder="เช่น คุณสมชาย" class="w-full p-2.5 rounded-xl border bg-white font-bold text-sm focus:outline-none focus:border-[#008B47]">
           </div>
 
-          <!-- 🗺️ ส่วนแผนที่ปรับปรุงปุ่มดึง GPS ใหญ่พิเศษสำหรับผู้สูงอายุ -->
           <div id="addressInputBox" class="space-y-3 pt-1">
             <label class="text-xs font-bold text-gray-700 block font-display">
               📍 ตำแหน่งจัดส่งสินค้าบนแผนที่ *
             </label>
 
-            <!-- 🔴 ปุ่มดึง GPS ขนาดใหญ่พิเศษ เห็นชัดเจนสำหรับผู้สูงอายุ -->
             <button type="button" onclick="getCurrentLocation()" class="w-full bg-[#F37021] hover:bg-orange-600 active:scale-95 text-white py-3 px-4 rounded-2xl font-bold text-sm md:text-base font-display shadow-md flex items-center justify-center gap-2 border-2 border-orange-400 transition">
               <i data-lucide="crosshair" class="w-5 h-5"></i>
               <span>🎯 กดตรงนี้เพื่อดึงตำแหน่งบ้านปัจจุบัน (GPS)</span>
             </button>
 
-            <!-- กล่องแผนที่ลากหมุด -->
             <div id="mapPicker" class="shadow-inner border-2 border-gray-300 rounded-2xl"></div>
 
             <div id="gpsStatusText" class="text-xs font-bold text-emerald-800 bg-emerald-50 p-2.5 rounded-xl border border-emerald-200 text-center hidden"></div>
@@ -481,7 +548,6 @@
     let leafletMarker = null;
     let storeMarker = null;
     let storeCircle = null;
-    let qrCodeInstance = null;
 
     liff.init({ liffId: MY_LIFF_ID }).then(() => {
       if (liff.isLoggedIn()) {
@@ -512,6 +578,70 @@
 
     let notifiedCancelledMap = {};
 
+    // 🎂 ฟังก์ชันสร้างรายการตัวเลือก ดรอปดาวน์ วัน/เดือน/ปีเกิด (พ.ศ. ย้อนหลัง 100 ปี)
+    function initBirthdateDropdowns() {
+      const daySel = document.getElementById('birthDaySelect');
+      const monthSel = document.getElementById('birthMonthSelect');
+      const yearSel = document.getElementById('birthYearSelect');
+      if (!daySel || !monthSel || !yearSel) return;
+
+      // วันที่ 1 - 31
+      let dayHtml = '<option value="">วัน</option>';
+      for (let d = 1; d <= 31; d++) {
+        const val = String(d).padStart(2, '0');
+        dayHtml += `<option value="${val}">${d}</option>`;
+      }
+      daySel.innerHTML = dayHtml;
+
+      // เดือน ม.ค. - ธ.ค.
+      const monthsThai = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+      let monthHtml = '<option value="">เดือน</option>';
+      monthsThai.forEach((m, idx) => {
+        const val = String(idx + 1).padStart(2, '0');
+        monthHtml += `<option value="${val}">${m}</option>`;
+      });
+      monthSel.innerHTML = monthHtml;
+
+      // ปี พ.ศ. (ย้อนหลัง 100 ปีจากปัจจุบัน)
+      const currentYearAD = new Date().getFullYear();
+      const currentYearBE = currentYearAD + 543;
+      let yearHtml = '<option value="">ปี (พ.ศ.)</option>';
+      for (let yBE = currentYearBE; yBE >= currentYearBE - 100; yBE--) {
+        const yAD = yBE - 543; // แปลงเก็บเป็น ค.ศ. เบื้องหลัง
+        yearHtml += `<option value="${yAD}">พ.ศ. ${yBE}</option>`;
+      }
+      yearSel.innerHTML = yearHtml;
+    }
+
+    function setBirthdateDropdowns(birthdateStr) {
+      initBirthdateDropdowns();
+      if (!birthdateStr || !birthdateStr.includes('-')) {
+        document.getElementById('birthDaySelect').value = '';
+        document.getElementById('birthMonthSelect').value = '';
+        document.getElementById('birthYearSelect').value = '';
+        return;
+      }
+      const parts = birthdateStr.split('-');
+      if (parts.length === 3) {
+        document.getElementById('birthYearSelect').value = parts[0];
+        document.getElementById('birthMonthSelect').value = parts[1];
+        document.getElementById('birthDaySelect').value = parts[2];
+      }
+    }
+
+    function getBirthdateFromDropdowns() {
+      const y = document.getElementById('birthYearSelect')?.value || '';
+      const m = document.getElementById('birthMonthSelect')?.value || '';
+      const d = document.getElementById('birthDaySelect')?.value || '';
+      if (y && m && d) {
+        return `${y}-${m}-${d}`;
+      }
+      return '';
+    }
+
+    // เรียกสร้างดรอปดาวน์ทันทีตอนโหลดหน้า
+    initBirthdateDropdowns();
+
     function calculateDistanceInKm(lat1, lon1, lat2, lon2) {
       const R = 6371;
       const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -537,7 +667,6 @@
         freshProducts.push({ id: doc.id, ...d, stock: d.stock !== undefined ? d.stock : totalStock });
       });
 
-      // 🔥 จัดเรียงชื่อสินค้าตามตัวอักษร ก-ฮ
       freshProducts.sort((a, b) => {
         return a.name.localeCompare(b.name, 'th');
       });
@@ -558,27 +687,71 @@
     if (currentOrderId) trackOrderRealtime(currentOrderId);
     if (currentMember) updateMemberUI();
 
-    // 📱 ฟังก์ชันสร้าง QR Code จากเบอร์โทรศัพท์ลูกค้า
     function generateMemberQRCode(phone) {
-      const container = document.getElementById("qrcodeCanvas");
-      const box = document.getElementById("qrCodeBox");
-      if (!container) return;
-
-      container.innerHTML = "";
-      
       if (phone && phone.trim().length >= 9) {
-        qrCodeInstance = new QRCode(container, {
-          text: phone.trim(),
-          width: 140,
-          height: 140,
-          colorDark : "#008B47",
-          colorLight : "#ffffff",
-          correctLevel : QRCode.CorrectLevel.H
-        });
-        box.classList.remove("hidden");
+        const memName = currentMember ? currentMember.name : (document.getElementById('memberNameInput')?.value || '');
+        renderCustomerCardUI(phone, memName);
       } else {
-        box.classList.add("hidden");
+        document.getElementById("custCardPreviewBox")?.classList.add("hidden");
       }
+    }
+
+    function renderCustomerCardUI(phone, name) {
+      const cardBox = document.getElementById("custCardPreviewBox");
+      if (!cardBox) return;
+
+      if (phone && phone.trim().length >= 9) {
+        const cleanPhone = phone.trim();
+        document.getElementById('cardCustName').innerText = `คุณ ${name || 'ลูกค้า'}`;
+        const formattedPhone = cleanPhone.replace(/(\d{3})(\d{3})(\d{4})/, '$1 - $2 - $3');
+        document.getElementById('cardCustPhone').innerText = formattedPhone;
+
+        const qrContainer = document.getElementById("memberCardQrCode");
+        if (qrContainer) {
+          qrContainer.innerHTML = "";
+          new QRCode(qrContainer, {
+            text: cleanPhone,
+            width: 140,
+            height: 140,
+            colorDark : "#2C302E",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+          });
+        }
+        cardBox.classList.remove("hidden");
+      } else {
+        cardBox.classList.add("hidden");
+      }
+    }
+
+    function downloadCustomerCardImage() {
+      const cardElement = document.getElementById('memberCardPrintArea');
+      if (!cardElement) return alert('ไม่พบข้อมูลบัตรสมาชิก');
+
+      const phone = (currentMember ? currentMember.phone : '') || 'Member';
+
+      html2canvas(cardElement, {
+        scale: 3,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#FAF7F2',
+        logging: false,
+        onclone: (clonedDoc) => {
+          const el = clonedDoc.querySelector('#memberCardPrintArea');
+          if (el) el.style.fontFamily = "Tahoma, 'Leelawadee UI', 'Sarabun', sans-serif";
+        }
+      }).then(canvas => {
+        const imageUri = canvas.toDataURL("image/png");
+        const link = document.createElement('a');
+        link.download = `บัตรสมาชิก_${phone}.png`;
+        link.href = imageUri;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }).catch(err => {
+        console.error(err);
+        alert('เกิดข้อผิดพลาดในการโหลดรูปบัตร: ' + err.message);
+      });
     }
 
     function initLeafletMap(defaultLat, defaultLng) {
@@ -733,10 +906,12 @@
       if (currentMember) {
         document.getElementById('memberPhoneInput').value = currentMember.phone || '';
         document.getElementById('memberNameInput').value = currentMember.name || '';
+        setBirthdateDropdowns(currentMember.birthdate || ''); // แสดงวันเกิดในดรอปดาวน์
         document.getElementById('memberAddressInput').value = currentMember.address || '';
         document.getElementById('modalMemberPoints').innerText = (currentMember.points || 0) + ' แต้ม';
         generateMemberQRCode(currentMember.phone);
       } else {
+        setBirthdateDropdowns('');
         generateMemberQRCode("");
       }
       document.getElementById('memberModal').classList.remove('hidden');
@@ -754,6 +929,7 @@
         if (doc.exists) {
           const m = doc.data();
           document.getElementById('memberNameInput').value = m.name || '';
+          setBirthdateDropdowns(m.birthdate || ''); // แสดงวันเกิดที่เคยบันทึกไว้
           document.getElementById('memberAddressInput').value = m.address || '';
           document.getElementById('modalMemberPoints').innerText = (m.points || 0) + ' แต้ม';
           if (m.customerLineId && !customerLineUserId) customerLineUserId = m.customerLineId;
@@ -764,7 +940,7 @@
           alert(`พบข้อมูลสมาชิก: คุณ${m.name}`);
         } else {
           generateMemberQRCode("");
-          alert('ยังไม่พบข้อมูลสมาชิกในเบอร์นี้ สามารถกรอกชื่อและที่อยู่เพื่อสมัครใหม่ได้เลยครับ');
+          alert('ยังไม่พบข้อมูลสมาชิกในเบอร์นี้ สามารถกรอกชื่อและวันเกิดเพื่อสมัครใหม่ได้เลยครับ');
         }
       });
     }
@@ -772,6 +948,7 @@
     function saveMemberProfile() {
       const phone = document.getElementById('memberPhoneInput').value.trim();
       const name = document.getElementById('memberNameInput').value.trim();
+      const birthdate = getBirthdateFromDropdowns(); // ดึงวันเกิดที่เลอกจาก 3 ดรอปดาวน์
       const address = document.getElementById('memberAddressInput').value.trim();
 
       if (!phone || !name) return alert('กรุณากรอกเบอร์โทรศัพท์และชื่อให้ครบถ้วน');
@@ -780,7 +957,8 @@
         const existingPoints = doc.exists ? (doc.data().points || 0) : 0;
         const memberData = { 
           phone, 
-          name, 
+          name,
+          birthdate: birthdate || (doc.exists ? (doc.data().birthdate || '') : ''), 
           address, 
           customerLineId: customerLineUserId || (doc.exists ? doc.data().customerLineId : ''),
           points: existingPoints, 
@@ -844,7 +1022,6 @@
       }
     }
 
-    // ⚡ ฟังก์ชันเช็กเวลาสั่งหลัง 18:00 น.
     function checkDeliveryTimeNotice() {
       const currentHour = new Date().getHours();
       const isAfter18 = currentHour >= 18;
@@ -891,7 +1068,6 @@
     }
 
     function renderCategoryFilters() {
-      // 📌 ล็อกลำดับหมวดหมู่ให้เรียงสวยงามถาวร
       const masterOrder = [
         'ทั้งหมด',
         'กล่องพัสดุ',
@@ -950,7 +1126,6 @@
       renderCustomerProducts();
     }
 
-    // 🖼️ ปรับแก้รูปภาพสินค้าให้เป็นสี่เหลี่ยมจัตุรัส 1:1 (aspect-square) และเห็นรูปสินค้าเต็ม 100% (object-contain)
     function renderCustomerProducts() {
       const grid = document.getElementById('custProductGrid');
       const searchRaw = document.getElementById('custSearchInput')?.value || '';
@@ -968,7 +1143,6 @@
         });
       }
 
-      // Smart Sort: เอาของหมดไปไว้ท้ายสุด + สินค้าพร้อมขายเรียง ก-ฮ
       displayList.sort((a, b) => {
         const aStock = (a.isSubProduct && a.parentId) ? (products.find(p => p.id === a.parentId)?.stock || 0) : a.stock;
         const bStock = (b.isSubProduct && b.parentId) ? (products.find(p => p.id === b.parentId)?.stock || 0) : b.stock;
@@ -998,7 +1172,6 @@
 
         return `
           <div class="bg-white p-2.5 md:p-3.5 rounded-2xl border border-gray-100 flex flex-col justify-between shadow-sm relative overflow-hidden">
-            <!-- 🏷️ ป้ายแสดงจำนวนสต็อกคงเหลือมุมขวาบน -->
             <span class="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] md:text-xs font-bold z-10 ${isOutOfStock ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'}">
               ${isOutOfStock ? 'สินค้าหมด' : `เหลือ ${availStock} ชิ้น`}
             </span>
@@ -1041,7 +1214,6 @@
       const idx = custCart.findIndex(c => c.productId === id);
       const currentQtyInCart = idx >= 0 ? custCart[idx].qty : 0;
 
-      // 🛑 เช็กไม่ให้หยิบเกินสต็อกที่มี
       if (currentQtyInCart + 1 > availStock) {
         return alert(`ขออภัยครับ สินค้านี้ในสต็อกเหลือเพียง ${availStock} ชิ้นเท่านั้น`);
       }
@@ -1070,7 +1242,6 @@
         }
       }
 
-      // 🛑 เช็กไม่ให้บวกจำนวนเกินสต็อก
       if (delta > 0 && item.qty + delta > availStock) {
         return alert(`ขออภัยครับ สินค้านี้ในสต็อกเหลือเพียง ${availStock} ชิ้นเท่านั้น`);
       }
@@ -1126,7 +1297,6 @@
       document.getElementById('custModalTotal').innerText = '฿' + totalNet.toFixed(2);
     }
 
-    // ⚡ 2. ฟังก์ชันเปิดหน้าป๊อบอัพตะกร้าสินค้า
     function openCustomerCartModal() {
       if (custCart.length === 0) return alert('กรุณาเลือกสินค้าใส่ตะกร้าก่อนครับ');
       
@@ -1162,7 +1332,7 @@
 
     function renderCartModalItems() {
       const container = document.getElementById('custCartItems');
-      if (!container) return; // 🛑 ตัวกันสะดุดหากยังหาองค์ประกอบใน DOM ไม่เจอ
+      if (!container) return;
 
       container.innerHTML = custCart.map((c, i) => `
         <div class="flex justify-between items-center py-1.5">
@@ -1225,7 +1395,6 @@
       const totalNet = subtotal + deliveryFee;
       const shortOrderId = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
 
-      // ⚡ กำกับหมายเหตุติดไปกับที่อยู่ทันทีเมื่อสั่งหลัง 18:00 น.
       let finalAddress = address;
       if (deliveryType === 'delivery' && new Date().getHours() >= 18) {
         finalAddress += " ⚠️ (สั่งหลัง 18:00 น. - จัดส่งรอบเช้าวันถัดไป)";

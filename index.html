@@ -1511,7 +1511,7 @@ function listenMembersData() {
   });
 }
 
-function renderMembersList() {
+async function renderMembersList() {
   const searchVal = (document.getElementById('memberSearchInput')?.value || '').trim().toLowerCase();
   const tbody = document.getElementById('membersListTableBody');
   if (!tbody) return;
@@ -1529,18 +1529,67 @@ function renderMembersList() {
     return;
   }
 
-  filtered.sort((a,b) => (b.points || 0) - (a.points || 0));
+  // 1. ดึงบิลค้างชำระทั้งหมดมาคำนวณโทษหักแต้มหนี้เกิน 30 วัน
+  const now = Date.now();
+  const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+  const penaltiesMap = {}; 
 
-  tbody.innerHTML = filtered.map(m => {
+  try {
+    const debtSnap = await db.collection("sales").where("settled", "==", false).get();
+    debtSnap.forEach(doc => {
+      const s = doc.data();
+      if (s.creditPart > 0 || s.method === 'credit') {
+        const ageMs = now - (s.ts || now);
+        if (ageMs >= THIRTY_DAYS_MS) {
+          const overdueMonths = Math.floor(ageMs / THIRTY_DAYS_MS);
+          const debtAmt = s.creditPart || s.total || 0;
+          const ptsPerMonth = Math.max(1, Math.floor(debtAmt / 100));
+          const penalty = overdueMonths * ptsPerMonth;
+
+          if (s.customerPhone) {
+            penaltiesMap[s.customerPhone] = (penaltiesMap[s.customerPhone] || 0) + penalty;
+          }
+          if (s.debtorName) {
+            const cleanName = s.debtorName.trim();
+            penaltiesMap[cleanName] = (penaltiesMap[cleanName] || 0) + penalty;
+          }
+        }
+      }
+    });
+  } catch (e) {
+    console.error("Calculate penalties error:", e);
+  }
+
+  // 2. ประมวลผลแต้มสุทธิของสมาชิกแต่ละคน
+  const memberWithNetPoints = filtered.map(m => {
     const memPhone = m.phone || m.id;
+    const memName = (m.name || '').trim();
+    const penalty = (penaltiesMap[memPhone] || 0) + (penaltiesMap[memName] || 0);
+    const netPoints = (m.points || 0) - penalty;
+    return { ...m, netPoints, penalty };
+  });
+
+  // 3. จัดเรียงตามแต้มสุทธิ (ลูกค้าชั้นดีอยู่บนสุด / ลูกค้าติดหนี้เกินกำหนดจะตกไปอยู่ล่างสุด)
+  memberWithNetPoints.sort((a, b) => b.netPoints - a.netPoints);
+
+  tbody.innerHTML = memberWithNetPoints.map(m => {
+    const memPhone = m.phone || m.id;
+    
+    let statusBadge = '';
+    if (m.netPoints < 0) {
+      statusBadge = `<span class="bg-red-100 text-red-800 font-bold px-3 py-1 rounded-full text-xs font-display">🚨 ติดหนี้เกินกำหนด (${m.netPoints} แต้ม)</span>`;
+    } else if (m.penalty > 0) {
+      statusBadge = `<span class="bg-amber-100 text-amber-900 font-bold px-3 py-1 rounded-full text-xs font-display">⚠️ โดนหักแต้มหนี้ (${m.netPoints} แต้ม)</span>`;
+    } else {
+      statusBadge = `<span class="bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full text-xs font-display">⭐ ${m.netPoints} แต้ม (ชั้นดี)</span>`;
+    }
+
     return `
-      <tr class="border-b hover:bg-amber-50/50 transition">
+      <tr class="border-b hover:bg-amber-50/50 transition ${m.netPoints < 0 ? 'bg-red-50/50' : ''}">
         <td class="py-3 font-bold text-gray-800">${m.name || 'ไม่ระบุชื่อ'}</td>
         <td class="py-3 font-mono text-gray-600 font-bold">${memPhone}</td>
         <td class="py-3 text-center">
-          <span class="bg-amber-100 text-amber-900 font-bold px-3 py-1 rounded-full text-xs font-display">
-            ⭐ ${m.points || 0} แต้ม
-          </span>
+          ${statusBadge}
         </td>
         <td class="py-3 text-right">
           <button onclick="openMemberCardFromList('${memPhone}')" class="bg-[#0F5C52] text-white px-3 py-1 rounded-xl text-xs font-bold font-display hover:opacity-90 shadow-sm">
@@ -1860,6 +1909,39 @@ function downloadMemberCardImage() {
       return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
     }
 
+// ⚖️ ฟังก์ชันคำนวณหักแต้มกรณีติดหนี้เกิน 1 เดือน (30 วัน)
+function fetchMemberNetPoints(phone, basePoints, memberName, callback) {
+  if (!phone) return callback(basePoints);
+  
+  db.collection("sales").where("settled", "==", false).get().then(snapshot => {
+    let totalPenalty = 0;
+    const now = Date.now();
+    const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+    snapshot.forEach(doc => {
+      const s = doc.data();
+      const matchPhone = s.customerPhone && (s.customerPhone === phone);
+      const matchName = s.debtorName && memberName && (s.debtorName.trim() === memberName.trim());
+
+      if ((matchPhone || matchName) && (s.creditPart > 0 || s.method === 'credit')) {
+        const ageMs = now - (s.ts || now);
+        if (ageMs >= THIRTY_DAYS_MS) {
+          const overdueMonths = Math.floor(ageMs / THIRTY_DAYS_MS);
+          const debtAmt = s.creditPart || s.total || 0;
+          const ptsPerMonth = Math.max(1, Math.floor(debtAmt / 100));
+          totalPenalty += (overdueMonths * ptsPerMonth);
+        }
+      }
+    });
+
+    const netPoints = basePoints - totalPenalty; // ยอดแต้มสุทธิ (ติดลบได้)
+    callback(netPoints);
+  }).catch(err => {
+    console.error("Penalty calculation error:", err);
+    callback(basePoints);
+  });
+}
+
     function fetchPosMemberInfo(phoneVal) {
       const cleanPhone = phoneVal.trim();
       const nameDisplay = document.getElementById('posMemberNameDisplay');
@@ -1871,7 +1953,9 @@ function downloadMemberCardImage() {
             currentPosMemberObj = doc.data();
             nameDisplay.innerText = `👤 สมาชิก: คุณ${currentPosMemberObj.name}`;
             nameDisplay.classList.remove('hidden');
-            ptsBadge.innerText = `แต้มเดิม: ${currentPosMemberObj.points || 0} แต้ม`;
+            fetchMemberNetPoints(cleanPhone, currentPosMemberObj.points || 0, currentPosMemberObj.name, (netPts) => {
+  ptsBadge.innerText = `แต้มเดิม: ${netPts} แต้ม`;
+});
           } else {
             currentPosMemberObj = { phone: cleanPhone, name: 'ลูกค้าหน้าร้าน', points: 0 };
             nameDisplay.innerText = `✨ สมัครสมาชิกใหม่ให้เบอร์นี้อัตโนมัติ`;
@@ -3876,7 +3960,13 @@ document.getElementById('cashChange').innerText = fmtMoney(0);
       }
 
       const posPhoneVal = document.getElementById('posCustomerPhone').value.trim();
-      const earnedPoints = Math.floor(netTotal / 100);
+      // 🟢 คำนวณแต้มปกติ (100 บาท = 1 แต้ม)
+let earnedPoints = Math.floor(netTotal / 100);
+
+// ⚠️ ถ้าบิลนี้มีการเชื่อของ / ติดหนี้ (creditPart > 0) แต้มที่ได้จะลดลง 50%
+if (creditPart > 0) {
+  earnedPoints = Math.floor(earnedPoints * 0.5);
+}
 
       let oldMemberPts = 0;
       if (currentPosMemberObj && currentPosMemberObj.phone === posPhoneVal) {

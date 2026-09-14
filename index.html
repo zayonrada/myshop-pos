@@ -1834,6 +1834,8 @@ function downloadMemberCardImage() {
     let isReStockMode = false;
     let pendingDeleteSaleObj = null;
 
+    let isDeletingSale = false; // 🔒 ตัวแปรป้องกันการกดปุ่มลบรัวบนมือถือ
+
     let audioCtx = null;
 
     function initAudioContext() {
@@ -1856,15 +1858,18 @@ function downloadMemberCardImage() {
     });
 
     function focusScanInput() {
-      const scanInput = document.getElementById('scanInput');
-      const activeEl = document.activeElement;
-      if (scanInput && !document.getElementById('tab-pos').classList.contains('hidden')) {
-        const isModalOpen = document.querySelector('.fixed:not(.hidden)');
-        if (!isModalOpen && (activeEl.tagName !== 'INPUT' || activeEl.id === 'scanInput')) {
-          scanInput.focus();
-        }
-      }
+  // ถ้าเป็นหน้าจอมือถือ (ความกว้าง <= 768px) ให้ยกเลิกการดึงเคอร์เซอร์ทันที เพื่อไม่ให้คีย์บอร์ดเด้งค้าง
+  if (window.innerWidth <= 768) return;
+
+  const scanInput = document.getElementById('scanInput');
+  const activeEl = document.activeElement;
+  if (scanInput && !document.getElementById('tab-pos').classList.contains('hidden')) {
+    const isModalOpen = document.querySelector('.fixed:not(.hidden)');
+    if (!isModalOpen && (activeEl.tagName !== 'INPUT' || activeEl.id === 'scanInput')) {
+      scanInput.focus();
     }
+  }
+}
 
     function checkPin() {
       const input = document.getElementById('pinInput').value;
@@ -2071,12 +2076,21 @@ function fetchMemberNetPoints(phone, basePoints, memberName, callback) {
     }
 
     function closeDeleteSaleModal() {
-      document.getElementById('deleteSaleModal').classList.add('hidden');
-      pendingDeleteSaleObj = null;
-      focusScanInput();
-    }
+  document.getElementById('deleteSaleModal').classList.add('hidden');
+  pendingDeleteSaleObj = null;
+  isDeletingSale = false; // 🔓 ปลดล็อก
+  const deleteBtn = document.querySelector('#deleteSaleModal button[onclick="confirmDeleteSaleWithPin()"]');
+  if (deleteBtn) {
+    deleteBtn.disabled = false;
+    deleteBtn.innerText = '🗑️ ยืนยันลบ';
+  }
+  focusScanInput();
+}
 
-    function confirmDeleteSaleWithPin() {
+function confirmDeleteSaleWithPin() {
+  // 🔒 ถ้ากำลังประมวลผลการลบอยู่ ให้ยกเลิกการกดรัวทันที
+  if (isDeletingSale) return;
+
   const pin = document.getElementById('deletePinInput').value;
   const errorEl = document.getElementById('deletePinError');
 
@@ -2088,9 +2102,17 @@ function fetchMemberNetPoints(phone, basePoints, memberName, callback) {
 
   if (!pendingDeleteSaleObj) return;
 
+  // 🛑 เริ่มล็อกระบบ และเปลี่ยนข้อความบนปุ่มเป็นกำลังลบ
+  isDeletingSale = true;
+  const deleteBtn = document.querySelector('#deleteSaleModal button[onclick="confirmDeleteSaleWithPin()"]');
+  if (deleteBtn) {
+    deleteBtn.disabled = true;
+    deleteBtn.innerText = '⏳ กำลังลบ...';
+  }
+
   const saleToDelete = pendingDeleteSaleObj;
 
-  // คืนสต็อกสินค้าทุกรายการในบิลกลับเข้าคลังอย่างถูกต้อง
+  // คืนสต็อกสินค้าทุกรายการในบิลกลับเข้าคลังอย่างถูกต้อง (ทำงานแค่รอบเดียว)
   if (saleToDelete.items && saleToDelete.items.length > 0) {
     saleToDelete.items.forEach(item => {
       if (!item.isCustom && item.productId) {
@@ -2101,9 +2123,16 @@ function fetchMemberNetPoints(phone, basePoints, memberName, callback) {
 
   db.collection("sales").doc(saleToDelete.id).delete().then(() => {
     closeDeleteSaleModal();
-    alert('ลบบิลเรียบร้อยแล้ว คืนสินค้าเข้าสต็อกและลงลอตให้อัตโนมัติแล้วครับ');
+    alert('ลบบิลเรียบร้อยแล้ว คืนสินค้าเข้าสต็อกให้อัตโนมัติแล้วครับ');
   }).catch(err => {
     alert('เกิดข้อผิดพลาดในการลบ: ' + err.message);
+  }).finally(() => {
+    // 🔓 ปลดล็อกระบบเมื่อทำงานเสร็จ
+    isDeletingSale = false;
+    if (deleteBtn) {
+      deleteBtn.disabled = false;
+      deleteBtn.innerText = '🗑️ ยืนยันลบ';
+    }
   });
 }
 
@@ -5739,17 +5768,22 @@ if (item.type === 'sale') {
 }
 
         return `
-          <div class="flex justify-between items-center py-4 text-base">
-            <div>
-              <div class="font-bold text-lg">${new Date(item.ts).toLocaleString('th-TH')}</div>
+          <div class="flex justify-between items-center gap-2 py-3.5 text-base w-full overflow-hidden border-b border-gray-200">
+            
+            <!-- 🟢 ฝั่งซ้าย: บังคับยืดหยุ่น หดตามจอมือถือ และปัดรายการขึ้นบรรทัดใหม่ -->
+            <div class="flex-1 min-w-0 pr-1">
+              <div class="font-bold text-base sm:text-lg text-[#1C2321]">${new Date(item.ts).toLocaleString('th-TH')}</div>
               <div class="text-xs text-[#6B6A61] font-semibold mt-0.5">พนักงาน: ${item.cashierName || 'ไม่ระบุพนักงาน'}</div>
               ${itemsText}
             </div>
-            <div class="flex items-center gap-4">
-              ${badge}
-              <span class="font-bold font-display text-xl">${amtDisplay}</span>
+
+            <!-- 🟢 ฝั่งขวา: ล็อกป้ายสถานะ ราคา และปุ่มถังขยะ ให้ชิดขวาถาวร ไม่ตกขอบจอ -->
+            <div class="flex-shrink-0 flex items-center gap-2 flex-wrap sm:flex-nowrap justify-end">
+              <div class="text-right">${badge}</div>
+              <span class="font-bold font-display text-lg sm:text-xl text-[#1C2321] whitespace-nowrap">${amtDisplay}</span>
               ${deleteBtnHtml}
             </div>
+
           </div>
         `;
       }).join('');

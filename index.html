@@ -123,7 +123,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
-<body class="min-h-screen flex flex-col relative">
+<body class="h-screen flex flex-row relative bg-[#E5E7EB] overflow-hidden">
 
   <!-- 🔔 ป๊อปอัปแจ้งเตือนออเดอร์เข้าใหม่ -->
   <div id="newOrderAlertToast" class="hidden fixed top-20 right-6 z-[999] max-w-sm w-full bg-white border-4 border-amber-400 p-4 rounded-3xl shadow-2xl animate-pop-in no-print">
@@ -171,54 +171,95 @@
     </div>
   </div>
 
-  <!-- Top Bar -->
-  <header class="bg-[#1C2321] text-[#F5F3EE] px-6 py-4 flex justify-between items-center no-print flex-wrap gap-3">
-    <div class="flex items-center gap-3">
-      <img src="logo.jpg.png" alt="โลโก้ร้าน" class="w-10 h-10 rounded-xl object-cover border border-emerald-500/30">
-      <span class="font-bold text-2xl font-display">ร้านค้าขวัญใจ</span>
-      <span id="db-status" class="text-sm text-amber-400 ml-2 font-medium">● กำลังเชื่อมต่อ...</span>
+  <!-- 🗂️ แถบเมนูด้านซ้าย (Left Sidebar) -->
+  <aside id="sidebar" class="w-64 bg-[#1C2321] text-[#F5F3EE] flex flex-col justify-between h-screen sticky top-0 flex-shrink-0 z-40 p-5 shadow-xl no-print overflow-y-auto no-scrollbar">
+    
+    <div class="space-y-6">
+      <div class="flex items-center gap-3 border-b border-white/10 pb-4">
+        <img src="logo.jpg.png" alt="โลโก้ร้าน" class="w-11 h-11 rounded-2xl object-cover border border-emerald-500/30 shadow">
+        <div>
+          <h1 class="font-bold text-xl font-display text-white leading-tight">ร้านค้าขวัญใจ</h1>
+          <span id="db-status" class="text-xs text-amber-400 font-medium block mt-0.5">● กำลังเชื่อมต่อ...</span>
+        </div>
+      </div>
+
+      <nav class="space-y-4 font-semibold text-sm pb-4">
+        <div class="space-y-1">
+          <div class="text-[11px] font-bold text-gray-400 uppercase tracking-wider px-3 mb-1 font-display">🛒 เมนูขาย & สมาชิก</div>
+          
+          <button onclick="showTab('pos')" id="btn-pos" class="w-full text-left px-3.5 py-2.5 rounded-xl font-bold flex items-center gap-3 transition bg-[#F5F3EE] text-[#1C2321] shadow-md">
+            <i data-lucide="shopping-cart" class="w-5 h-5"></i><span>ขายสินค้า</span>
+          </button>
+          <button onclick="openRegisterMemberModal()" class="w-full text-left px-3.5 py-2.5 rounded-xl font-bold flex items-center gap-3 text-amber-300 hover:bg-white/10 transition">
+            <i data-lucide="user-plus" class="w-5 h-5"></i><span>สมัครสมาชิก</span>
+          </button>
+          <button onclick="openAllMembersModal()" class="w-full text-left px-3.5 py-2.5 rounded-xl font-bold flex items-center gap-3 text-gray-300 hover:bg-white/10 hover:text-white transition">
+            <i data-lucide="users" class="w-5 h-5"></i><span>รายชื่อสมาชิก</span>
+          </button>
+          <button onclick="openOnlineOrdersModal()" id="btn-online-orders" class="w-full text-left px-3.5 py-2.5 rounded-xl font-bold flex items-center justify-between text-gray-300 hover:bg-white/10 hover:text-white transition">
+            <div class="flex items-center gap-3"><i data-lucide="globe" class="w-5 h-5"></i><span>ออเดอร์ออนไลน์</span></div>
+            <span id="onlineOrdersBadge" class="bg-amber-500 text-black text-xs px-2 py-0.5 rounded-full font-bold hidden animate-pulse">0</span>
+          </button>
+        </div>
+
+        <div class="space-y-1">
+          <div class="text-[11px] font-bold text-gray-400 uppercase tracking-wider px-3 mb-1 font-display mt-4">📦 จัดการสินค้า & สต็อก</div>
+          
+          <button onclick="showTab('stock')" id="btn-stock" class="w-full text-left px-3.5 py-2.5 rounded-xl font-bold flex items-center gap-3 text-gray-300 hover:bg-white/10 hover:text-white transition">
+            <i data-lucide="package" class="w-5 h-5"></i><span>สต็อกสินค้า</span>
+          </button>
+          <button onclick="showTab('lowstock')" id="btn-lowstock" class="w-full text-left px-3.5 py-2.5 rounded-xl font-bold flex items-center justify-between text-gray-300 hover:bg-white/10 hover:text-white transition">
+            <div class="flex items-center gap-3"><i data-lucide="alert-triangle" class="w-5 h-5"></i><span>เติมสต็อกสินค้า</span></div>
+            <span id="lowStockBadge" class="bg-[#B3432B] text-white text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+          </button>
+          <button onclick="showTab('rewards')" id="btn-rewards" class="w-full text-left px-3.5 py-2.5 rounded-xl font-bold flex items-center gap-3 text-gray-300 hover:bg-white/10 hover:text-white transition">
+            <i data-lucide="gift" class="w-5 h-5"></i><span>จัดการของรางวัล</span>
+          </button>
+        </div>
+
+        <div class="space-y-1">
+          <div class="text-[11px] font-bold text-gray-400 uppercase tracking-wider px-3 mb-1 font-display mt-4">📊 บัญชี & รายงาน</div>
+          
+          <button onclick="showTab('debts')" id="btn-debts" class="w-full text-left px-3.5 py-2.5 rounded-xl font-bold flex items-center gap-3 text-gray-300 hover:bg-white/10 hover:text-white transition">
+            <i data-lucide="book-open" class="w-5 h-5"></i><span>สมุดบัญชีเชื่อ</span>
+          </button>
+          <button onclick="showTab('expenses')" id="btn-expenses" class="w-full text-left px-3.5 py-2.5 rounded-xl font-bold flex items-center gap-3 text-gray-300 hover:bg-white/10 hover:text-white transition">
+            <i data-lucide="arrow-down-right" class="w-5 h-5"></i><span>รายจ่าย</span>
+          </button>
+          <button onclick="showTab('reports')" id="btn-reports" class="w-full text-left px-3.5 py-2.5 rounded-xl font-bold flex items-center gap-3 text-gray-300 hover:bg-white/10 hover:text-white transition">
+            <i data-lucide="bar-chart-3" class="w-5 h-5"></i><span>รายงานยอดขาย</span>
+          </button>
+          <button onclick="showTab('staff')" id="btn-staff" class="w-full text-left px-3.5 py-2.5 rounded-xl font-bold flex items-center gap-3 text-gray-300 hover:bg-white/10 hover:text-white transition">
+            <i data-lucide="users" class="w-5 h-5"></i><span>พนักงาน</span>
+          </button>
+        </div>
+      </nav>
     </div>
 
-    <nav class="flex items-center gap-1.5 bg-white/10 p-1.5 rounded-2xl text-base font-semibold flex-wrap">
-      <button onclick="showTab('pos')" id="btn-pos" class="px-4 py-2 rounded-xl bg-[#F5F3EE] text-[#1C2321]">ขายสินค้า</button>
-      <button onclick="openRegisterMemberModal()" class="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-500 text-black font-bold flex items-center gap-1.5 shadow-sm transition">
-        <i data-lucide="user-plus" class="w-5 h-5"></i> สมัครสมาชิก
+    <!-- ส่วนล่างสุด: ตั้งค่า -->
+    <div class="space-y-2 border-t border-white/10 pt-4 mt-2">
+      <button onclick="openStaffShiftModal()" class="w-full bg-[#0F5C52] hover:bg-[#0D4B43] text-white p-3 rounded-xl font-semibold flex items-center justify-between text-xs transition shadow-sm">
+        <div class="flex items-center gap-2 truncate">
+          <i data-lucide="user-check" class="w-4 h-4 text-emerald-300 flex-shrink-0"></i>
+          <span id="currentStaffBadge" class="font-bold text-amber-300 font-display truncate">ไม่ระบุพนักงาน</span>
+        </div>
+        <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 flex-shrink-0"></i>
       </button>
-      <button onclick="openAllMembersModal()" class="px-4 py-2 rounded-xl hover:bg-white/10 text-white font-semibold flex items-center gap-1.5 transition">
-        <span>👥 รายชื่อสมาชิก</span>
-      </button>
-      <button onclick="openOnlineOrdersModal()" id="btn-online-orders" class="px-4 py-2 rounded-xl hover:bg-white/10 text-white flex items-center gap-1.5 relative">
-        <span>🛒 ออเดอร์ออนไลน์</span>
-        <span id="onlineOrdersBadge" class="bg-amber-500 text-black text-xs px-2 py-0.5 rounded-full font-bold hidden animate-pulse">0</span>
-      </button>
-      <button onclick="showTab('stock')" id="btn-stock" class="px-4 py-2 rounded-xl hover:bg-white/10 text-white">สต็อกสินค้า</button>
-      <button onclick="showTab('lowstock')" id="btn-lowstock" class="px-4 py-2 rounded-xl hover:bg-white/10 text-white flex items-center gap-1.5">
-        <span>เติมสต็อกสินค้า</span>
-        <span id="lowStockBadge" class="bg-[#B3432B] text-white text-xs px-2 py-0.5 rounded-full font-bold">0</span>
-      </button>
-      <button onclick="showTab('rewards')" id="btn-rewards" class="px-4 py-2 rounded-xl hover:bg-white/10 text-white flex items-center gap-1.5">
-        <span>🎁 จัดการของรางวัล</span>
-      </button>
-      <button onclick="showTab('debts')" id="btn-debts" class="px-4 py-2 rounded-xl hover:bg-white/10 text-white">สมุดบัญชีเชื่อ</button>
-      <button onclick="showTab('expenses')" id="btn-expenses" class="px-4 py-2 rounded-xl hover:bg-white/10 text-white">รายจ่าย</button>
-      <button onclick="showTab('reports')" id="btn-reports" class="px-4 py-2 rounded-xl hover:bg-white/10 text-white">รายงาน</button>
-      <button onclick="showTab('staff')" id="btn-staff" class="px-4 py-2 rounded-xl hover:bg-white/10 text-white">พนักงาน</button>
-    </nav>
-
-    <div class="flex items-center gap-2">
-      <button onclick="openStaffShiftModal()" class="bg-[#0F5C52] hover:bg-[#0D4B43] text-white px-3.5 py-1.5 rounded-xl font-semibold flex items-center gap-2 border border-emerald-500/30 transition shadow-sm">
-        <i data-lucide="user-check" class="w-5 h-5 text-emerald-300"></i>
-        <span class="text-sm">กะปัจจุบัน:</span>
-        <span id="currentStaffBadge" class="text-base font-bold font-display text-amber-300">ไม่ระบุพนักงาน</span>
-      </button>
-      <button onclick="openShopLocationModal()" class="bg-[#0F5C52] text-white px-3 py-1.5 rounded-xl text-sm font-bold font-display hover:opacity-90 flex items-center gap-1.5 shadow-sm">
-  <i data-lucide="map-pin" class="w-4 h-4"></i> ตั้งค่าพิกัดร้าน
-</button>
-      <button onclick="lockSystem()" class="bg-[#B3432B] hover:opacity-90 text-white p-2 rounded-xl text-sm font-bold flex items-center gap-1" title="ล็อกระบบ">
-        <i data-lucide="lock" class="w-4 h-4"></i>
-      </button>
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="openShopLocationModal()" class="bg-white/10 hover:bg-white/20 text-white p-2.5 rounded-xl text-xs font-bold font-display transition flex items-center justify-center gap-1.5" title="ตั้งค่าพิกัดร้าน">
+          <i data-lucide="map-pin" class="w-4 h-4 text-amber-400"></i>
+          <span>พิกัดร้าน</span>
+        </button>
+        <button onclick="lockSystem()" class="bg-[#B3432B]/80 hover:bg-[#B3432B] text-white p-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5" title="ล็อกระบบ">
+          <i data-lucide="lock" class="w-4 h-4"></i>
+          <span>ล็อกระบบ</span>
+        </button>
+      </div>
     </div>
-  </header>
+  </aside>
+
+  <!-- 🟢 ส่วนเนื้อหาหลักฝั่งขวา -->
+  <div class="flex-1 min-w-0 h-screen overflow-y-auto">
 
   <main class="p-6 flex-1 max-w-[1600px] w-full mx-auto no-print">
     <!-- แท็บ 1: ขายสินค้า (POS) -->
@@ -239,14 +280,26 @@
           </button>
         </div>
         
-        <div class="flex items-center gap-2 overflow-x-auto pb-1" id="posCategoryFilter"></div>
-
-        <div>
-          <div class="text-sm font-bold text-[#6B6A61] mb-3">รายการสินค้า — คลิกเพื่อเลือกใส่ตะกร้า</div>
-          <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4">
-            <p class="col-span-4 text-center py-12 text-base text-[#0F5C52] font-bold animate-pulse">⏳ กำลังเชื่อมต่อฐานข้อมูลและดึงรายการสินค้า...</p>
+        <!-- 📦 เลย์เอาต์ใหม่: ซ้าย(หมวดหมู่) ขวา(สินค้า) -->
+        <div class="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-5 items-start mt-2">
+          
+          <!-- 📌 แถบหมวดหมู่แนวตั้ง -->
+          <div class="bg-[#F5F3EE] p-3 rounded-2xl border-2 border-[#DEDACB] sticky top-0 max-h-[600px] overflow-y-auto no-scrollbar">
+            <div class="text-xs font-bold text-[#6B6A61] px-2 mb-3 font-display">📂 เลือกหมวดหมู่</div>
+            <div id="posCategoryFilter" class="flex flex-col gap-2"></div>
           </div>
-          <div id="paginationControls" class="flex justify-between items-center pt-4 border-t border-[#DEDACB] mt-4"></div>
+
+          <!-- 🛍️ กล่องรายการสินค้า -->
+          <div class="min-w-0">
+            <div class="text-sm font-bold text-[#6B6A61] mb-3 flex items-center justify-between">
+              <span>รายการสินค้า — คลิกเพื่อเลือกใส่ตะกร้า</span>
+            </div>
+            <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              <p class="col-span-full text-center py-12 text-base text-[#0F5C52] font-bold animate-pulse">⏳ กำลังดึงรายการสินค้า...</p>
+            </div>
+            <div id="paginationControls" class="flex justify-between items-center pt-4 border-t border-[#DEDACB] mt-4"></div>
+          </div>
+
         </div>
       </div>
 
@@ -1536,26 +1589,58 @@ function openMemberCardFromList(phone) {
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
-  function openRegisterMemberModal() {
-    document.getElementById('regMemPhone').value = '';
-    document.getElementById('regMemName').value = '';
-    document.getElementById('regMemAddress').value = '';
-    document.getElementById('registerMemberModal').classList.remove('hidden');
-    setTimeout(() => document.getElementById('regMemPhone').focus(), 100);
-  }
+// 🎂 ฟังก์ชันสร้างลิสต์ วัน/เดือน/ปีเกิด (พ.ศ.) ฝั่ง POS
+function initPosBirthdateDropdowns() {
+  const daySel = document.getElementById('regMemBirthDay');
+  const monthSel = document.getElementById('regMemBirthMonth');
+  const yearSel = document.getElementById('regMemBirthYear');
+  if (!daySel || !monthSel || !yearSel) return;
 
-  function closeRegisterMemberModal() {
-    document.getElementById('registerMemberModal').classList.add('hidden');
-    focusScanInput();
-  }
+  if (daySel.options.length > 1) return;
 
-  let isOpenedFromMembersList = false;
+  let dayHtml = '<option value="">วัน</option>';
+  for (let d = 1; d <= 31; d++) dayHtml += `<option value="${String(d).padStart(2, '0')}">${d}</option>`;
+  daySel.innerHTML = dayHtml;
+
+  const monthsThai = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+  let monthHtml = '<option value="">เดือน</option>';
+  monthsThai.forEach((m, idx) => monthHtml += `<option value="${String(idx + 1).padStart(2, '0')}">${m}</option>`);
+  monthSel.innerHTML = monthHtml;
+
+  const currentYearAD = new Date().getFullYear();
+  const currentYearBE = currentYearAD + 543;
+  let yearHtml = '<option value="">ปี (พ.ศ.)</option>';
+  for (let yBE = currentYearBE; yBE >= currentYearBE - 100; yBE--) {
+    yearHtml += `<option value="${yBE - 543}">พ.ศ. ${yBE}</option>`;
+  }
+  yearSel.innerHTML = yearHtml;
+}
+
+function openRegisterMemberModal() {
+  document.getElementById('regMemPhone').value = '';
+  document.getElementById('regMemName').value = '';
+  document.getElementById('regMemAddress').value = '';
+  
+  initPosBirthdateDropdowns();
+  document.getElementById('regMemBirthDay').value = '';
+  document.getElementById('regMemBirthMonth').value = '';
+  document.getElementById('regMemBirthYear').value = '';
+
+  document.getElementById('registerMemberModal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('regMemPhone').focus(), 100);
+}
+
+function closeRegisterMemberModal() {
+  document.getElementById('registerMemberModal').classList.add('hidden');
+  focusScanInput();
+}
+
+let isOpenedFromMembersList = false;
 
 function closeMemberCardModal() {
   document.getElementById('memberCardModal').classList.add('hidden');
 
   if (isOpenedFromMembersList) {
-    // 🔄 ถ้าเปิดมาจากหน้ารายชื่อสมาชิก ให้เด้งกลับไปหน้ารายชื่อสมาชิกทันที
     document.getElementById('allMembersModal').classList.remove('hidden');
     isOpenedFromMembersList = false;
   } else {
@@ -1563,52 +1648,57 @@ function closeMemberCardModal() {
   }
 }
 
-  function saveAndGenerateMemberCard() {
-    const phone = document.getElementById('regMemPhone').value.trim();
-    const name = document.getElementById('regMemName').value.trim();
-    const address = document.getElementById('regMemAddress').value.trim();
+function saveAndGenerateMemberCard() {
+  const phone = document.getElementById('regMemPhone').value.trim();
+  const name = document.getElementById('regMemName').value.trim();
+  const address = document.getElementById('regMemAddress').value.trim();
 
-    if (!phone || phone.length !== 10 || isNaN(phone)) {
-      return alert('กรุณากรอกเบอร์โทรศัพท์ 10 หลักให้ถูกต้องครับ');
-    }
-    if (!name) {
-      return alert('กรุณากรอกชื่อ-นามสกุล ลูกค้าด้วยครับ');
-    }
+  const bDay = document.getElementById('regMemBirthDay').value;
+  const bMonth = document.getElementById('regMemBirthMonth').value;
+  const bYear = document.getElementById('regMemBirthYear').value;
+  const birthdate = (bYear && bMonth && bDay) ? `${bYear}-${bMonth}-${bDay}` : '';
 
-    currentCardPhone = phone;
-
-    db.collection("members").doc(phone).get().then(doc => {
-      const existingPoints = doc.exists ? (doc.data().points || 0) : 0;
-      
-      db.collection("members").doc(phone).set({
-        phone: phone,
-        name: name,
-        address: address || '',
-        points: existingPoints,
-        ts: Date.now()
-      }, { merge: true }).then(() => {
-        document.getElementById('cardCustName').innerText = `คุณ ${name}`;
-        const formattedPhone = phone.replace(/(\d{3})(\d{3})(\d{4})/, '$1 - $2 - $3');
-        document.getElementById('cardCustPhone').innerText = formattedPhone;
-
-        const qrContainer = document.getElementById('memberCardQrCode');
-        qrContainer.innerHTML = '';
-        new QRCode(qrContainer, {
-          text: phone,
-          width: 160,
-          height: 160,
-          colorDark : "#0F5C52",
-          colorLight : "#ffffff",
-          correctLevel : QRCode.CorrectLevel.H
-        });
-
-        closeRegisterMemberModal();
-        document.getElementById('memberCardModal').classList.remove('hidden');
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-      });
-    });
+  if (!phone || phone.length !== 10 || isNaN(phone)) {
+    return alert('กรุณากรอกเบอร์โทรศัพท์ 10 หลักให้ถูกต้องครับ');
+  }
+  if (!name) {
+    return alert('กรุณากรอกชื่อ-นามสกุล ลูกค้าด้วยครับ');
   }
 
+  currentCardPhone = phone;
+
+  db.collection("members").doc(phone).get().then(doc => {
+    const existingPoints = doc.exists ? (doc.data().points || 0) : 0;
+    
+    db.collection("members").doc(phone).set({
+      phone: phone,
+      name: name,
+      birthdate: birthdate || (doc.exists ? (doc.data().birthdate || '') : ''),
+      address: address || '',
+      points: existingPoints,
+      ts: Date.now()
+    }, { merge: true }).then(() => {
+      document.getElementById('cardCustName').innerText = `คุณ ${name}`;
+      const formattedPhone = phone.replace(/(\d{3})(\d{3})(\d{4})/, '$1 - $2 - $3');
+      document.getElementById('cardCustPhone').innerText = formattedPhone;
+
+      const qrContainer = document.getElementById('memberCardQrCode');
+      qrContainer.innerHTML = '';
+      new QRCode(qrContainer, {
+        text: phone,
+        width: 160,
+        height: 160,
+        colorDark : "#0F5C52",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
+      });
+
+      closeRegisterMemberModal();
+      document.getElementById('memberCardModal').classList.remove('hidden');
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    });
+  });
+}
   // 📸 ฟังก์ชันเซฟรูปภาพบัตรสมาชิก (.png) แก้ปัญหากระตุก/ฟอนต์เบี้ยว
 function downloadMemberCardImage() {
   const cardElement = document.getElementById('memberCardPrintArea');
@@ -3027,7 +3117,8 @@ function handleSearchInput() {
     posFilter.innerHTML = cats.map(c => {
       const isActive = (c === selectedPosCategory);
       return `
-        <button onclick="setPosCategory('${c}')" class="px-4 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition ${isActive ? 'bg-[#0F5C52] text-white shadow-md' : 'bg-[#F5F3EE] text-[#6B6A61] hover:bg-[#DEDACB]'}">
+        <button onclick="setPosCategory('${c}')" 
+          class="w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition border-2 leading-tight ${isActive ? 'bg-[#0F5C52] text-white border-[#0F5C52] shadow-md' : 'bg-white text-[#6B6A61] border-transparent hover:border-[#DEDACB]'}">
           ${c}
         </button>
       `;
@@ -3181,15 +3272,7 @@ function handleSearchInput() {
         `;
       }).join('');
 
-      let pageButtonsHtml = '';
-      for (let i = 1; i <= totalPages; i++) {
-        pageButtonsHtml += `
-          <button onclick="goToPage(${i})" 
-            class="w-9 h-9 rounded-xl font-bold text-sm transition flex items-center justify-center font-display ${i === currentPage ? 'bg-[#0F5C52] text-white shadow-sm' : 'bg-[#F5F3EE] text-[#6B6A61] hover:bg-[#DEDACB]'}">
-            ${i}
-          </button>
-        `;
-      }
+      const pageButtonsHtml = generateSlidingPagination(currentPage, totalPages, 'goToPage');
 
       const paginationEl = document.getElementById('paginationControls');
       paginationEl.innerHTML = `
@@ -3210,6 +3293,41 @@ function handleSearchInput() {
 
       lucide.createIcons();
     }
+
+// 🔄 ฟังก์ชันสร้างปุ่มเปลี่ยนหน้าแบบสไลด์ (Sliding Pagination) ไม่ให้รกจอ
+function generateSlidingPagination(currentPage, totalPages, goToFuncName) {
+  const maxVisible = 10; // แสดงปุ่มเลขช่วงกลางไม่เกิน 10 ปุ่ม
+  let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+  let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+
+  if (endPage - startPage + 1 < maxVisible) {
+    startPage = Math.max(1, endPage - maxVisible + 1);
+  }
+
+  let html = '';
+
+  if (startPage > 1) {
+    html += `<button onclick="${goToFuncName}(1)" class="w-9 h-9 rounded-xl font-bold text-sm transition flex items-center justify-center font-display bg-[#F5F3EE] text-[#6B6A61] hover:bg-[#DEDACB]">1</button>`;
+    if (startPage > 2) html += `<span class="text-xs font-bold text-[#6B6A61] px-1 align-center flex items-center">...</span>`;
+  }
+
+  for (let i = startPage; i <= endPage; i++) {
+    const isActive = (i === currentPage);
+    html += `
+      <button onclick="${goToFuncName}(${i})" 
+        class="w-9 h-9 rounded-xl font-bold text-sm transition flex items-center justify-center font-display ${isActive ? 'bg-[#0F5C52] text-white shadow-sm' : 'bg-[#F5F3EE] text-[#6B6A61] hover:bg-[#DEDACB]'}">
+        ${i}
+      </button>
+    `;
+  }
+
+  if (endPage < totalPages) {
+    if (endPage < totalPages - 1) html += `<span class="text-xs font-bold text-[#6B6A61] px-1 align-center flex items-center">...</span>`;
+    html += `<button onclick="${goToFuncName}(${totalPages})" class="w-9 h-9 rounded-xl font-bold text-sm transition flex items-center justify-center font-display bg-[#F5F3EE] text-[#6B6A61] hover:bg-[#DEDACB]">${totalPages}</button>`;
+  }
+
+  return html;
+}
 
     function renderStockTable() {
       const selectedCat = document.getElementById('stockCategorySelect').value;
@@ -3293,15 +3411,7 @@ function handleSearchInput() {
         `;
       }).join('');
 
-      let pageButtonsHtml = '';
-      for (let i = 1; i <= totalPages; i++) {
-        pageButtonsHtml += `
-          <button onclick="goToStockPage(${i})" 
-            class="w-9 h-9 rounded-xl font-bold text-sm transition flex items-center justify-center font-display ${i === currentStockPage ? 'bg-[#0F5C52] text-white shadow-sm' : 'bg-[#F5F3EE] text-[#6B6A61] hover:bg-[#DEDACB]'}">
-            ${i}
-          </button>
-        `;
-      }
+      const pageButtonsHtml = generateSlidingPagination(currentStockPage, totalPages, 'goToStockPage');
 
       paginationEl.innerHTML = `
         <button onclick="changeStockPage(-1)" ${currentStockPage === 1 ? 'disabled' : ''} 
@@ -3376,15 +3486,7 @@ function handleSearchInput() {
         </tr>
       `).join('');
 
-      let pageButtonsHtml = '';
-      for (let i = 1; i <= totalPages; i++) {
-        pageButtonsHtml += `
-          <button onclick="goToLowStockPage(${i})" 
-            class="w-9 h-9 rounded-xl font-bold text-sm transition flex items-center justify-center font-display ${i === currentLowStockPage ? 'bg-[#0F5C52] text-white shadow-sm' : 'bg-[#F5F3EE] text-[#6B6A61] hover:bg-[#DEDACB]'}">
-            ${i}
-          </button>
-        `;
-      }
+      const pageButtonsHtml = generateSlidingPagination(currentLowStockPage, totalPages, 'goToLowStockPage');
 
       paginationEl.innerHTML = `
         <button onclick="changeLowStockPage(-1)" ${currentLowStockPage === 1 ? 'disabled' : ''} 
@@ -5516,8 +5618,15 @@ if (item.type === 'sale') {
       ['pos', 'stock', 'lowstock', 'rewards', 'debts', 'expenses', 'reports', 'staff'].forEach(t => {
         const el = document.getElementById(`tab-${t}`);
         if(el) el.classList.add('hidden');
+        
         const btn = document.getElementById(`btn-${t}`);
-        if(btn) btn.className = `px-4 py-2 rounded-xl ${t===name ? 'bg-[#F5F3EE] text-[#1C2321] font-semibold' : 'hover:bg-white/10 text-white'}`;
+        if(btn) {
+          if (t === name) {
+            btn.className = "w-full text-left px-3.5 py-2.5 rounded-xl font-bold flex items-center gap-3 transition bg-[#F5F3EE] text-[#1C2321] shadow-md";
+          } else {
+            btn.className = "w-full text-left px-3.5 py-2.5 rounded-xl font-bold flex items-center gap-3 text-gray-300 hover:bg-white/10 hover:text-white transition";
+          }
+        }
       });
       document.getElementById(`tab-${name}`).classList.remove('hidden');
       if(name==='pos') focusScanInput();
@@ -6002,37 +6111,47 @@ function bindPhoneToDebtor(debtorName) {
   </div>
 
   <!-- 📝 Modal 1: ฟอร์มสมัครสมาชิกใหม่ -->
-<div id="registerMemberModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[9999] no-print">
-  <div class="bg-white p-6 rounded-3xl max-w-md w-full space-y-4 shadow-2xl border-2 border-amber-300">
-    <div class="flex justify-between items-center border-b pb-3">
-      <h3 class="font-bold text-2xl font-display text-[#0F5C52] flex items-center gap-2">
-        <i data-lucide="sparkles" class="w-6 h-6 text-amber-500"></i> สมัครสมาชิกใหม่
-      </h3>
-      <button onclick="closeRegisterMemberModal()" class="text-gray-400 hover:text-black p-1"><i data-lucide="x" class="w-6 h-6"></i></button>
+  <div id="registerMemberModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[9999] no-print">
+    <div class="bg-white p-6 rounded-3xl max-w-md w-full space-y-4 shadow-2xl border-2 border-amber-300">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-2xl font-display text-[#0F5C52] flex items-center gap-2">
+          <i data-lucide="sparkles" class="w-6 h-6 text-amber-500"></i> สมัครสมาชิกใหม่
+        </h3>
+        <button onclick="closeRegisterMemberModal()" class="text-gray-400 hover:text-black p-1"><i data-lucide="x" class="w-6 h-6"></i></button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs font-bold text-gray-600 block mb-1">เบอร์โทรศัพท์ (ใช้เป็น ID สมาชิก 10 หลัก) *</label>
+          <input type="tel" id="regMemPhone" maxlength="10" placeholder="0812345678" class="w-full p-3 rounded-2xl border-2 border-amber-400 text-2xl font-bold font-mono tracking-wider text-center focus:outline-none focus:border-[#0F5C52] bg-amber-50/50">
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-gray-600 block mb-1">ชื่อ-นามสกุล ลูกค้า *</label>
+          <input type="text" id="regMemName" placeholder="เช่น คุณสมชาย ใจดี" class="w-full p-3 rounded-xl border-2 border-gray-200 text-base font-bold focus:outline-none focus:border-[#0F5C52]">
+        </div>
+
+        <!-- 🎂 ดรอปดาวน์ วัน/เดือน/ปีเกิด (พ.ศ.) ฝั่งหน้าร้าน -->
+        <div>
+          <label class="text-xs font-bold text-gray-600 block mb-1">วัน/เดือน/ปีเกิด (รับแต้ม x2 ในเดือนเกิด) 🎂</label>
+          <div class="grid grid-cols-3 gap-2">
+            <select id="regMemBirthDay" class="p-2.5 rounded-xl border-2 border-gray-200 bg-white font-bold text-sm focus:outline-none focus:border-[#0F5C52]"><option value="">วัน</option></select>
+            <select id="regMemBirthMonth" class="p-2.5 rounded-xl border-2 border-gray-200 bg-white font-bold text-sm focus:outline-none focus:border-[#0F5C52]"><option value="">เดือน</option></select>
+            <select id="regMemBirthYear" class="p-2.5 rounded-xl border-2 border-gray-200 bg-white font-bold text-sm focus:outline-none focus:border-[#0F5C52]"><option value="">ปี (พ.ศ.)</option></select>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-gray-600 block mb-1">ที่อยู่ / หมายเหตุ (เว้นได้)</label>
+          <input type="text" id="regMemAddress" placeholder="ระบุที่อยู่สั้นๆ หรือหมายเหตุ..." class="w-full p-3 rounded-xl border-2 border-gray-200 text-sm font-medium focus:outline-none">
+        </div>
+      </div>
+
+      <button onclick="saveAndGenerateMemberCard()" class="w-full bg-[#0F5C52] hover:bg-[#0c4941] text-white py-3.5 rounded-2xl font-bold font-display text-lg shadow-md transition flex items-center justify-center gap-2">
+        <i data-lucide="qr-code" class="w-5 h-5"></i> บันทึก & ออกบัตรสมาชิก
+      </button>
     </div>
-
-    <div class="space-y-3">
-      <div>
-        <label class="text-xs font-bold text-gray-600 block mb-1">เบอร์โทรศัพท์ (ใช้เป็น ID สมาชิก 10 หลัก) *</label>
-        <input type="tel" id="regMemPhone" maxlength="10" placeholder="0812345678" class="w-full p-3 rounded-2xl border-2 border-amber-400 text-2xl font-bold font-mono tracking-wider text-center focus:outline-none focus:border-[#0F5C52] bg-amber-50/50">
-      </div>
-
-      <div>
-        <label class="text-xs font-bold text-gray-600 block mb-1">ชื่อ-นามสกุล ลูกค้า *</label>
-        <input type="text" id="regMemName" placeholder="เช่น คุณสมชาย ใจดี" class="w-full p-3 rounded-xl border-2 border-gray-200 text-base font-bold focus:outline-none focus:border-[#0F5C52]">
-      </div>
-
-      <div>
-        <label class="text-xs font-bold text-gray-600 block mb-1">ที่อยู่ / หมายเหตุ (เว้นได้)</label>
-        <input type="text" id="regMemAddress" placeholder="ระบุที่อยู่สั้นๆ หรือหมายเหตุ..." class="w-full p-3 rounded-xl border-2 border-gray-200 text-sm font-medium focus:outline-none">
-      </div>
-    </div>
-
-    <button onclick="saveAndGenerateMemberCard()" class="w-full bg-[#0F5C52] hover:bg-[#0c4941] text-white py-3.5 rounded-2xl font-bold font-display text-lg shadow-md transition flex items-center justify-center gap-2">
-      <i data-lucide="qr-code" class="w-5 h-5"></i> บันทึก & ออกบัตรสมาชิก
-    </button>
   </div>
-</div>
 
 <!-- 🎴 Modal 2: แสดงบัตรสมาชิกดิจิทัล -->
 <div id="memberCardModal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[9999] no-print">
@@ -6093,7 +6212,7 @@ function bindPhoneToDebtor(debtorName) {
         </div>
         <div class="flex flex-col items-center gap-0.5">
           <span class="text-base">🎂</span>
-          <span>ของขวัญวันเกิด</span>
+          <span>แต้ม x2 เดือนเกิด</span>
         </div>
       </div>
 

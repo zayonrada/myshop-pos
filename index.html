@@ -3819,61 +3819,65 @@ function generateSlidingPagination(currentPage, totalPages, goToFuncName) {
       return totalCostSum;
     }
 
-    // 🏠 บันทึกใช้ในบ้าน (ไม่รวมเป็นยอดขาย)
-    function checkoutHomeUse() {
-      if (cart.length === 0) return alert('ไม่มีสินค้าในตะกร้า');
-      const staffName = currentSelectedStaff || "ไม่ระบุพนักงาน";
+    // 🏠 บันทึกใช้ในบ้าน
+function checkoutHomeUse() {
+  if (cart.length === 0) return alert('ไม่มีสินค้าในตะกร้า');
+  const staffName = currentSelectedStaff || "ไม่ระบุพนักงาน";
 
-      if (confirm(`ยืนยันการนำสินค้าในตะกร้าไปกิน/ใช้เองในบ้านใช่หรือไม่?\n\nระบบจะตัดสต็อกและบันทึกต้นทุนสินค้าให้อัตโนมัติ (ไม่นำไปรวมเป็นยอดขาย)`)) {
-        const totalCost = calculateTotalCostAndDeductStock(cart);
-        const homeUseDoc = {
-          ts: Date.now(),
-          items: [...cart],
-          totalCost: totalCost,
-          total: 0, // ยอดขายเป็น 0 เสมอ
-          isHomeUse: true,
-          cashierName: staffName
-        };
+  if (confirm(`ยืนยันการนำสินค้าในตะกร้าไปกิน/ใช้เองในบ้านใช่หรือไม่?\n\nระบบจะตัดสต็อกและบันทึกต้นทุนสินค้าให้อัตโนมัติ (ไม่นำไปรวมเป็นยอดขาย)`)) {
+    const totalCost = calculateTotalCostAndDeductStock(cart);
+    const homeUseDoc = {
+      ts: Date.now(),
+      items: [...cart],
+      totalCost: totalCost,
+      total: 0,
+      isHomeUse: true,
+      cashierName: staffName
+    };
 
-        db.collection("sales").add(homeUseDoc).then(() => {
-          cart = [];
-          document.getElementById('hasDiscountCheck').checked = false;
-          toggleDiscountInput();
-          clearSearchInput();
-          renderCart();
-          alert('บันทึกการใช้ในบ้านเรียบร้อยแล้ว');
-          focusScanInput();
-        });
-      }
-    }
+    // 🟢 เคลียร์ตะกร้าบนหน้าจอทันที ไม่ต้องนั่งรอ Firebase ตอบกลับ
+    cart = [];
+    document.getElementById('hasDiscountCheck').checked = false;
+    toggleDiscountInput();
+    clearSearchInput();
+    renderCart();
+    alert('บันทึกการใช้ในบ้านเรียบร้อยแล้ว');
 
-    // 👷 บันทึกเลี้ยงคนงาน (ไม่รวมเป็นยอดขาย)
-    function checkoutWorkerUse() {
-      if (cart.length === 0) return alert('ไม่มีสินค้าในตะกร้า');
-      const staffName = currentSelectedStaff || "ไม่ระบุพนักงาน";
+    db.collection("sales").add(homeUseDoc).then(() => {
+      focusScanInput();
+    });
+  }
+}
 
-      if (confirm(`ยืนยันการบันทึกรายการ "ของเลี้ยงคนงาน" ใช่หรือไม่?\n\nระบบจะตัดสต็อกและบันทึกต้นทุนสินค้าให้อัตโนมัติ (ไม่นำไปรวมเป็นยอดขาย)`)) {
-        const totalCost = calculateTotalCostAndDeductStock(cart);
-        const workerUseDoc = {
-          ts: Date.now(),
-          items: [...cart],
-          totalCost: totalCost,
-          total: 0, // ยอดขายเป็น 0 เสมอ
-          isWorkerUse: true,
-          cashierName: staffName
-        };
+// 👷 บันทึกเลี้ยงคนงาน
+function checkoutWorkerUse() {
+  if (cart.length === 0) return alert('ไม่มีสินค้าในตะกร้า');
+  const staffName = currentSelectedStaff || "ไม่ระบุพนักงาน";
 
-        db.collection("sales").add(workerUseDoc).then(() => {
-          cart = [];
-          document.getElementById('hasDiscountCheck').checked = false;
-          toggleDiscountInput();
-          clearSearchInput();
-          renderCart();
-          alert('บันทึกรายการเลี้ยงคนงานเรียบร้อยแล้ว');
-          focusScanInput();
-        });
-      }
-    }
+  if (confirm(`ยืนยันการบันทึกรายการ "ของเลี้ยงคนงาน" ใช่หรือไม่?\n\nระบบจะตัดสต็อกและบันทึกต้นทุนสินค้าให้อัตโนมัติ (ไม่นำไปรวมเป็นยอดขาย)`)) {
+    const totalCost = calculateTotalCostAndDeductStock(cart);
+    const workerUseDoc = {
+      ts: Date.now(),
+      items: [...cart],
+      totalCost: totalCost,
+      total: 0,
+      isWorkerUse: true,
+      cashierName: staffName
+    };
+
+    // 🟢 เคลียร์ตะกร้าบนหน้าจอทันที ไม่ต้องนั่งรอ Firebase ตอบกลับ
+    cart = [];
+    document.getElementById('hasDiscountCheck').checked = false;
+    toggleDiscountInput();
+    clearSearchInput();
+    renderCart();
+    alert('บันทึกรายการเลี้ยงคนงานเรียบร้อยแล้ว');
+
+    db.collection("sales").add(workerUseDoc).then(() => {
+      focusScanInput();
+    });
+  }
+}
 
     function openCheckoutModal() {
       if (cart.length === 0) return;

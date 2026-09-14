@@ -3244,6 +3244,21 @@ function handleSearchInput() {
 
   if (stockSelect) { stockSelect.innerHTML = optionsHtml; stockSelect.value = curStockVal || 'ทั้งหมด'; }
   if (lowStockSelect) { lowStockSelect.innerHTML = optionsHtml; lowStockSelect.value = curLowStockVal || 'ทั้งหมด'; }
+
+  // 📱 ยิงรายชื่อหมวดหมู่เข้า Dropdown มือถือ
+    const mobilePosSelect = document.getElementById('posCategorySelectMobile');
+    if (mobilePosSelect) {
+      mobilePosSelect.innerHTML = cats.map(c => 
+        `<option value="${c}" ${c === selectedPosCategory ? 'selected' : ''}>
+          ${c === 'ทั้งหมด' ? 'หมวดหมู่ทั้งหมด' : c}
+        </option>`
+      ).join('');
+    }
+}
+
+// 📱 ฟังก์ชันกดเปลี่ยนหมวดหมู่จาก Dropdown บนมือถือ
+function selectPosCategoryMobile(cat) {
+  setPosCategory(cat); // วิ่งไปเรียกใช้งานฟังก์ชันดึงสินค้าเดิมที่มีอยู่แล้ว
 }
 
     function setPosCategory(cat) {

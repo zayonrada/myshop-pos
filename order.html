@@ -56,29 +56,39 @@
   <div class="w-full max-w-5xl bg-[#F8F9FA] min-h-screen flex flex-col relative pb-36 shadow-2xl md:border-x border-gray-300">
 
     <!-- Top Header -->
-    <header class="bg-white px-4 md:px-8 py-2.5 sticky top-0 z-40 shadow-sm flex items-center justify-between border-b">
-      <button onclick="openMemberModal()" class="flex items-center gap-1.5 text-xs font-bold text-[#008B47] bg-emerald-50 px-3 py-1.5 rounded-full hover:bg-emerald-100 transition shadow-sm">
+    <header class="bg-white px-3 md:px-8 py-2.5 sticky top-0 z-40 shadow-sm flex items-center justify-between border-b gap-1.5">
+      <button onclick="openMemberModal()" class="flex items-center gap-1 text-xs font-bold text-[#008B47] bg-emerald-50 px-2.5 py-1.5 rounded-full hover:bg-emerald-100 transition shadow-sm">
         <i data-lucide="user-check" class="w-4 h-4"></i>
         <span id="memberHeaderBadge">เข้าสู่ระบบสมาชิก</span>
       </button>
 
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-1.5">
         <img src="logo.jpg.png" alt="โลโก้ร้านค้าขวัญใจ" class="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover shadow-sm border border-orange-200">
         <div class="flex flex-col items-center">
-          <span class="font-bold text-xl md:text-2xl font-display tracking-tight text-[#008B47] leading-none">ร้านค้าขวัญใจ</span>
+          <span class="font-bold text-lg md:text-2xl font-display tracking-tight text-[#008B47] leading-none">ร้านค้าขวัญใจ</span>
           <span class="text-[10px] md:text-xs font-bold text-[#F37021] font-display tracking-wider">Delivery</span>
         </div>
       </div>
 
-      <div class="flex items-center gap-2">
-        <button onclick="openRedeemCatalogModal()" class="flex items-center gap-1 text-xs font-bold text-amber-900 bg-amber-100 px-3 py-1.5 rounded-full hover:bg-amber-200 transition shadow-sm">
-          <i data-lucide="gift" class="w-4 h-4 text-amber-600"></i>
+      <div class="flex items-center gap-1.5">
+        <!-- 🌐 ปุ่มเลือกภาษา (TH / EN / LO / MY) -->
+        <div class="relative">
+          <select id="langSelect" onchange="changeAppLanguage(this.value)" class="bg-emerald-50 border border-[#008B47] text-[#008B47] font-bold text-xs rounded-full px-2 py-1.5 focus:outline-none cursor-pointer shadow-sm">
+            <option value="th">🇹🇭 TH</option>
+            <option value="en">🇬🇧 EN</option>
+            <option value="lo">🇱🇦 LO</option>
+            <option value="my">🇲🇲 MY</option>
+          </select>
+        </div>
+
+        <button id="userPointsBtn" onclick="openRedeemCatalogModal()" class="flex items-center gap-1 text-xs font-bold text-amber-900 bg-amber-100 px-2.5 py-1.5 rounded-full hover:bg-amber-200 transition shadow-sm">
+          <i data-lucide="gift" class="w-3.5 h-3.5 text-amber-600"></i>
           <span id="userPointsBadge">0 แต้ม</span>
         </button>
 
-        <button onclick="openCustomerCartModal()" class="w-9 h-9 md:w-11 md:h-11 rounded-full bg-emerald-50 flex items-center justify-center relative hover:bg-emerald-100 transition">
-          <i data-lucide="shopping-basket" class="w-5 h-5 md:w-6 md:h-6 text-[#008B47]"></i>
-          <span id="badgeCount" class="absolute -top-1 -right-1 bg-[#E31837] text-white text-[10px] md:text-xs w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center font-bold border-2 border-white hidden">0</span>
+        <button onclick="openCustomerCartModal()" class="w-8 h-8 md:w-11 md:h-11 rounded-full bg-emerald-50 flex items-center justify-center relative hover:bg-emerald-100 transition">
+          <i data-lucide="shopping-basket" class="w-4 h-4 md:w-6 md:h-6 text-[#008B47]"></i>
+          <span id="badgeCount" class="absolute -top-1 -right-1 bg-[#E31837] text-white text-[10px] md:text-xs w-4 h-4 md:w-6 md:h-6 rounded-full flex items-center justify-center font-bold border-2 border-white hidden">0</span>
         </button>
       </div>
     </header>
@@ -92,7 +102,7 @@
               <i data-lucide="bike" class="w-4 h-4 md:w-5 md:h-5 text-white"></i>
             </div>
             <div class="truncate">
-              <div class="text-[10px] md:text-xs text-emerald-200 font-normal">สั่งซื้อด่วน Delivery:</div>
+              <div class="text-[10px] md:text-xs text-emerald-200 font-normal" id="lblQuickDelivery">สั่งซื้อด่วน Delivery:</div>
               <div id="topAddrDisplay" class="truncate text-sm md:text-base font-display text-white">ส่งฟรี 3 กม. แรกเมื่อซื้อครบ 100.- (เกินคิดตามจริง)</div>
             </div>
           </div>
@@ -109,18 +119,18 @@
       <div class="p-3 md:p-6 pb-1">
         <div class="bg-gradient-to-r from-amber-400 to-orange-500 rounded-2xl md:rounded-3xl p-4 md:p-6 text-white shadow-lg flex items-center justify-between relative overflow-hidden">
           <div class="space-y-1 z-10">
-            <span class="bg-white/20 text-white text-[10px] md:text-xs font-bold px-2.5 py-0.5 rounded-full font-display">สะสมแต้มแลกของรางวัล</span>
+            <span class="bg-white/20 text-white text-[10px] md:text-xs font-bold px-2.5 py-0.5 rounded-full font-display" id="lblBadgeCollectPts">สะสมแต้มแลกของรางวัล</span>
             <div class="text-2xl md:text-4xl font-bold font-display" id="cardPointDisplay">0 คะแนน</div>
-            <div class="text-[11px] md:text-xs text-amber-50">ซื้อครบทุก 100 บาท = รับ 1 แต้ม</div>
+            <div class="text-[11px] md:text-xs text-amber-50" id="pointRulesText">ซื้อครบทุก 100 บาท = รับ 1 แต้ม (ติดหนี้ได้แต้ม 50%)</div>
           </div>
           <button onclick="openRedeemCatalogModal()" class="z-10 bg-white text-orange-600 px-4 md:px-6 py-2 md:py-2.5 rounded-2xl font-bold text-xs md:text-sm font-display shadow-md hover:bg-amber-50 transition active:scale-95 flex items-center gap-1">
-            <span>🎁 ดูของรางวัล</span>
+            <span id="btnCatalogLabel">🎁 ดูของรางวัล</span>
           </button>
         </div>
       </div>
 
       <div class="p-3 md:p-6">
-        <div class="text-xs md:text-sm font-bold text-gray-500 mb-2 font-display">หมวดหมู่สินค้า</div>
+        <div class="text-xs md:text-sm font-bold text-gray-500 mb-2 font-display" id="lblCatSection">หมวดหมู่สินค้า</div>
         <div class="flex items-start gap-2 md:gap-3 overflow-x-auto no-scrollbar pb-2 pt-1" id="custCatFilter"></div>
       </div>
 
@@ -141,7 +151,7 @@
           <span class="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-[#F37021] animate-ping"></span>
           <div>
             <div class="flex items-center gap-1.5 md:gap-2">
-              <span class="font-bold text-xs md:text-sm text-[#008B47] font-display">สถานะออเดอร์</span>
+              <span class="font-bold text-xs md:text-sm text-[#008B47] font-display" id="lblOrderStatusHeader">สถานะออเดอร์</span>
               <span id="miniOrderIdBadge" class="bg-gray-100 text-gray-700 text-[10px] md:text-xs px-2 py-0.5 rounded font-bold font-mono"></span>
             </div>
             <div id="miniStatusText" class="text-xs md:text-sm font-bold text-[#F37021]">กำลังดำเนินการ...</div>
@@ -149,7 +159,7 @@
         </div>
 
         <button onclick="toggleTrackingModal(true)" class="bg-[#008B47] text-white px-3 md:px-5 py-1.5 md:py-2 rounded-xl text-xs md:text-sm font-bold font-display shadow-sm flex items-center gap-1 active:scale-95 transition">
-          <span>ดูรายละเอียด</span>
+          <span id="btnTrackDetail">ดูรายละเอียด</span>
           <i data-lucide="chevron-up" class="w-4 h-4 md:w-5 md:h-5"></i>
         </button>
       </div>
@@ -164,13 +174,13 @@
             <span id="barTotalQty" class="absolute -top-1.5 -right-1.5 bg-[#E31837] text-white text-[10px] md:text-xs w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center font-bold">0</span>
           </div>
           <div>
-            <div class="text-[11px] md:text-xs text-gray-400">ยอดรวมสินค้า</div>
+            <div class="text-[11px] md:text-xs text-gray-400" id="lblBarSubtotal">ยอดรวมสินค้า</div>
             <div class="text-2xl md:text-3xl font-bold font-display text-amber-400 leading-tight" id="barTotalAmount">฿0.00</div>
           </div>
         </div>
 
         <button onclick="openCustomerCartModal()" class="bg-[#F37021] hover:bg-orange-600 text-white px-5 md:px-8 py-2.5 md:py-3.5 rounded-2xl font-bold text-base md:text-lg font-display flex items-center gap-1 shadow-md transition active:scale-95">
-          <span>ดำเนินการต่อ</span>
+          <span id="btnBarProceed">ดำเนินการต่อ</span>
           <i data-lucide="chevron-right" class="w-5 h-5 md:w-6 md:h-6"></i>
         </button>
       </div>
@@ -181,30 +191,30 @@
       <div class="bg-white p-6 rounded-3xl max-w-md w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar">
         <div class="flex justify-between items-center border-b pb-3">
           <h3 class="font-bold text-xl font-display flex items-center gap-2 text-[#008B47]">
-            <i data-lucide="user-check"></i> เข้าสู่ระบบสมาชิก
+            <i data-lucide="user-check"></i> <span id="modalLoginTitle">เข้าสู่ระบบสมาชิก</span>
           </h3>
           <button onclick="closeMemberModal()"><i data-lucide="x" class="w-5 h-5 text-gray-500"></i></button>
         </div>
 
         <div class="space-y-3">
           <div>
-            <label class="text-xs font-bold text-gray-600 block mb-1">เบอร์โทรศัพท์มือถือ *</label>
+            <label class="text-xs font-bold text-gray-600 block mb-1" id="lblPhoneInput">เบอร์โทรศัพท์มือถือ *</label>
             <div class="flex gap-2">
               <input type="tel" id="memberPhoneInput" placeholder="เช่น 0812345678" class="w-full p-2.5 rounded-xl border bg-gray-50 font-bold text-sm focus:outline-none focus:border-[#008B47]">
-              <button onclick="lookupMemberByPhone()" class="bg-[#008B47] text-white px-4 py-2.5 rounded-xl font-bold text-xs font-display whitespace-nowrap shadow-sm">
+              <button onclick="lookupMemberByPhone()" class="bg-[#008B47] text-white px-4 py-2.5 rounded-xl font-bold text-xs font-display whitespace-nowrap shadow-sm" id="btnSearchMember">
                 ค้นหา
               </button>
             </div>
           </div>
 
           <div>
-            <label class="text-xs font-bold text-gray-600 block mb-1">ชื่อผู้สั่งซื้อ *</label>
+            <label class="text-xs font-bold text-gray-600 block mb-1" id="lblNameInput">ชื่อผู้สั่งซื้อ *</label>
             <input type="text" id="memberNameInput" placeholder="กรอกชื่อของคุณ" class="w-full p-2.5 rounded-xl border bg-gray-50 font-bold text-sm focus:outline-none focus:border-[#008B47]">
           </div>
 
-          <!-- 🎂 ดรอปดาวน์ วัน/เดือน/ปีเกิด (พ.ศ. ย้อนหลัง 100 ปี) -->
+          <!-- 🎂 ดรอปดาวน์ วัน/เดือน/ปีเกิด -->
           <div>
-            <label class="text-xs font-bold text-gray-600 block mb-1">วัน/เดือน/ปีเกิด (รับแต้ม x2 ในเดือนเกิด) 🎂</label>
+            <label class="text-xs font-bold text-gray-600 block mb-1" id="lblBirthdate">วัน/เดือน/ปีเกิด (รับแต้ม x2 ในเดือนเกิด) 🎂</label>
             <div class="grid grid-cols-3 gap-2">
               <select id="birthDaySelect" class="p-2.5 rounded-xl border bg-gray-50 font-bold text-xs md:text-sm focus:outline-none focus:border-[#008B47]">
                 <option value="">วัน</option>
@@ -219,23 +229,21 @@
           </div>
 
           <div>
-            <label class="text-xs font-bold text-gray-600 block mb-1">ที่อยู่จัดส่งประจำ</label>
+            <label class="text-xs font-bold text-gray-600 block mb-1" id="lblAddressInput">ที่อยู่จัดส่งประจำ</label>
             <textarea id="memberAddressInput" rows="2" placeholder="ระบุที่อยู่บ้านเลขที่ / จุดสังเกต..." class="w-full p-2.5 rounded-xl border bg-gray-50 font-bold text-sm focus:outline-none focus:border-[#008B47]"></textarea>
           </div>
 
           <div class="bg-amber-50 p-3 rounded-2xl border border-amber-200 flex justify-between items-center">
-            <span class="text-xs font-bold text-amber-900 font-display">คะแนนสะสมของคุณ:</span>
+            <span class="text-xs font-bold text-amber-900 font-display" id="lblYourPoints">คะแนนสะสมสุทธิของคุณ:</span>
             <span class="text-xl font-bold font-display text-amber-600" id="modalMemberPoints">0 แต้ม</span>
           </div>
 
           <!-- 🎴 บัตรสมาชิกดิจิทัลแนวตั้ง & ปุ่มกดโหลดรูป -->
           <div id="custCardPreviewBox" class="hidden pt-4 border-t border-gray-200 space-y-3">
-            <div class="text-sm font-bold text-[#008B47] font-display text-center">🎴 บัตรสมาชิกดิจิทัล</div>
+            <div class="text-sm font-bold text-[#008B47] font-display text-center" id="lblDigitalCard">🎴 บัตรสมาชิกดิจิทัล</div>
 
             <!-- ตัวบัตรสมาชิกแนวตั้ง -->
             <div id="memberCardPrintArea" style="font-family: Tahoma, 'Leelawadee UI', 'Sarabun', sans-serif; width: 300px;" class="mx-auto p-4 bg-[#FAF7F2] rounded-[28px] text-[#2C302E] shadow-lg relative overflow-hidden border-2 border-[#E8E2D5] flex flex-col justify-between items-center min-h-[440px]">
-              
-              <!-- แถบทองเมทัลลิกโค้งมนด้านล่าง -->
               <div class="absolute -bottom-12 -right-10 w-48 h-24 bg-gradient-to-r from-[#C5A059] via-[#E8D08D] to-[#A38038] rounded-full -rotate-12 opacity-85 pointer-events-none"></div>
 
               <!-- 1. Header -->
@@ -264,7 +272,7 @@
                 <div id="cardCustName" style="font-size: 18px; font-weight: 700; line-height: 1.3; color: #2C302E;" class="px-2 truncate">คุณลูกค้า</div>
                 
                 <div class="pt-0.5">
-                  <div style="font-size: 9px; font-weight: 700; color: #8A8679;">หมายเลขสมาชิก</div>
+                  <div style="font-size: 9px; font-weight: 700; color: #8A8679;" id="lblCardPhoneTitle">หมายเลขสมาชิก</div>
                   <div id="cardCustPhone" style="font-size: 15px; font-weight: 700; color: #2C302E; line-height: 1.3;" class="bg-white py-1 px-3 rounded-xl border border-[#E8E2D5] shadow-inner mt-0.5 inline-block font-mono">
                     08X - XXX - XXXX
                   </div>
@@ -275,27 +283,27 @@
               <div style="font-size: 9px; font-weight: 700;" class="w-full pt-2 border-t border-[#E8E2D5] grid grid-cols-3 gap-1 text-[#6B685C] relative z-10 text-center">
                 <div class="flex flex-col items-center gap-0.5">
                   <span class="text-xs">🎁</span>
-                  <span>สิทธิพิเศษ</span>
+                  <span id="lblCardPrivilege">สิทธิพิเศษ</span>
                 </div>
                 <div class="flex flex-col items-center gap-0.5 border-x border-[#E8E2D5]">
                   <span class="text-xs">🏷️</span>
-                  <span>ส่วนลดพิเศษ</span>
+                  <span id="lblCardDiscount">ส่วนลดพิเศษ</span>
                 </div>
                 <div class="flex flex-col items-center gap-0.5">
                   <span class="text-xs">🎂</span>
-                  <span>แต้ม x2 เดือนเกิด</span>
+                  <span id="lblCardBirthdayPts">แต้ม x2 เดือนเกิด</span>
                 </div>
               </div>
             </div>
 
             <!-- ปุ่มกดเซฟรูปบัตร -->
             <button type="button" onclick="downloadCustomerCardImage()" class="w-full bg-amber-500 hover:bg-amber-600 active:scale-95 text-black py-3 rounded-2xl font-bold text-sm font-display shadow-md transition flex items-center justify-center gap-2">
-              <i data-lucide="download" class="w-4 h-4"></i> เซฟรูปบัตรสมาชิก (.png)
+              <i data-lucide="download" class="w-4 h-4"></i> <span id="btnSaveCardImg">เซฟรูปบัตรสมาชิก (.png)</span>
             </button>
           </div>
         </div>
 
-        <button onclick="saveMemberProfile()" class="w-full bg-[#008B47] hover:bg-[#007438] text-white py-3 rounded-2xl font-bold text-base font-display shadow-md transition active:scale-95 mt-2">
+        <button onclick="saveMemberProfile()" class="w-full bg-[#008B47] hover:bg-[#007438] text-white py-3 rounded-2xl font-bold text-base font-display shadow-md transition active:scale-95 mt-2" id="btnSaveMember">
           💾 บันทึกการเปลี่ยนแปลง
         </button>
       </div>
@@ -307,15 +315,15 @@
         <div class="flex justify-between items-center border-b pb-3">
           <div>
             <h3 class="font-bold text-xl font-display text-amber-600 flex items-center gap-2">
-              <i data-lucide="gift"></i> แคตตาล็อกของรางวัล
+              <i data-lucide="gift"></i> <span id="modalRewardCatalogTitle">แคตตาล็อกของรางวัล</span>
             </h3>
-            <p class="text-xs text-gray-400">เลือกของรางวัลที่คุณต้องการใช้แต้มแลกรับ</p>
+            <p class="text-xs text-gray-400" id="lblRewardSubtitle">เลือกของรางวัลที่คุณต้องการใช้แต้มแลกรับ</p>
           </div>
           <button onclick="closeRedeemCatalogModal()"><i data-lucide="x" class="w-6 h-6 text-gray-500"></i></button>
         </div>
 
         <div class="bg-amber-50 p-3 rounded-2xl border border-amber-200 flex justify-between items-center">
-          <span class="text-xs font-bold text-amber-900">แต้มสะสมปัจจุบันของคุณ:</span>
+          <span class="text-xs font-bold text-amber-900" id="lblCurrPointsText">แต้มสะสมปัจจุบันของคุณ:</span>
           <span class="text-xl font-bold font-display text-amber-600" id="catalogUserPoints">0 แต้ม</span>
         </div>
 
@@ -331,7 +339,7 @@
         
         <div class="sticky top-0 bg-white z-20 -mx-5 -mt-5 px-5 pt-5 md:-mx-7 md:-mt-7 md:px-7 md:pt-7 pb-3 border-b flex justify-between items-center">
           <h3 class="font-bold text-xl font-display flex items-center gap-2 text-[#008B47]">
-            <i data-lucide="shopping-bag"></i> ตรวจสอบรายการสั่งซื้อ
+            <i data-lucide="shopping-bag"></i> <span id="modalCartReviewTitle">ตรวจสอบรายการสั่งซื้อ</span>
           </h3>
           <button type="button" onclick="closeCustomerCartModal()" class="p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition active:scale-95 shadow-sm">
             <i data-lucide="x" class="w-5 h-5"></i>
@@ -342,7 +350,7 @@
 
         <div class="bg-gray-50 p-3 rounded-2xl border space-y-2">
           <div class="text-xs font-bold text-gray-700 font-display flex justify-between items-center">
-            <span>รูปแบบการรับสินค้า</span>
+            <span id="lblDeliveryTypeSection">รูปแบบการรับสินค้า</span>
           </div>
           
           <div id="after18Notice" class="hidden"></div>
@@ -350,18 +358,18 @@
           <div class="grid grid-cols-2 gap-2">
             <button type="button" onclick="setDeliveryType('delivery')" id="btnTypeDelivery" class="py-2.5 px-3 rounded-xl border-2 border-[#008B47] bg-[#008B47] text-white flex flex-col items-center justify-center gap-0.5 transition">
               <div class="flex items-center gap-1.5 font-bold text-xs md:text-sm">
-                <i data-lucide="bike" class="w-4 h-4"></i> ให้ไปส่งที่บ้าน
+                <i data-lucide="bike" class="w-4 h-4"></i> <span id="lblBtnSendHome">ให้ไปส่งที่บ้าน</span>
               </div>
-              <div class="text-[10px] opacity-80 font-normal leading-tight text-center mt-0.5">
+              <div class="text-[10px] opacity-80 font-normal leading-tight text-center mt-0.5" id="lblSubSendHome">
                 สั่งหลัง 18:00 น.<br>ส่งเช้าวันถัดไป
               </div>
             </button>
 
             <button type="button" onclick="setDeliveryType('pickup')" id="btnTypePickup" class="py-2.5 px-3 rounded-xl border-2 border-gray-200 bg-white text-gray-700 flex flex-col items-center justify-center gap-0.5 transition">
               <div class="flex items-center gap-1.5 font-bold text-xs md:text-sm">
-                <i data-lucide="store" class="w-4 h-4"></i> มารับเองที่ร้าน
+                <i data-lucide="store" class="w-4 h-4"></i> <span id="lblBtnPickupStore">มารับเองที่ร้าน</span>
               </div>
-              <div class="text-[10px] opacity-70 font-normal leading-tight text-center mt-0.5">
+              <div class="text-[10px] opacity-70 font-normal leading-tight text-center mt-0.5" id="lblSubPickupStore">
                 มารับหน้าร้านได้ถึง<br>เวลา 20:00 น.
               </div>
             </button>
@@ -369,37 +377,37 @@
         </div>
 
         <div class="bg-gray-50 p-3 rounded-2xl border space-y-2">
-          <div class="text-xs font-bold text-gray-700 font-display">วิธีการชำระเงิน</div>
+          <div class="text-xs font-bold text-gray-700 font-display" id="lblPayOptionSection">วิธีการชำระเงิน</div>
           <div class="grid grid-cols-2 gap-2">
             <button type="button" onclick="setPayOption('transfer')" id="btnPayTransfer" class="py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm border-2 border-[#008B47] bg-[#008B47] text-white flex items-center justify-center gap-1.5 transition">
-              <i data-lucide="credit-card" class="w-4 h-4"></i> 📱 โอนเงินผ่านบัญชี
+              <i data-lucide="credit-card" class="w-4 h-4"></i> <span id="lblBtnPayTransfer">📱 โอนเงินผ่านบัญชี</span>
             </button>
             <button type="button" onclick="setPayOption('cash')" id="btnPayCash" class="py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm border-2 border-gray-200 bg-white text-gray-700 flex items-center justify-center gap-1.5 transition">
-              <i data-lucide="coins" class="w-4 h-4"></i> 💵 เงินสดปลายทาง
+              <i data-lucide="coins" class="w-4 h-4"></i> <span id="lblBtnPayCash">💵 เงินสดปลายทาง</span>
             </button>
           </div>
 
           <div id="bankTransferBox" class="pt-2 border-t space-y-2.5">
             <div class="bg-emerald-50 p-3.5 rounded-xl border border-emerald-300 text-xs space-y-2">
               <div class="flex justify-between items-center border-b border-emerald-200 pb-2">
-                <span class="font-bold text-[#008B47] text-sm">ธนาคารกสิกรไทย (K-Bank)</span>
+                <span class="font-bold text-[#008B47] text-sm" id="lblBankName">ธนาคารกสิกรไทย (K-Bank)</span>
                 <span class="text-[10px] bg-[#008B47] text-white px-2 py-0.5 rounded-full font-bold">กสิกร</span>
               </div>
               
               <div class="space-y-1">
-                <div class="text-gray-500 text-[11px]">เลขที่บัญชี:</div>
+                <div class="text-gray-500 text-[11px]" id="lblBankAccNo">เลขที่บัญชี:</div>
                 <div class="flex justify-between items-center bg-white p-2.5 rounded-lg border">
                   <span class="text-gray-900 font-bold text-lg font-display tracking-wider">855-2-19984-8</span>
                   <button type="button" onclick="copyBankAcc()" class="bg-[#008B47] text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm active:scale-95 flex items-center gap-1">
-                    <i data-lucide="copy" class="w-3.5 h-3.5"></i> ก๊อปปี้เลขบัญชี
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i> <span id="lblCopyAccBtn">ก๊อปปี้เลขบัญชี</span>
                   </button>
                 </div>
-                <div class="text-gray-700 text-xs font-bold pt-1">ชื่อบัญชี: ยลรดา ฉิมพาลี</div>
+                <div class="text-gray-700 text-xs font-bold pt-1" id="lblBankAccName">ชื่อบัญชี: ยลรดา ฉิมพาลี</div>
               </div>
             </div>
 
             <div>
-              <label class="text-[11px] font-bold text-gray-600 block mb-1">แนบรูปสลิปการโอนเงิน *</label>
+              <label class="text-[11px] font-bold text-gray-600 block mb-1" id="lblAttachSlip">แนบรูปสลิปการโอนเงิน *</label>
               <input type="file" id="paySlipFile" accept="image/*" onchange="previewPaySlip(event)" class="w-full text-xs p-2 bg-white rounded-xl border">
               <div id="slipPreviewBlock" class="mt-2 hidden flex justify-center">
                 <img id="slipPreview" src="" class="w-32 h-auto rounded-lg border">
@@ -410,15 +418,15 @@
 
         <div class="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-200 space-y-1">
           <div class="flex justify-between text-xs text-gray-600">
-            <span>ค่าสินค้า</span>
+            <span id="lblCartSubtotalText">ค่าสินค้า</span>
             <span id="custCartSubtotal">฿0.00</span>
           </div>
           <div class="flex justify-between text-xs text-gray-600">
-            <span>ค่าจัดส่ง</span>
+            <span id="lblCartFeeText">ค่าจัดส่ง</span>
             <span id="custDeliveryFee" class="font-bold text-[#F37021]">฿0.00</span>
           </div>
           <div class="flex justify-between items-center border-t border-emerald-200 pt-1.5 mt-1">
-            <span class="font-bold text-emerald-900 text-sm md:text-base">ยอดรวมทั้งสิ้น</span>
+            <span class="font-bold text-emerald-900 text-sm md:text-base" id="lblCartNetText">ยอดรวมทั้งสิ้น</span>
             <span id="custModalTotal" class="text-2xl md:text-3xl font-bold font-display text-[#008B47]">฿0.00</span>
           </div>
         </div>
@@ -426,36 +434,36 @@
         <div class="space-y-3 bg-gray-50 p-3.5 rounded-2xl border">
           <div class="flex justify-between items-center">
             <div class="text-xs font-bold text-[#008B47] font-display flex items-center gap-1">
-              <i data-lucide="map-pin" class="w-4 h-4"></i> ระบุข้อมูลจัดส่ง
+              <i data-lucide="map-pin" class="w-4 h-4"></i> <span id="lblDeliveryInfoSection">ระบุข้อมูลจัดส่ง</span>
             </div>
-            <span class="text-[10px] text-gray-400 font-bold">ใส่เบอร์เพื่อดึงข้อมูลสมาชิกอัตโนมัติ</span>
+            <span class="text-[10px] text-gray-400 font-bold" id="lblAutoFetchHint">ใส่เบอร์เพื่อดึงข้อมูลสมาชิกอัตโนมัติ</span>
           </div>
 
           <div>
-            <label class="text-[11px] font-bold text-gray-500 block mb-1">เบอร์โทรศัพท์ติดต่อ *</label>
+            <label class="text-[11px] font-bold text-gray-500 block mb-1" id="lblContactPhone">เบอร์โทรศัพท์ติดต่อ *</label>
             <input type="tel" id="custPhone" oninput="autoFetchMemberInfo(this.value)" placeholder="เช่น 0812345678" class="w-full p-2.5 rounded-xl border bg-white font-bold text-sm focus:outline-none focus:border-[#008B47]">
           </div>
 
           <div>
-            <label class="text-[11px] font-bold text-gray-500 block mb-1">ชื่อผู้รับสินค้า *</label>
+            <label class="text-[11px] font-bold text-gray-500 block mb-1" id="lblRecipientName">ชื่อผู้รับสินค้า *</label>
             <input type="text" id="custName" placeholder="เช่น คุณสมชาย" class="w-full p-2.5 rounded-xl border bg-white font-bold text-sm focus:outline-none focus:border-[#008B47]">
           </div>
 
           <div id="addressInputBox" class="space-y-3 pt-1">
-            <label class="text-xs font-bold text-gray-700 block font-display">
+            <label class="text-xs font-bold text-gray-700 block font-display" id="lblGpsTitle">
               📍 ตำแหน่งจัดส่งสินค้าบนแผนที่ *
             </label>
 
             <button type="button" onclick="getCurrentLocation()" class="w-full bg-[#F37021] hover:bg-orange-600 active:scale-95 text-white py-3 px-4 rounded-2xl font-bold text-sm md:text-base font-display shadow-md flex items-center justify-center gap-2 border-2 border-orange-400 transition">
               <i data-lucide="crosshair" class="w-5 h-5"></i>
-              <span>🎯 กดตรงนี้เพื่อดึงตำแหน่งบ้านปัจจุบัน (GPS)</span>
+              <span id="btnGpsText">🎯 กดตรงนี้เพื่อดึงตำแหน่งบ้านปัจจุบัน (GPS)</span>
             </button>
 
             <div id="mapPicker" class="shadow-inner border-2 border-gray-300 rounded-2xl"></div>
 
             <div id="gpsStatusText" class="text-xs font-bold text-emerald-800 bg-emerald-50 p-2.5 rounded-xl border border-emerald-200 text-center hidden"></div>
 
-            <div class="text-xs text-gray-500 font-medium text-center bg-amber-50 p-2 rounded-xl border border-amber-200">
+            <div class="text-xs text-gray-500 font-medium text-center bg-amber-50 p-2 rounded-xl border border-amber-200" id="lblGpsTip">
               💡 <b>คำแนะนำ:</b> สามารถเอานิ้วลากหมุดสีแดงบนแผนที่ไปวางตรงหลังคาบ้านของคุณได้เลยครับ
             </div>
 
@@ -463,7 +471,7 @@
           </div>
         </div>
 
-        <button onclick="submitOrderFromCustomer()" class="w-full bg-[#008B47] hover:bg-[#007438] text-white py-3.5 rounded-2xl font-bold text-lg font-display shadow-lg transition active:scale-95">
+        <button onclick="submitOrderFromCustomer()" class="w-full bg-[#008B47] hover:bg-[#007438] text-white py-3.5 rounded-2xl font-bold text-lg font-display shadow-lg transition active:scale-95" id="btnSubmitOrderText">
           🚀 ยืนยันการสั่งซื้อ
         </button>
       </div>
@@ -492,7 +500,7 @@
             <div id="modalCircle4" class="w-6 h-6 rounded-full bg-gray-300 text-[#FFFFFF] flex items-center justify-center text-xs font-bold z-10 shadow">4</div>
             <div id="modalCircle5" class="w-6 h-6 rounded-full bg-gray-300 text-[#FFFFFF] flex items-center justify-center text-xs font-bold z-10 shadow">5</div>
           </div>
-          <div class="grid grid-cols-5 text-[9px] font-bold text-center text-gray-400">
+          <div class="grid grid-cols-5 text-[9px] font-bold text-center text-gray-400" id="stepperLabelsRow">
             <span>รับออเดอร์</span>
             <span>จัดเตรียม</span>
             <span>รอจัดส่ง</span>
@@ -501,17 +509,17 @@
           </div>
         </div>
 
-        <div class="text-xs font-bold text-gray-700 font-display">รายการสินค้าที่สั่งซื้อ</div>
+        <div class="text-xs font-bold text-gray-700 font-display" id="lblTrackItemsHeader">รายการสินค้าที่สั่งซื้อ</div>
         <div id="trackingItemList" class="divide-y divide-gray-100 bg-gray-50 p-2.5 rounded-2xl border max-h-40 overflow-y-auto"></div>
 
         <div class="bg-gray-50 p-3.5 rounded-2xl border space-y-1.5 text-xs text-gray-600 font-medium">
-          <div class="flex justify-between"><span>การรับสินค้า:</span><span id="trackDeliveryType" class="font-bold text-[#008B47]"></span></div>
-          <div class="flex justify-between"><span>ช่องทางชำระ:</span><span id="trackPayType" class="font-bold text-[#F37021]"></span></div>
-          <div class="flex justify-between"><span>ผู้สั่งซื้อ:</span><span id="trackCustName" class="font-bold text-gray-900"></span></div>
-          <div class="flex justify-between"><span>เบอร์โทร:</span><span id="trackCustPhone" class="font-bold text-gray-900"></span></div>
-          <div class="flex justify-between"><span>ที่อยู่/หมายเหตุ:</span><span id="trackCustAddress" class="font-bold text-gray-900 text-right max-w-[180px] truncate"></span></div>
+          <div class="flex justify-between"><span id="lblTrackMethod">การรับสินค้า:</span><span id="trackDeliveryType" class="font-bold text-[#008B47]"></span></div>
+          <div class="flex justify-between"><span id="lblTrackPay">ช่องทางชำระ:</span><span id="trackPayType" class="font-bold text-[#F37021]"></span></div>
+          <div class="flex justify-between"><span id="lblTrackCustomer">ผู้สั่งซื้อ:</span><span id="trackCustName" class="font-bold text-gray-900"></span></div>
+          <div class="flex justify-between"><span id="lblTrackPhone">เบอร์โทร:</span><span id="trackCustPhone" class="font-bold text-gray-900"></span></div>
+          <div class="flex justify-between"><span id="lblTrackAddress">ที่อยู่/หมายเหตุ:</span><span id="trackCustAddress" class="font-bold text-gray-900 text-right max-w-[180px] truncate"></span></div>
           <div class="flex justify-between border-t pt-2 text-sm font-bold text-[#008B47]">
-            <span>ยอดรวมทั้งสิ้น:</span>
+            <span id="lblTrackTotal">ยอดรวมทั้งสิ้น:</span>
             <span id="trackTotalAmt" class="text-lg font-display text-[#F37021]">฿0.00</span>
           </div>
         </div>
@@ -523,6 +531,376 @@
   <script>
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzufZy7m8IIxHGZ1ae9Yy4cYcYPXsFdkzX8fSA7kpeZVlBMv_XP2W4v0zrIjNMJRKg5/exec";
     const MY_LIFF_ID = "2011317502-oCvWQ4LI";
+
+    // 🌐 คลังคำแปล 4 ภาษา (ไทย / อังกฤษ / ลาว / พม่า)
+    const translations = {
+      th: {
+        login: "เข้าสู่ระบบสมาชิก",
+        searchPlaceholder: "ค้นหาสินค้าที่ต้องการสั่ง...",
+        searchBtn: "ค้นหา",
+        quickDelivery: "สั่งซื้อด่วน Delivery:",
+        deliveryNotice: "ส่งฟรี 3 กม. แรกเมื่อซื้อครบ 100.- (เกินคิดตามจริง)",
+        badgeCollectPts: "สะสมแต้มแลกของรางวัล",
+        pointRules: "ซื้อครบทุก 100 บาท = รับ 1 แต้ม (ติดหนี้ได้แต้ม 50%)",
+        viewRewards: "🎁 ดูของรางวัล",
+        catSection: "หมวดหมู่สินค้า",
+        catTitleAll: "สินค้าแนะนำทั้งหมด",
+        catTitlePrefix: "หมวดหมู่: ",
+        outOfStock: "สินค้าหมด",
+        leftQty: "เหลือ",
+        unit: "ชิ้น",
+        kmUnit: "กม.",
+        phoneLabel: "เบอร์โทรศัพท์มือถือ *",
+        nameLabel: "ชื่อผู้สั่งซื้อ *",
+        birthdateLabel: "วัน/เดือน/ปีเกิด (รับแต้ม x2 ในเดือนเกิด) 🎂",
+        addressLabel: "ที่อยู่จัดส่งประจำ",
+        cardPhoneTitle: "หมายเลขสมาชิก",
+        cardPrivilege: "สิทธิพิเศษ",
+        cardDiscount: "ส่วนลดพิเศษ",
+        cardBirthdayPts: "แต้ม x2 เดือนเกิด",
+        points: "แต้ม",
+        score: "คะแนน",
+        cartTitle: "ตรวจสอบรายการสั่งซื้อ",
+        deliveryType: "รูปแบบการรับสินค้า",
+        sendHome: "ให้ไปส่งที่บ้าน",
+        subSendHome: "สั่งหลัง 18:00 น.<br>ส่งเช้าวันถัดไป",
+        pickupStore: "มารับเองที่ร้าน",
+        subPickupStore: "มารับหน้าร้านได้ถึง<br>เวลา 20:00 น.",
+        after18NoticeText: `<div class="text-amber-800 font-bold text-sm">🌙 ขณะนี้เกินเวลา 18:00 น. แล้ว:</div><div>• 🛵 <strong>ให้ไปส่งที่บ้าน:</strong> ทางร้านจะจัดส่งให้ใน<strong>วันถัดไป ตั้งแต่เวลา 08:00 น.</strong> เป็นต้นไปครับ</div><div>• 🏪 หากต้องการรับสินค้าทันทีคืนนี้: แนะนำให้เลือก <strong>"มารับเองที่ร้าน"</strong> ได้เลยครับ</div>`,
+        payOption: "วิธีการชำระเงิน",
+        payTransfer: "📱 โอนเงินผ่านบัญชี",
+        payCash: "💵 เงินสดปลายทาง",
+        bankName: "ธนาคารกสิกรไทย (K-Bank)",
+        bankAccNo: "เลขที่บัญชี:",
+        copyAccBtn: "ก๊อปปี้เลขบัญชี",
+        bankAccName: "ชื่อบัญชี: ยลรดา ฉิมพาลี",
+        attachSlip: "แนบรูปสลิปการโอนเงิน *",
+        subtotal: "ค่าสินค้า",
+        deliveryFee: "ค่าจัดส่ง",
+        totalNet: "ยอดรวมทั้งสิ้น",
+        deliveryInfo: "ระบุข้อมูลจัดส่ง",
+        autoFetchHint: "ใส่เบอร์เพื่อดึงข้อมูลสมาชิกอัตโนมัติ",
+        contactPhone: "เบอร์โทรศัพท์ติดต่อ *",
+        recipientName: "ชื่อผู้รับสินค้า *",
+        gpsTitle: "📍 ตำแหน่งจัดส่งสินค้าบนแผนที่ *",
+        btnGps: "🎯 กดตรงนี้เพื่อดึงตำแหน่งบ้านปัจจุบัน (GPS)",
+        gpsTip: "💡 <b>คำแนะนำ:</b> สามารถเอานิ้วลากหมุดสีแดงบนแผนที่ไปวางตรงหลังคาบ้านของคุณได้เลยครับ",
+        addrPlaceholder: "ระบุบ้านเลขที่ / ซอย / จุดสังเกตเพิ่มเติม...",
+        confirmOrder: "🚀 ยืนยันการสั่งซื้อ",
+        orderStatus: "สถานะออเดอร์",
+        viewDetail: "ดูรายละเอียด",
+        barSubtotal: "ยอดรวมสินค้า",
+        barProceed: "ดำเนินการต่อ",
+        yourNetPoints: "คะแนนสะสมสุทธิของคุณ:",
+        digitalCard: "🎴 บัตรสมาชิกดิจิทัล",
+        saveCardImg: "เซฟรูปบัตรสมาชิก (.png)",
+        saveChanges: "💾 บันทึกการเปลี่ยนแปลง",
+        catalogTitle: "แคตตาล็อกของรางวัล",
+        catalogSubtitle: "เลือกของรางวัลที่คุณต้องการใช้แต้มแลกรับ",
+        currPointsText: "แต้มสะสมปัจจุบันของคุณ:",
+        notEnoughPts: "แต้มไม่พอ",
+        outOfStockReward: "ของหมด",
+        btnRedeem: "🎁 กดแลกรับ",
+        freeDeliveryText: "ฟรีค่าส่ง",
+        pickupAtStoreText: "รับเองที่ร้าน",
+        overDistanceText: "เกิน",
+        trackItemsHeader: "รายการสินค้าที่สั่งซื้อ",
+        trackMethod: "การรับสินค้า:",
+        trackPay: "ช่องทางชำระ:",
+        trackCustomer: "ผู้สั่งซื้อ:",
+        trackPhone: "เบอร์โทร:",
+        trackAddress: "ที่อยู่/หมายเหตุ:",
+        steppers: ["รับออเดอร์", "จัดเตรียม", "รอจัดส่ง", "กำลังส่ง", "ส่งสำเร็จ"]
+      },
+      en: {
+        login: "Member Login",
+        searchPlaceholder: "Search products...",
+        searchBtn: "Search",
+        quickDelivery: "Express Delivery:",
+        deliveryNotice: "Free delivery for first 3 km on orders over 100.-",
+        badgeCollectPts: "Collect Points for Rewards",
+        pointRules: "Every 100 THB = 1 Point (Debt orders get 50%)",
+        viewRewards: "🎁 View Rewards",
+        catSection: "Categories",
+        catTitleAll: "All Recommended Products",
+        catTitlePrefix: "Category: ",
+        outOfStock: "Out of stock",
+        leftQty: "In stock",
+        unit: "pcs",
+        kmUnit: "km",
+        phoneLabel: "Mobile Phone *",
+        nameLabel: "Full Name *",
+        birthdateLabel: "Birthdate (Double pts in birth month) 🎂",
+        addressLabel: "Regular Address",
+        cardPhoneTitle: "Member Number",
+        cardPrivilege: "Privileges",
+        cardDiscount: "Discounts",
+        cardBirthdayPts: "2x Birthday Pts",
+        points: "Pts",
+        score: "Points",
+        cartTitle: "Review Your Order",
+        deliveryType: "Delivery Method",
+        sendHome: "Home Delivery",
+        subSendHome: "Order after 18:00<br>Next morning delivery",
+        pickupStore: "Pick up at Store",
+        subPickupStore: "Pick up at store<br>until 20:00",
+        after18NoticeText: `<div class="text-amber-800 font-bold text-sm">🌙 It is past 18:00:</div><div>• 🛵 <strong>Home Delivery:</strong> Orders will be delivered <strong>next day from 08:00 onwards</strong>.</div><div>• 🏪 To receive items tonight: Please select <strong>"Pick up at Store"</strong>.</div>`,
+        payOption: "Payment Method",
+        payTransfer: "📱 Bank Transfer",
+        payCash: "💵 Cash on Delivery",
+        bankName: "Kasikornbank (K-Bank)",
+        bankAccNo: "Account No.:",
+        copyAccBtn: "Copy Acc. No.",
+        bankAccName: "Account Name: Yonlada Chimphali",
+        attachSlip: "Attach Transfer Slip *",
+        subtotal: "Subtotal",
+        deliveryFee: "Delivery Fee",
+        totalNet: "Total Amount",
+        deliveryInfo: "Delivery Information",
+        autoFetchHint: "Enter phone to auto-fill member info",
+        contactPhone: "Contact Phone *",
+        recipientName: "Recipient Name *",
+        gpsTitle: "📍 Delivery Pin Location *",
+        btnGps: "🎯 Click to get current GPS location",
+        gpsTip: "💡 <b>Tip:</b> Drag the red pin on the map directly onto your rooftop.",
+        addrPlaceholder: "House No. / Soi / Nearby landmarks...",
+        confirmOrder: "🚀 Place Order",
+        orderStatus: "Order Status",
+        viewDetail: "View Details",
+        barSubtotal: "Subtotal",
+        barProceed: "Proceed",
+        yourNetPoints: "Your Net Points:",
+        digitalCard: "🎴 Digital Membership Card",
+        saveCardImg: "Save Card Image (.png)",
+        saveChanges: "💾 Save Changes",
+        catalogTitle: "Reward Catalog",
+        catalogSubtitle: "Select rewards you wish to redeem",
+        currPointsText: "Your Current Points:",
+        notEnoughPts: "Not enough pts",
+        outOfStockReward: "Out of stock",
+        btnRedeem: "🎁 Redeem",
+        freeDeliveryText: "Free Delivery",
+        pickupAtStoreText: "Pick up at store",
+        overDistanceText: "over",
+        trackItemsHeader: "Purchased Items",
+        trackMethod: "Receiving Method:",
+        trackPay: "Payment:",
+        trackCustomer: "Customer:",
+        trackPhone: "Phone:",
+        trackAddress: "Address/Note:",
+        steppers: ["Order Placed", "Preparing", "Ready", "Delivering", "Completed"]
+      },
+      lo: {
+        login: "ເຂົ້າສູ່ລະບົບສະມາຊິກ",
+        searchPlaceholder: "ຄົ້ນຫາສິນຄ້າ...",
+        searchBtn: "ຄົ້ນຫາ",
+        quickDelivery: "ສັ່ງຊື້ດ່ວນ Delivery:",
+        deliveryNotice: "ສົ່ງຟຣີ 3 ກມ ທຳອິດ ເມື່ອຊື້ຄົບ 100.-",
+        badgeCollectPts: "ສະສົມຄະແນນແລກຂອງລາງວັນ",
+        pointRules: "ຊື້ຄົບ 100 ບາດ = 1 ຄະແນນ (ຕິດໜີ້ໄດ້ 50%)",
+        viewRewards: "🎁 ເບິ່ງຂອງລາງວັນ",
+        catSection: "ໝວດໝູ່ສິນຄ້າ",
+        catTitleAll: "ສິນຄ້າແນະນຳທັງໝົດ",
+        catTitlePrefix: "ໝວດໝູ່: ",
+        outOfStock: "ສິນຄ້າໝົດ",
+        leftQty: "ເຫຼືອ",
+        unit: "ອັນ",
+        kmUnit: "ກມ",
+        phoneLabel: "ເບີໂທລະສັບ *",
+        nameLabel: "ຊື່ຜູ້ສັ່ງຊື້ *",
+        birthdateLabel: "ວັນເດືອນປີເກີດ (ຄະແນນ x2 ເດືອນເກີດ) 🎂",
+        addressLabel: "ທີ່ຢູ່ຈັດສົ່ງປະຈຳ",
+        cardPhoneTitle: "ໝາຍເລກສະມາຊິກ",
+        cardPrivilege: "ສິດທິພິເສດ",
+        cardDiscount: "ສ່ວນຫຼຸດພິເສດ",
+        cardBirthdayPts: "ຄະແນນ x2 ເດືອນເກີດ",
+        points: "ຄະແນນ",
+        score: "ຄະແນນ",
+        cartTitle: "ກວດສອບລາຍການສັ່ງຊື້",
+        deliveryType: "ຮູບແບບການຮັບສິນຄ້າ",
+        sendHome: "ໃຫ້ໄປສົ່ງຢູ່ບ້ານ",
+        subSendHome: "ສັ່ງຫຼັງ 18:00 ນ.<br>ສົ່ງເຊົ້າວັນຖັດໄປ",
+        pickupStore: "ມາຮັບເອງຢູ່ຮ້ານ",
+        subPickupStore: "ມາຮັບໜ້າຮ້ານໄດ້ເຖິງ<br>ເວລາ 20:00 ນ.",
+        after18NoticeText: `<div class="text-amber-800 font-bold text-sm">🌙 ຂະນະນີ້ເກີນເວລາ 18:00 ນ. ແລ້ວ:</div><div>• 🛵 <strong>ໃຫ້ໄປສົ່ງຢູ່ບ້ານ:</strong> ທາງຮ້ານຈະຈັດສົ່ງໃຫ້ໃນ<strong>ວັນຖັດໄປ ຕັ້ງແຕ່ເວລາ 08:00 ນ.</strong> ເປັນຕົ້ນໄປ</div><div>• 🏪 ຫາກຕ້ອງການຮັບສິນຄ້າທັນທີຄືນນີ້: ແນະນຳໃຫ້ເລືອກ <strong>"ມາຮັບເອງຢູ່ຮ້ານ"</strong></div>`,
+        payOption: "ວິທີການຊຳລະເງິນ",
+        payTransfer: "📱 ໂອນເງິນຜ່ານບັນຊີ",
+        payCash: "💵 ເງິນສົດປາຍທາງ",
+        bankName: "ທະນາຄານກາສິກອນໄທ (K-Bank)",
+        bankAccNo: "ເລກບັນຊີ:",
+        copyAccBtn: "ກັອບປີ້ເລກບັນຊີ",
+        bankAccName: "ຊື່ບັນຊີ: ຍົນລະດາ ສິມພະລີ",
+        attachSlip: "ແນບຮູບສະລິບການໂອນເງິນ *",
+        subtotal: "ຄ່າສິນຄ້າ",
+        deliveryFee: "ຄ່າຈັດສົ່ງ",
+        totalNet: "ຍອດຮວມທັງໝົດ",
+        deliveryInfo: "ລະບຸຂໍ້ມູນຈັດສົ່ງ",
+        autoFetchHint: "ໃສ່ເບີເພື່ອດຶງຂໍ້ມູນສະມາຊິກອັດໂນມັດ",
+        contactPhone: "ເບີໂທລະສັບຕິດຕໍ່ *",
+        recipientName: "ຊື່ຜູ້ຮັບສິນຄ້າ *",
+        gpsTitle: "📍 ຕຳແໜ່ງຈັດສົ່ງເທິງແຜນທີ່ *",
+        btnGps: "🎯 ກົດບ່ອນນີ້ເພື່ອດຶງຕຳແໜ່ງ GPS ປະຈຸບັນ",
+        gpsTip: "💡 <b>ຄຳແນະນຳ:</b> ສາມາດເອົານິ້ວລາກໝຸດສີແດງເທິງແຜນທີ່ໄປວາງກົງຫຼັງຄາບ້ານຂອງທ່ານໄດ້ເລີຍ",
+        addrPlaceholder: "ລະບຸເຮືອນເລກທີ / ຊອຍ / ຈຸດສັງເກດຕ່າງໆ...",
+        confirmOrder: "🚀 ຢືນຢັນການສັ່ງຊື້",
+        orderStatus: "ສະຖານະອໍເດີ້",
+        viewDetail: "ເບິ່ງລາຍລະອຽດ",
+        barSubtotal: "ຍອດຮວມສິນຄ້າ",
+        barProceed: "ດຳເນີນການຕໍ່",
+        yourNetPoints: "ຄະແນນສະສົມຂອງທ່ານ:",
+        digitalCard: "🎴 ບັດສະມາຊິກດິຈິທອນ",
+        saveCardImg: "ບັນທຶກຮູບບັດ (.png)",
+        saveChanges: "💾 ບັນທຶກການປ່ຽນແປງ",
+        catalogTitle: "ແຄັດຕາລັອກຂອງລາງວັນ",
+        catalogSubtitle: "ເລືອກຂອງລາງວັນທີ່ຕ້ອງການແລກ",
+        currPointsText: "ຄະແນນປະຈຸບັນຂອງທ່ານ:",
+        notEnoughPts: "ຄະແນນບໍ່ພໍ",
+        outOfStockReward: "ຂອງໝົດ",
+        btnRedeem: "🎁 ກົດແລກຮັບ",
+        freeDeliveryText: "ສົ່ງຟຣີ",
+        pickupAtStoreText: "ຮັບເອງຢູ່ຮ້ານ",
+        overDistanceText: "ເກີນ",
+        trackItemsHeader: "ລາຍການສິນຄ້າທີ່ສັ່ງຊື້",
+        trackMethod: "ການຮັບສິນຄ້າ:",
+        trackPay: "ຊ່ອງທາງຊຳລະ:",
+        trackCustomer: "ຜູ້ສັ່ງຊື້:",
+        trackPhone: "ເບີໂທ:",
+        trackAddress: "ທີ່ຢູ່/ໝາຍເຫດ:",
+        steppers: ["ຮັບອໍເດີ້", "ຈັດຕຽມ", "ລໍຈັດສົ່ງ", "ກຳລັງສົ່ງ", "ສົ່ງສຳເລັດ"]
+      },
+      my: {
+        login: "အဖွဲ့ဝင်ဝင်ရန်",
+        searchPlaceholder: "ပစ္စည်းရှာဖွေပါ...",
+        searchBtn: "ရှာဖွေပါ",
+        quickDelivery: "အမြန်မှာယူရန် Delivery:",
+        deliveryNotice: "၁၀ဝ ဖိုးဝယ်ပါက ပထမ ၃ ကီလိုမီတာ အခမဲ့ပို့ပေးပါသည်",
+        badgeCollectPts: "လက်ဆောင်အတွက် ရမှတ်စုဆောင်းပါ",
+        pointRules: "၁၀ဝ ဖိုးဝယ်ယူတိုင်း ၁ မှတ်ရမည် (ကြွေးကျန် ၅၀% ရမည်)",
+        viewRewards: "🎁 လက်ဆောင်ကြည့်ရန်",
+        catSection: "ပစ္စည်းအမျိုးအစားများ",
+        catTitleAll: "အကြံပြုထားသော ပစ္စည်းများ",
+        catTitlePrefix: "အမျိုးအစား: ",
+        outOfStock: "ပစ္စည်းကုန်ပါပြီ",
+        leftQty: "ကျန်ရှိသော",
+        unit: "ခု",
+        kmUnit: "ကီလိုမီတာ",
+        phoneLabel: "ဖုန်းနံပါတ် *",
+        nameLabel: "ဝယ်ယူသူအမည် *",
+        birthdateLabel: "မွေးနေ့ (မွေးနေ့လတွင် ရမှတ် ၂ ဆရမည်) 🎂",
+        addressLabel: "ပို့ဆောင်ရမည့်လိပ်စာ",
+        cardPhoneTitle: "အဖွဲ့ဝင်နံပါတ်",
+        cardPrivilege: "အခွင့်အရေးများ",
+        cardDiscount: "အထူးလျှော့ဈေး",
+        cardBirthdayPts: "မွေးနေ့ရမှတ် ၂ ဆ",
+        points: "ရမှတ်",
+        score: "ရမှတ်",
+        cartTitle: "မှာယူမှုကို စစ်ဆေးပါ",
+        deliveryType: "လက်ခံမည့်ပုံစံ",
+        sendHome: "အိမ်တိုင်ရာရောက်ပို့ပေးပါ",
+        subSendHome: "၁၈:၀ဝ နောက်ပိုင်းမှာပါက<br>နောက်နေ့မနက်မှပို့မည်",
+        pickupStore: "ဆိုင်တွင်လာယူမည်",
+        subPickupStore: "ဆိုင်တွင် ည ၈:၀ဝ အထိ<br>လာရောက်ယူနိုင်ပါသည်",
+        after18NoticeText: `<div class="text-amber-800 font-bold text-sm">🌙 ည ၆:၀ဝ ကျော်လွန်သွားပါပြီ:</div><div>• 🛵 <strong>အိမ်တိုင်ရာရောက်ပို့ပေးပါ:</strong> နောက်နေ့နံနက် ၈:၀ဝ မှစတင်၍ ပို့ဆောင်ပေးပါမည်။</div><div>• 🏪 ယခုည ပစ္စည်းချက်ချင်းလိုပါက <strong>"ဆိုင်တွင်လာယူမည်"</strong> ကိုရွေးချယ်ပါ။</div>`,
+        payOption: "ငွေပေးချေမှုနည်းလမ်း",
+        payTransfer: "📱 ဘဏ်မှတဆင့်ငွေလွှဲမည်",
+        payCash: "💵 ပစ္စည်းရောက်မှငွေချေမည်",
+        bankName: "ကစီကွန်ဘဏ် (K-Bank)",
+        bankAccNo: "ဘဏ်အကောင့်နံပါတ်:",
+        copyAccBtn: "အကောင့်နံပါတ်ကူးယူမည်",
+        bankAccName: "အကောင့်အမည်: Yonlada Chimphali",
+        attachSlip: "ငွေလွှဲဖြတ်ပိုင်းပုံထည့်ပါ *",
+        subtotal: "ပစ္စည်းတန်ဖိုး",
+        deliveryFee: "ပို့ဆောင်ခ",
+        totalNet: "စုစုပေါင်းကျသင့်ငွေ",
+        deliveryInfo: "ပို့ဆောင်မည့်အချက်အလက်",
+        autoFetchHint: "ဖုန်းနံပါတ်ရိုက်ထည့်ပါက အချက်အလက်များပေါ်လာမည်",
+        contactPhone: "ဆက်သွယ်ရန်ဖုန်းနံပါတ် *",
+        recipientName: "လက်ခံသူအမည် *",
+        gpsTitle: "📍 မြေပုံပေါ်တွင်နေရာပြပါ *",
+        btnGps: "🎯 လက်ရှိ GPS နေရာကိုယူမည်",
+        gpsTip: "💡 <b>အကြံပြုချက်:</b> မြေပုံပေါ်မှ အနီရောင်ပင်အား သင့်အိမ်ခေါင်မိုးပေါ်သို့ ဆွဲရွှေ့ပါ",
+        addrPlaceholder: "အိမ်နံပါတ် / လမ်း / အမှတ်အသား...",
+        confirmOrder: "🚀 မှာယူမှုကို အတည်ပြုမည်",
+        orderStatus: "အော်ဒါအခြေအနေ",
+        viewDetail: "အသေးစိတ်ကြည့်မည်",
+        barSubtotal: "စုစုပေါင်းတန်ဖိုး",
+        barProceed: "ရှေ့ဆက်မည်",
+        yourNetPoints: "သင်၏စုစုပေါင်းရမှတ်:",
+        digitalCard: "🎴 အဖွဲ့ဝင်ကဒ်",
+        saveCardImg: "ကဒ်ပုံစံသိမ်းဆည်းမည် (.png)",
+        saveChanges: "💾 ပြောင်းလဲမှုများကိုသိမ်းမည်",
+        catalogTitle: "လက်ဆောင်ကက်တလောက်",
+        catalogSubtitle: "လဲလှယ်လိုသော လက်ဆောင်ကိုရွေးပါ",
+        currPointsText: "လက်ရှိရမှတ်:",
+        notEnoughPts: "ရမှတ်မလုံလောက်ပါ",
+        outOfStockReward: "ပစ္စည်းကုန်သွားပါပြီ",
+        btnRedeem: "🎁 လဲလှယ်မည်",
+        freeDeliveryText: "အခမဲ့ပို့ဆောင်ခ",
+        pickupAtStoreText: "ဆိုင်တွင်ကိုယ်တိုင်လာယူမည်",
+        overDistanceText: "ကျော်လွန်",
+        trackItemsHeader: "ဝယ်ယူထားသော ပစ္စည်းများ",
+        trackMethod: "လက်ခံမည့်ပုံစံ:",
+        trackPay: "ငွေပေးချေမှု:",
+        trackCustomer: "မှာယူသူ:",
+        trackPhone: "ဖုန်းနံပါတ်:",
+        trackAddress: "လိပ်စာ/မှတ်ချက်:",
+        steppers: ["လက်ခံပြီး", "ပြင်ဆင်နေသည်", "ပို့ရန်အသင့်", "ပို့ဆောင်နေသည်", "ပြီးစီးပါပြီ"]
+      }
+    };
+
+    // 🌐 ตารางแปลชื่อหมวดหมู่สินค้า 4 ภาษา
+    const categoryTranslations = {
+      th: {
+        'ทั้งหมด': 'ทั้งหมด',
+        'กล่องพัสดุ': 'กล่องพัสดุ',
+        'ทั่วไป': 'ทั่วไป',
+        'อาหาร/เครื่องดื่ม': 'อาหาร/เครื่องดื่ม',
+        'ยา/เวชภัณฑ์': 'ยา/เวชภัณฑ์',
+        'เครื่องสำอาง': 'เครื่องสำอาง',
+        'ของใช้': 'ของใช้',
+        'เนื้อสัตว์/ของสด': 'เนื้อสัตว์/ของสด',
+        'เชื้อเพลิง/พลังงาน': 'เชื้อเพลิง/พลังงาน',
+        'สัตว์เลี้ยง': 'สัตว์เลี้ยง'
+      },
+      en: {
+        'ทั้งหมด': 'All',
+        'กล่องพัสดุ': 'Parcels',
+        'ทั่วไป': 'General',
+        'อาหาร/เครื่องดื่ม': 'Food & Drinks',
+        'ยา/เวชภัณฑ์': 'Medicines',
+        'เครื่องสำอาง': 'Cosmetics',
+        'ของใช้': 'Household',
+        'เนื้อสัตว์/ของสด': 'Fresh Food',
+        'เชื้อเพลิง/พลังงาน': 'Fuel',
+        'สัตว์เลี้ยง': 'Pet Supplies'
+      },
+      lo: {
+        'ทั้งหมด': 'ທັງໝົດ',
+        'กล่องพัสดุ': 'ກ່ອງພັດສະດຸ',
+        'ทั่วไป': 'ທົ່ວໄປ',
+        'อาหาร/เครื่องดื่ม': 'ອາຫານ/ເຄື່ອງດື່ມ',
+        'ยา/เวชภัณฑ์': 'ຢາ/ເວຊະພັນ',
+        'เครื่องสำອາງ': 'ເຄື່ອງສຳອາງ',
+        'ของใช้': 'ເຄື່ອງໃຊ້',
+        'เนื้อสัตว์/ของสด': 'ເນື້ອສັດ/ຂອງສົດ',
+        'เชื้อเพลิง/พลังงาน': 'ເຊື້ອເພີງ',
+        'สัตว์เลี้ยง': 'ສັດລ້ຽງ'
+      },
+      my: {
+        'ทั้งหมด': 'အားလုံး',
+        'กล่องพัสดุ': 'ပါဆယ်ပုံး',
+        'ทั่วไป': 'အထွေထွေ',
+        'อาหาร/เครื่องดื่ม': 'အစားအသောက်',
+        'ยา/เวชภัณฑ์': 'ဆေးဝါးများ',
+        'เครื่องสำอาง': 'မိတ်ကပ်',
+        'ของใช้': 'အိမ်သုံး',
+        'เนื้อสัตว์/ของสด': 'အသား/အဆတ်',
+        'เชื้อเพลิง/พลังงาน': 'စက်သုံးဆီ',
+        'สัตว์เลี้ยง': 'အိမ်မွေးတိရစ္ဆာန်'
+      }
+    };
+
+    let currentLang = localStorage.getItem('appLang') || 'th';
 
     // 📍 พิกัดร้านค้า
     const STORE_LOCATION = { lat: 13.867726, lng: 100.113623 }; 
@@ -578,39 +956,322 @@
 
     let notifiedCancelledMap = {};
 
-    // 🎂 ฟังก์ชันสร้างรายการตัวเลือก ดรอปดาวน์ วัน/เดือน/ปีเกิด (พ.ศ. ย้อนหลัง 100 ปี)
+    // 🌐 ฟังก์ชันเปลี่ยนภาษาในระบบทุกจุด
+    function changeAppLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem('appLang', lang);
+
+      const t = translations[lang] || translations.th;
+
+      const memberBadge = document.getElementById('memberHeaderBadge');
+      if (memberBadge && !currentMember) memberBadge.innerText = t.login;
+
+      const quickDel = document.getElementById('lblQuickDelivery');
+      if (quickDel) quickDel.innerText = t.quickDelivery;
+
+      const topNotice = document.getElementById('topAddrDisplay');
+      if (topNotice && topNotice.innerText.includes('ส่งฟรี')) topNotice.innerText = t.deliveryNotice;
+
+      const searchInput = document.getElementById('custSearchInput');
+      if (searchInput) searchInput.placeholder = t.searchPlaceholder;
+
+      const badgeCollect = document.getElementById('lblBadgeCollectPts');
+      if (badgeCollect) badgeCollect.innerText = t.badgeCollectPts;
+
+      const rulesText = document.getElementById('pointRulesText');
+      if (rulesText) rulesText.innerText = t.pointRules;
+
+      const catalogBtn = document.getElementById('btnCatalogLabel');
+      if (catalogBtn) catalogBtn.innerText = t.viewRewards;
+
+      const catSec = document.getElementById('lblCatSection');
+      if (catSec) catSec.innerText = t.catSection;
+
+      const orderStatusH = document.getElementById('lblOrderStatusHeader');
+      if (orderStatusH) orderStatusH.innerText = t.orderStatus;
+
+      const trackDetailBtn = document.getElementById('btnTrackDetail');
+      if (trackDetailBtn) trackDetailBtn.innerText = t.viewDetail;
+
+      const barSub = document.getElementById('lblBarSubtotal');
+      if (barSub) barSub.innerText = t.barSubtotal;
+
+      const barProc = document.getElementById('btnBarProceed');
+      if (barProc) barProc.innerText = t.barProceed;
+
+      const modalLoginT = document.getElementById('modalLoginTitle');
+      if (modalLoginT) modalLoginT.innerText = t.login;
+
+      const btnSearchM = document.getElementById('btnSearchMember');
+      if (btnSearchM) btnSearchM.innerText = t.searchBtn;
+
+      const lblPhone = document.getElementById('lblPhoneInput');
+      if (lblPhone) lblPhone.innerText = t.phoneLabel;
+
+      const lblName = document.getElementById('lblNameInput');
+      if (lblName) lblName.innerText = t.nameLabel;
+
+      const lblBirth = document.getElementById('lblBirthdate');
+      if (lblBirth) lblBirth.innerText = t.birthdateLabel;
+
+      const lblAddr = document.getElementById('lblAddressInput');
+      if (lblAddr) lblAddr.innerText = t.addressLabel;
+
+      const lblCardPhoneT = document.getElementById('lblCardPhoneTitle');
+      if (lblCardPhoneT) lblCardPhoneT.innerText = t.cardPhoneTitle;
+
+      const lblCardPriv = document.getElementById('lblCardPrivilege');
+      if (lblCardPriv) lblCardPriv.innerText = t.cardPrivilege;
+
+      const lblCardDisc = document.getElementById('lblCardDiscount');
+      if (lblCardDisc) lblCardDisc.innerText = t.cardDiscount;
+
+      const lblCardBday = document.getElementById('lblCardBirthdayPts');
+      if (lblCardBday) lblCardBday.innerText = t.cardBirthdayPts;
+
+      const yourPtsText = document.getElementById('lblYourPoints');
+      if (yourPtsText) yourPtsText.innerText = t.yourNetPoints;
+
+      const digiCardText = document.getElementById('lblDigitalCard');
+      if (digiCardText) digiCardText.innerText = t.digitalCard;
+
+      const saveCardText = document.getElementById('btnSaveCardImg');
+      if (saveCardText) saveCardText.innerText = t.saveCardImg;
+
+      const saveMemText = document.getElementById('btnSaveMember');
+      if (saveMemText) saveMemText.innerText = t.saveChanges;
+
+      const catTitleText = document.getElementById('modalRewardCatalogTitle');
+      if (catTitleText) catTitleText.innerText = t.catalogTitle;
+
+      const catSubText = document.getElementById('lblRewardSubtitle');
+      if (catSubText) catSubText.innerText = t.catalogSubtitle;
+
+      const currPtsText = document.getElementById('lblCurrPointsText');
+      if (currPtsText) currPtsText.innerText = t.currPointsText;
+
+      const cartRevTitle = document.getElementById('modalCartReviewTitle');
+      if (cartRevTitle) cartRevTitle.innerText = t.cartTitle;
+
+      const delTypeSec = document.getElementById('lblDeliveryTypeSection');
+      if (delTypeSec) delTypeSec.innerText = t.deliveryType;
+
+      const btnHome = document.getElementById('lblBtnSendHome');
+      if (btnHome) btnHome.innerText = t.sendHome;
+
+      const subHome = document.getElementById('lblSubSendHome');
+      if (subHome) subHome.innerHTML = t.subSendHome;
+
+      const btnStore = document.getElementById('lblBtnPickupStore');
+      if (btnStore) btnStore.innerText = t.pickupStore;
+
+      const subStore = document.getElementById('lblSubPickupStore');
+      if (subStore) subStore.innerHTML = t.subPickupStore;
+
+      const paySec = document.getElementById('lblPayOptionSection');
+      if (paySec) paySec.innerText = t.payOption;
+
+      const btnTrans = document.getElementById('lblBtnPayTransfer');
+      if (btnTrans) btnTrans.innerText = t.payTransfer;
+
+      const btnCash = document.getElementById('lblBtnPayCash');
+      if (btnCash) btnCash.innerText = t.payCash;
+
+      const bankNameLabel = document.getElementById('lblBankName');
+      if (bankNameLabel) bankNameLabel.innerText = t.bankName;
+
+      const bankNoLabel = document.getElementById('lblBankAccNo');
+      if (bankNoLabel) bankNoLabel.innerText = t.bankAccNo;
+
+      const copyAccLabel = document.getElementById('lblCopyAccBtn');
+      if (copyAccLabel) copyAccLabel.innerText = t.copyAccBtn;
+
+      const bankNameAccLabel = document.getElementById('lblBankAccName');
+      if (bankNameAccLabel) bankNameAccLabel.innerText = t.bankAccName;
+
+      const slipLabel = document.getElementById('lblAttachSlip');
+      if (slipLabel) slipLabel.innerText = t.attachSlip;
+
+      const subtotalText = document.getElementById('lblCartSubtotalText');
+      if (subtotalText) subtotalText.innerText = t.subtotal;
+
+      const feeText = document.getElementById('lblCartFeeText');
+      if (feeText) feeText.innerText = t.deliveryFee;
+
+      const netText = document.getElementById('lblCartNetText');
+      if (netText) netText.innerText = t.totalNet;
+
+      const delInfoSec = document.getElementById('lblDeliveryInfoSection');
+      if (delInfoSec) delInfoSec.innerText = t.deliveryInfo;
+
+      const fetchHint = document.getElementById('lblAutoFetchHint');
+      if (fetchHint) fetchHint.innerText = t.autoFetchHint;
+
+      const phoneLbl = document.getElementById('lblContactPhone');
+      if (phoneLbl) phoneLbl.innerText = t.contactPhone;
+
+      const recipientLbl = document.getElementById('lblRecipientName');
+      if (recipientLbl) recipientLbl.innerText = t.recipientName;
+
+      const gpsTitle = document.getElementById('lblGpsTitle');
+      if (gpsTitle) gpsTitle.innerText = t.gpsTitle;
+
+      const btnGps = document.getElementById('btnGpsText');
+      if (btnGps) btnGps.innerText = t.btnGps;
+
+      const gpsTip = document.getElementById('lblGpsTip');
+      if (gpsTip) gpsTip.innerHTML = t.gpsTip;
+
+      const custAddressInput = document.getElementById('custAddress');
+      if (custAddressInput) custAddressInput.placeholder = t.addrPlaceholder;
+
+      const btnSubmit = document.getElementById('btnSubmitOrderText');
+      if (btnSubmit) btnSubmit.innerText = t.confirmOrder;
+
+      // รายละเอียดหน้ารายละเอียดออเดอร์
+      const trkItemsH = document.getElementById('lblTrackItemsHeader');
+      if (trkItemsH) trkItemsH.innerText = t.trackItemsHeader;
+
+      const trkMethod = document.getElementById('lblTrackMethod');
+      if (trkMethod) trkMethod.innerText = t.trackMethod;
+
+      const trkPay = document.getElementById('lblTrackPay');
+      if (trkPay) trkPay.innerText = t.trackPay;
+
+      const trkCust = document.getElementById('lblTrackCustomer');
+      if (trkCust) trkCust.innerText = t.trackCustomer;
+
+      const trkPhone = document.getElementById('lblTrackPhone');
+      if (trkPhone) trkPhone.innerText = t.trackPhone;
+
+      const trkAddr = document.getElementById('lblTrackAddress');
+      if (trkAddr) trkAddr.innerText = t.trackAddress;
+
+      const trkTot = document.getElementById('lblTrackTotal');
+      if (trkTot) trkTot.innerText = t.totalNet + ':';
+
+      // ปรับป้าย Stepper 1-5
+      const stepperRow = document.getElementById('stepperLabelsRow');
+      if (stepperRow && t.steppers) {
+        stepperRow.innerHTML = t.steppers.map(s => `<span>${s}</span>`).join('');
+      }
+
+      // ปรับปรุงหมวดหมู่และสินค้า
+      const catLangMap = categoryTranslations[lang] || categoryTranslations.th;
+      if (selectedCategory === 'ทั้งหมด') {
+        document.getElementById('selectedCatTitle').innerText = t.catTitleAll;
+      } else {
+        document.getElementById('selectedCatTitle').innerText = t.catTitlePrefix + (catLangMap[selectedCategory] || selectedCategory);
+      }
+
+      initBirthdateDropdowns();
+      renderCategoryFilters();
+      renderCustomerProducts();
+      updateCartSummaryUI();
+      checkDeliveryTimeNotice();
+      if (currentMember) updateMemberUI();
+    }
+
+    // 📦 ฟังก์ชันจัดฟอร์แมตสต็อกสินค้า (ตัดทศนิยมเป็น 2 ตำแหน่งถ้ามีเศษ)
+    function fmtStk(num) {
+      const n = Number(num) || 0;
+      return (n % 1 === 0) ? n.toString() : n.toFixed(2);
+    }
+
+    // ⚖️ ฟังก์ชันคำนวณและหักแต้มกรณีติดหนี้เกิน 1 เดือน (30 วัน)
+    function fetchMemberNetPoints(phone, basePoints, memberName, callback) {
+      if (!phone) return callback(basePoints);
+      
+      db.collection("sales").where("settled", "==", false).get().then(snapshot => {
+        let totalPenalty = 0;
+        const now = Date.now();
+        const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+        snapshot.forEach(doc => {
+          const s = doc.data();
+          const matchPhone = s.customerPhone && (s.customerPhone === phone);
+          const matchName = s.debtorName && memberName && (s.debtorName.trim() === memberName.trim());
+
+          if ((matchPhone || matchName) && (s.creditPart > 0 || s.method === 'credit')) {
+            const ageMs = now - (s.ts || now);
+            if (ageMs >= THIRTY_DAYS_MS) {
+              const overdueMonths = Math.floor(ageMs / THIRTY_DAYS_MS);
+              const debtAmt = s.creditPart || s.total || 0;
+              const ptsPerMonth = Math.max(1, Math.floor(debtAmt / 100));
+              totalPenalty += (overdueMonths * ptsPerMonth);
+            }
+          }
+        });
+
+        const netPoints = basePoints - totalPenalty; // สามารถติดลบได้
+        callback(netPoints);
+      }).catch(err => {
+        console.error("Penalty calculation error:", err);
+        callback(basePoints);
+      });
+    }
+
+    // 🎂 ฟังก์ชันสร้างรายการตัวเลือก ดรอปดาวน์ วัน/เดือน/ปีเกิด (พ.ศ. ย้อนหลัง 100 ปี - รองรับ 4 ภาษา)
     function initBirthdateDropdowns() {
       const daySel = document.getElementById('birthDaySelect');
       const monthSel = document.getElementById('birthMonthSelect');
       const yearSel = document.getElementById('birthYearSelect');
       if (!daySel || !monthSel || !yearSel) return;
 
-      // วันที่ 1 - 31
+      const currentDayVal = daySel.value;
+      const currentMonthVal = monthSel.value;
+      const currentYearVal = yearSel.value;
+
       let dayHtml = '<option value="">วัน</option>';
+      if (currentLang === 'en') dayHtml = '<option value="">Day</option>';
+      else if (currentLang === 'lo') dayHtml = '<option value="">ວັນ</option>';
+      else if (currentLang === 'my') dayHtml = '<option value="">ရက်</option>';
+
       for (let d = 1; d <= 31; d++) {
         const val = String(d).padStart(2, '0');
         dayHtml += `<option value="${val}">${d}</option>`;
       }
       daySel.innerHTML = dayHtml;
 
-      // เดือน ม.ค. - ธ.ค.
-      const monthsThai = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
-      let monthHtml = '<option value="">เดือน</option>';
-      monthsThai.forEach((m, idx) => {
+      const monthNames = {
+        th: ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"],
+        en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+        lo: ["ມັງກອນ", "ກຸມພາ", "ມີນາ", "ເມສາ", "ພຶດສະພາ", "ມິຖຸນາ", "ກໍລະກົດ", "ສິງຫາ", "ກັນຍາ", "ຕຸລາ", "ພະຈິກ", "ທັນວາ"],
+        my: ["ဇန်နဝါရီ", "ဖေဖော်ဝါရီ", "မတ်", "ဧပြီ", "မေ", "ဇွန်", "ဇူလိုင်", "ဩဂုတ်", "စက်တင်ဘာ", "အောက်တိုဘာ", "နိုဝင်ဘာ", "ဒီဇင်ဘာ"]
+      };
+
+      const months = monthNames[currentLang] || monthNames.th;
+      let monthLabel = "เดือน";
+      if (currentLang === 'en') monthLabel = "Month";
+      else if (currentLang === 'lo') monthLabel = "ເດືອນ";
+      else if (currentLang === 'my') monthLabel = "လ";
+
+      let monthHtml = `<option value="">${monthLabel}</option>`;
+      months.forEach((m, idx) => {
         const val = String(idx + 1).padStart(2, '0');
         monthHtml += `<option value="${val}">${m}</option>`;
       });
       monthSel.innerHTML = monthHtml;
 
-      // ปี พ.ศ. (ย้อนหลัง 100 ปีจากปัจจุบัน)
       const currentYearAD = new Date().getFullYear();
       const currentYearBE = currentYearAD + 543;
-      let yearHtml = '<option value="">ปี (พ.ศ.)</option>';
+
+      let yearLabel = "ปี (พ.ศ.)";
+      if (currentLang === 'en') yearLabel = "Year";
+      else if (currentLang === 'lo') yearLabel = "ປີ (ພ.ສ.)";
+      else if (currentLang === 'my') yearLabel = "ခုနှစ်";
+
+      let yearHtml = `<option value="">${yearLabel}</option>`;
       for (let yBE = currentYearBE; yBE >= currentYearBE - 100; yBE--) {
-        const yAD = yBE - 543; // แปลงเก็บเป็น ค.ศ. เบื้องหลัง
-        yearHtml += `<option value="${yAD}">พ.ศ. ${yBE}</option>`;
+        const yAD = yBE - 543;
+        const yearDisplay = currentLang === 'en' ? yAD : `พ.ศ. ${yBE}`;
+        yearHtml += `<option value="${yAD}">${yearDisplay}</option>`;
       }
       yearSel.innerHTML = yearHtml;
+
+      if (currentDayVal) daySel.value = currentDayVal;
+      if (currentMonthVal) monthSel.value = currentMonthVal;
+      if (currentYearVal) yearSel.value = currentYearVal;
     }
 
     function setBirthdateDropdowns(birthdateStr) {
@@ -639,7 +1300,6 @@
       return '';
     }
 
-    // เรียกสร้างดรอปดาวน์ทันทีตอนโหลดหน้า
     initBirthdateDropdowns();
 
     function calculateDistanceInKm(lat1, lon1, lat2, lon2) {
@@ -822,10 +1482,11 @@
     function updateLocationStatus(lat, lng) {
       const distance = calculateDistanceInKm(STORE_LOCATION.lat, STORE_LOCATION.lng, lat, lng);
       const statusElem = document.getElementById('gpsStatusText');
+      const t = translations[currentLang] || translations.th;
       
-      let zoneText = distance <= FREE_DISTANCE_LIMIT_KM ? `🟢 อยู่ในระยะส่งฟรี (ไม่เกิน ${FREE_DISTANCE_LIMIT_KM} กม.)` : `🔴 เกินระยะส่งฟรีมา ${(distance - FREE_DISTANCE_LIMIT_KM).toFixed(2)} กม.`;
+      let zoneText = distance <= FREE_DISTANCE_LIMIT_KM ? `🟢 ${t.freeDeliveryText} (<= ${FREE_DISTANCE_LIMIT_KM} ${t.kmUnit})` : `🔴 ${t.overDistanceText} ${(distance - FREE_DISTANCE_LIMIT_KM).toFixed(2)} ${t.kmUnit}`;
       
-      statusElem.innerText = `✅ ปักหมุด: ${lat.toFixed(5)}, ${lng.toFixed(5)} (ห่างจากร้าน ~${distance.toFixed(2)} กม. - ${zoneText})`;
+      statusElem.innerText = `✅ GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)} (~${distance.toFixed(2)} ${t.kmUnit} - ${zoneText})`;
       statusElem.className = "text-xs font-bold text-emerald-800 bg-emerald-50 p-2.5 rounded-xl border border-emerald-200 text-center block";
       updateCartSummaryUI();
     }
@@ -833,7 +1494,7 @@
     function getCurrentLocation() {
       const statusText = document.getElementById('gpsStatusText');
       if (navigator.geolocation) {
-        statusText.innerText = "⏳ กำลังดึงพิกัด GPS ความแม่นยำสูง กรุณารอสักครู่...";
+        statusText.innerText = "⏳ GPS...";
         statusText.className = "text-xs font-bold text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200 text-center block animate-pulse";
         
         const geoOptions = {
@@ -845,17 +1506,18 @@
         navigator.geolocation.getCurrentPosition(position => {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
+          const t = translations[currentLang] || translations.th;
 
           initLeafletMap(lat, lng);
 
           const distance = calculateDistanceInKm(STORE_LOCATION.lat, STORE_LOCATION.lng, lat, lng);
-          document.getElementById('topAddrDisplay').innerText = `ปักหมุด GPS เรียบร้อย (ห่าง ~${distance.toFixed(1)} กม.)`;
+          document.getElementById('topAddrDisplay').innerText = `GPS OK (~${distance.toFixed(1)} ${t.kmUnit})`;
         }, err => {
-          statusText.innerText = "❌ ไม่สามารถดึง GPS อัตโนมัติได้ สามารถเอานิ้วลากหมุดสีแดงในแผนที่ไปวางที่บ้านได้เองครับ";
+          statusText.innerText = "❌ GPS Error";
           statusText.className = "text-xs font-bold text-red-800 bg-red-50 p-2.5 rounded-xl border border-red-200 text-center block";
         }, geoOptions);
       } else {
-        alert("อุปกรณ์ของคุณไม่รองรับการดึงตำแหน่ง GPS");
+        alert("GPS not supported");
       }
     }
 
@@ -906,9 +1568,14 @@
       if (currentMember) {
         document.getElementById('memberPhoneInput').value = currentMember.phone || '';
         document.getElementById('memberNameInput').value = currentMember.name || '';
-        setBirthdateDropdowns(currentMember.birthdate || ''); // แสดงวันเกิดในดรอปดาวน์
+        setBirthdateDropdowns(currentMember.birthdate || '');
         document.getElementById('memberAddressInput').value = currentMember.address || '';
-        document.getElementById('modalMemberPoints').innerText = (currentMember.points || 0) + ' แต้ม';
+        
+        fetchMemberNetPoints(currentMember.phone, currentMember.points || 0, currentMember.name, (netPts) => {
+          const t = translations[currentLang] || translations.th;
+          document.getElementById('modalMemberPoints').innerText = netPts + ' ' + t.points;
+        });
+        
         generateMemberQRCode(currentMember.phone);
       } else {
         setBirthdateDropdowns('');
@@ -928,10 +1595,15 @@
       db.collection("members").doc(phone).get().then(doc => {
         if (doc.exists) {
           const m = doc.data();
+          const t = translations[currentLang] || translations.th;
           document.getElementById('memberNameInput').value = m.name || '';
-          setBirthdateDropdowns(m.birthdate || ''); // แสดงวันเกิดที่เคยบันทึกไว้
+          setBirthdateDropdowns(m.birthdate || '');
           document.getElementById('memberAddressInput').value = m.address || '';
-          document.getElementById('modalMemberPoints').innerText = (m.points || 0) + ' แต้ม';
+          
+          fetchMemberNetPoints(phone, m.points || 0, m.name, (netPts) => {
+            document.getElementById('modalMemberPoints').innerText = netPts + ' ' + t.points;
+          });
+
           if (m.customerLineId && !customerLineUserId) customerLineUserId = m.customerLineId;
           currentMember = m;
           localStorage.setItem('memberProfile', JSON.stringify(m));
@@ -948,7 +1620,7 @@
     function saveMemberProfile() {
       const phone = document.getElementById('memberPhoneInput').value.trim();
       const name = document.getElementById('memberNameInput').value.trim();
-      const birthdate = getBirthdateFromDropdowns(); // ดึงวันเกิดที่เลอกจาก 3 ดรอปดาวน์
+      const birthdate = getBirthdateFromDropdowns();
       const address = document.getElementById('memberAddressInput').value.trim();
 
       if (!phone || !name) return alert('กรุณากรอกเบอร์โทรศัพท์และชื่อให้ครบถ้วน');
@@ -978,12 +1650,28 @@
 
     function updateMemberUI() {
       if (currentMember) {
+        const t = translations[currentLang] || translations.th;
         document.getElementById('memberHeaderBadge').innerText = `คุณ${currentMember.name}`;
-        const pts = currentMember.points || 0;
-        document.getElementById('userPointsBadge').innerText = pts + ' แต้ม';
-        document.getElementById('cardPointDisplay').innerText = pts + ' คะแนน';
-        document.getElementById('catalogUserPoints').innerText = pts + ' แต้ม';
-        document.getElementById('modalMemberPoints').innerText = pts + ' แต้ม';
+        const basePts = currentMember.points || 0;
+
+        fetchMemberNetPoints(currentMember.phone, basePts, currentMember.name, (netPts) => {
+          const ptsText = netPts + ' ' + t.points;
+          const scoreText = netPts + ' ' + t.score;
+
+          document.getElementById('userPointsBadge').innerText = ptsText;
+          document.getElementById('cardPointDisplay').innerText = scoreText;
+          document.getElementById('catalogUserPoints').innerText = ptsText;
+          document.getElementById('modalMemberPoints').innerText = ptsText;
+
+          const ptsBtn = document.getElementById('userPointsBtn');
+          if (ptsBtn) {
+            if (netPts < 0) {
+              ptsBtn.className = "flex items-center gap-1 text-xs font-bold text-red-900 bg-red-100 px-2.5 py-1.5 rounded-full hover:bg-red-200 transition shadow-sm";
+            } else {
+              ptsBtn.className = "flex items-center gap-1 text-xs font-bold text-amber-900 bg-amber-100 px-2.5 py-1.5 rounded-full hover:bg-amber-200 transition shadow-sm";
+            }
+          }
+        });
       }
     }
 
@@ -1027,14 +1715,13 @@
       const isAfter18 = currentHour >= 18;
       const noticeEl = document.getElementById('after18Notice');
       const dType = (typeof deliveryType !== 'undefined') ? deliveryType : 'delivery';
+      const t = translations[currentLang] || translations.th;
 
       if (noticeEl) {
         if (isAfter18 && dType === 'delivery') {
           noticeEl.innerHTML = `
             <div class="bg-amber-50 border-2 border-amber-400 p-3 rounded-2xl text-amber-900 text-xs font-bold my-1 space-y-1">
-              <div class="text-amber-800 font-bold text-sm">🌙 ขณะนี้เกินเวลา 18:00 น. แล้ว:</div>
-              <div>• 🛵 <strong>ให้ไปส่งที่บ้าน:</strong> ทางร้านจะจัดส่งให้ใน<strong>วันถัดไป ตั้งแต่เวลา 08:00 น.</strong> เป็นต้นไปครับ</div>
-              <div>• 🏪 หากต้องการรับสินค้าทันทีคืนนี้: แนะนำให้เลือก <strong>"มารับเองที่ร้าน"</strong> ได้เลยครับ</div>
+              ${t.after18NoticeText}
             </div>
           `;
           noticeEl.classList.remove('hidden');
@@ -1077,7 +1764,8 @@
         'เครื่องสำอาง',
         'ของใช้',
         'เนื้อสัตว์/ของสด',
-        'เชื้อเพลิง/พลังงาน'
+        'เชื้อเพลิง/พลังงาน',
+        'สัตว์เลี้ยง'
       ];
 
       const visibleProds = products.filter(p => !p.hideInDelivery);
@@ -1089,8 +1777,11 @@
       const container = document.getElementById('custCatFilter');
       if (!container) return;
       
+      const catLangMap = categoryTranslations[currentLang] || categoryTranslations.th;
+
       container.innerHTML = cats.map(c => {
-        const formattedName = c.replace('/', '/<br>');
+        const translatedCatName = catLangMap[c] || c;
+        const formattedName = translatedCatName.replace('/', '/<br>');
 
         return `
           <button onclick="selectCustCategory('${c}')" class="flex flex-col items-center gap-1.5 flex-shrink-0 w-16 md:w-20 group text-center">
@@ -1120,8 +1811,11 @@
     }
 
     function selectCustCategory(cat) {
+      const t = translations[currentLang] || translations.th;
+      const catLangMap = categoryTranslations[currentLang] || categoryTranslations.th;
       selectedCategory = cat;
-      document.getElementById('selectedCatTitle').innerText = cat === 'ทั้งหมด' ? 'สินค้าแนะนำทั้งหมด' : `หมวดหมู่: ${cat}`;
+      
+      document.getElementById('selectedCatTitle').innerText = cat === 'ทั้งหมด' ? t.catTitleAll : `${t.catTitlePrefix}${catLangMap[cat] || cat}`;
       renderCategoryFilters();
       renderCustomerProducts();
     }
@@ -1130,6 +1824,7 @@
       const grid = document.getElementById('custProductGrid');
       const searchRaw = document.getElementById('custSearchInput')?.value || '';
       const searchVal = normalizeThaiText(searchRaw);
+      const t = translations[currentLang] || translations.th;
 
       let displayList = products.filter(p => !p.hideInDelivery);
       if (selectedCategory !== 'ทั้งหมด') {
@@ -1163,7 +1858,7 @@
         let availStock = 0;
         if (p.isSubProduct && p.parentId) {
           const parent = products.find(prod => prod.id === p.parentId);
-          availStock = parent ? Math.floor((parent.stock || 0) * (p.ratio || 1)) : 0;
+          availStock = parent ? (parent.stock || 0) * (p.ratio || 1) : 0;
         } else {
           availStock = p.stock || 0;
         }
@@ -1173,13 +1868,13 @@
         return `
           <div class="bg-white p-2.5 md:p-3.5 rounded-2xl border border-gray-100 flex flex-col justify-between shadow-sm relative overflow-hidden">
             <span class="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] md:text-xs font-bold z-10 ${isOutOfStock ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'}">
-              ${isOutOfStock ? 'สินค้าหมด' : `เหลือ ${availStock} ชิ้น`}
+              ${isOutOfStock ? t.outOfStock : `${t.leftQty} ${fmtStk(availStock)} ${t.unit}`}
             </span>
 
             <div>
               <div class="w-full aspect-square bg-gray-50 rounded-xl mb-2 overflow-hidden flex items-center justify-center border border-gray-100 relative">
                 ${p.imageUrl ? `<img src="${p.imageUrl}" loading="lazy" class="w-full h-full object-contain p-1">` : `<i data-lucide="package" class="w-10 h-10 md:w-12 md:h-12 text-gray-300"></i>`}
-                ${isOutOfStock ? `<div class="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-xs md:text-sm font-bold font-display">สินค้าหมด</div>` : ''}
+                ${isOutOfStock ? `<div class="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-xs md:text-sm font-bold font-display">${t.outOfStock}</div>` : ''}
               </div>
               <div class="font-bold text-xs md:text-sm text-gray-800 line-clamp-2 leading-snug">${p.name}</div>
             </div>
@@ -1206,7 +1901,7 @@
       let availStock = 0;
       if (p.isSubProduct && p.parentId) {
         const parent = products.find(prod => prod.id === p.parentId);
-        availStock = parent ? Math.floor((parent.stock || 0) * (p.ratio || 1)) : 0;
+        availStock = parent ? (parent.stock || 0) * (p.ratio || 1) : 0;
       } else {
         availStock = p.stock || 0;
       }
@@ -1215,7 +1910,7 @@
       const currentQtyInCart = idx >= 0 ? custCart[idx].qty : 0;
 
       if (currentQtyInCart + 1 > availStock) {
-        return alert(`ขออภัยครับ สินค้านี้ในสต็อกเหลือเพียง ${availStock} ชิ้นเท่านั้น`);
+        return alert(`ขออภัยครับ สินค้านี้ในสต็อกเหลือเพียง ${fmtStk(availStock)} ชิ้นเท่านั้น`);
       }
 
       if (idx >= 0) {
@@ -1236,14 +1931,14 @@
       if (p) {
         if (p.isSubProduct && p.parentId) {
           const parent = products.find(prod => prod.id === p.parentId);
-          availStock = parent ? Math.floor((parent.stock || 0) * (p.ratio || 1)) : 0;
+          availStock = parent ? (parent.stock || 0) * (p.ratio || 1) : 0;
         } else {
           availStock = p.stock || 0;
         }
       }
 
       if (delta > 0 && item.qty + delta > availStock) {
-        return alert(`ขออภัยครับ สินค้านี้ในสต็อกเหลือเพียง ${availStock} ชิ้นเท่านั้น`);
+        return alert(`ขออภัยครับ สินค้านี้ในสต็อกเหลือเพียง ${fmtStk(availStock)} ชิ้นเท่านั้น`);
       }
 
       custCart[idx].qty += delta;
@@ -1255,6 +1950,7 @@
     function updateCartSummaryUI() {
       const totalQty = custCart.reduce((sum, c) => sum + c.qty, 0);
       const subtotal = custCart.reduce((sum, c) => sum + (c.price * c.qty), 0);
+      const t = translations[currentLang] || translations.th;
 
       let deliveryFee = 0;
       let distanceKm = 0;
@@ -1285,12 +1981,12 @@
       
       const feeElem = document.getElementById('custDeliveryFee');
       if (deliveryType === 'pickup') {
-        feeElem.innerText = '฿0.00 (รับเองที่ร้าน)';
+        feeElem.innerText = `฿0.00 (${t.pickupAtStoreText})`;
       } else {
         if (extraDist > 0) {
-          feeElem.innerText = `฿${deliveryFee.toFixed(2)} (${distanceKm.toFixed(1)} กม. - เกิน ${FREE_DISTANCE_LIMIT_KM} กม. +฿${extraFee.toFixed(2)})`;
+          feeElem.innerText = `฿${deliveryFee.toFixed(2)} (${distanceKm.toFixed(1)} ${t.kmUnit} - ${t.overDistanceText} ${FREE_DISTANCE_LIMIT_KM} ${t.kmUnit} +฿${extraFee.toFixed(2)})`;
         } else {
-          feeElem.innerText = deliveryFee === 0 ? `ฟรีค่าส่ง (~${distanceKm.toFixed(1)} กม.)` : `฿${deliveryFee.toFixed(2)} (~${distanceKm.toFixed(1)} กม.)`;
+          feeElem.innerText = deliveryFee === 0 ? `${t.freeDeliveryText} (~${distanceKm.toFixed(1)} ${t.kmUnit})` : `฿${deliveryFee.toFixed(2)} (~${distanceKm.toFixed(1)} ${t.kmUnit})`;
         }
       }
 
@@ -1448,51 +2144,58 @@
 
     function renderRedeemCatalog() {
       const grid = document.getElementById('redeemCatalogGrid');
-      const userPoints = currentMember ? (currentMember.points || 0) : 0;
+      const basePoints = currentMember ? (currentMember.points || 0) : 0;
+      const t = translations[currentLang] || translations.th;
 
       if (rewards.length === 0) {
         grid.innerHTML = `<p class="col-span-full text-center py-8 text-gray-400 font-bold">ขณะนี้ยังไม่มีของรางวัลเปิดให้แลก</p>`;
         return;
       }
 
-      grid.innerHTML = rewards.map(r => {
-        const canRedeem = userPoints >= r.points && (r.stock > 0);
-        return `
-          <div class="bg-gray-50 p-3 rounded-2xl border flex flex-col justify-between space-y-2">
-            <div>
-              <div class="w-full h-24 bg-white rounded-xl overflow-hidden border flex items-center justify-center mb-1.5">
-                ${r.imageUrl ? `<img src="${r.imageUrl}" class="w-full h-full object-cover">` : `<i data-lucide="gift" class="w-8 h-8 text-amber-400"></i>`}
+      fetchMemberNetPoints(currentMember ? currentMember.phone : '', basePoints, currentMember ? currentMember.name : '', (userPoints) => {
+        grid.innerHTML = rewards.map(r => {
+          const canRedeem = userPoints >= r.points && (r.stock > 0);
+          return `
+            <div class="bg-gray-50 p-3 rounded-2xl border flex flex-col justify-between space-y-2">
+              <div>
+                <div class="w-full h-24 bg-white rounded-xl overflow-hidden border flex items-center justify-center mb-1.5">
+                  ${r.imageUrl ? `<img src="${r.imageUrl}" class="w-full h-full object-cover">` : `<i data-lucide="gift" class="w-8 h-8 text-amber-400"></i>`}
+                </div>
+                <div class="font-bold text-xs text-gray-800 font-display">${r.name}</div>
+                <div class="text-[11px] text-amber-600 font-bold">${t.score} ${r.points}</div>
               </div>
-              <div class="font-bold text-xs text-gray-800 font-display">${r.name}</div>
-              <div class="text-[11px] text-amber-600 font-bold">ใช้ ${r.points} แต้ม</div>
+              <button onclick="redeemReward('${r.id}')" ${!canRedeem ? 'disabled' : ''} 
+                class="w-full py-2 rounded-xl font-bold text-xs font-display transition ${canRedeem ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm' : 'bg-gray-200 text-gray-400 disabled:cursor-not-allowed'}">
+                ${!currentMember ? t.login : (userPoints < r.points ? t.notEnoughPts : (r.stock <= 0 ? t.outOfStockReward : t.btnRedeem))}
+              </button>
             </div>
-            <button onclick="redeemReward('${r.id}')" ${!canRedeem ? 'disabled' : ''} 
-              class="w-full py-2 rounded-xl font-bold text-xs font-display transition ${canRedeem ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm' : 'bg-gray-200 text-gray-400 disabled:cursor-not-allowed'}">
-              ${!currentMember ? 'กรุณาเข้าสู่ระบบ' : (userPoints < r.points ? 'แต้มไม่พอ' : (r.stock <= 0 ? 'ของหมด' : '🎁 กดแลกรับ'))}
-            </button>
-          </div>
-        `;
-      }).join('');
-      if (window.lucide) lucide.createIcons();
+          `;
+        }).join('');
+        if (window.lucide) lucide.createIcons();
+      });
     }
 
     function redeemReward(rewardId) {
       const r = rewards.find(item => item.id === rewardId);
       if (!r || !currentMember) return;
 
-      if (confirm(`ยืนยันใช้ ${r.points} แต้ม แลกรับ "${r.name}" ใช่หรือไม่?`)) {
-        const newPoints = (currentMember.points || 0) - r.points;
+      fetchMemberNetPoints(currentMember.phone, currentMember.points || 0, currentMember.name, (netPts) => {
+        if (netPts < r.points) return alert('แต้มสะสมสุทธิของคุณไม่เพียงพอสำหรับการแลกของรางวัลนี้ครับ');
 
-        db.collection("members").doc(currentMember.phone).update({ points: newPoints });
-        db.collection("rewards").doc(rewardId).update({ stock: firebase.firestore.FieldValue.increment(-1) });
+        if (confirm(`ยืนยันใช้ ${r.points} แต้ม แลกรับ "${r.name}" ใช่หรือไม่?`)) {
+          const newBasePoints = (currentMember.points || 0) - r.points;
 
-        currentMember.points = newPoints;
-        localStorage.setItem('memberProfile', JSON.stringify(currentMember));
-        updateMemberUI();
-        renderRedeemCatalog();
+          db.collection("members").doc(currentMember.phone).update({ points: newBasePoints });
+          db.collection("rewards").doc(rewardId).update({ stock: firebase.firestore.FieldValue.increment(-1) });
 
-        alert(`🎉 แลกรับ "${r.name}" สำเร็จแล้ว! ทางร้านจะจัดส่งไปพร้อมออเดอร์ถัดไปครับ`);
-      }
+          currentMember.points = newBasePoints;
+          localStorage.setItem('memberProfile', JSON.stringify(currentMember));
+          updateMemberUI();
+          renderRedeemCatalog();
+
+          alert(`🎉 แลกรับ "${r.name}" สำเร็จแล้ว! ทางร้านจะจัดส่งไปพร้อมออเดอร์ถัดไปครับ`);
+        }
+      });
     }
 
     function trackOrderRealtime(orderId) {
@@ -1594,6 +2297,13 @@
       if (isOpen) modal.classList.remove('hidden');
       else modal.classList.add('hidden');
     }
+
+    // เรียกโหลดภาษาเริ่มต้นทันที
+    document.addEventListener("DOMContentLoaded", function() {
+      const langSel = document.getElementById('langSelect');
+      if (langSel) langSel.value = currentLang;
+      changeAppLanguage(currentLang);
+    });
 
     if (window.lucide) lucide.createIcons();
   </script>

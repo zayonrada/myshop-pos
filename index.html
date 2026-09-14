@@ -299,8 +299,16 @@
         <!-- 📦 เลย์เอาต์ใหม่: ซ้าย(หมวดหมู่) ขวา(สินค้า) -->
         <div class="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-5 items-start mt-2">
           
+<!-- 📱 ดรอปดาวน์เลือกหมวดหมู่สำหรับมือถือ -->
+        <div class="block md:hidden bg-white p-3 rounded-2xl border-2 border-[#DEDACB] shadow-sm">
+          <label class="text-xs font-bold text-[#008B47] block mb-1.5 font-display">📂 เลือกหมวดหมู่สินค้า:</label>
+          <select id="posCategorySelectMobile" onchange="selectPosCategoryMobile(this.value)" class="w-full p-2.5 bg-[#F8F9FA] border-2 border-[#008B47] text-[#008B47] font-bold text-sm rounded-xl focus:outline-none cursor-pointer shadow-inner">
+            <option value="ทั้งหมด">หมวดหมู่ทั้งหมด</option>
+          </select>
+        </div>
+
           <!-- 📌 แถบหมวดหมู่แนวตั้ง -->
-          <div class="bg-[#F5F3EE] p-3 rounded-2xl border-2 border-[#DEDACB] sticky top-0 max-h-[600px] overflow-y-auto no-scrollbar">
+          <div class="hidden md:block bg-[#F5F3EE] p-3 rounded-2xl border-2 border-[#DEDACB] sticky top-0 max-h-[600px] overflow-y-auto no-scrollbar">
             <div class="text-xs font-bold text-[#6B6A61] px-2 mb-3 font-display">📂 เลือกหมวดหมู่</div>
             <div id="posCategoryFilter" class="flex flex-col gap-2"></div>
           </div>

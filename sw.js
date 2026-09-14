@@ -1,5 +1,5 @@
 // 📌 เมื่อไหร่ที่อัปเดตโค้ดหน้าเว็บใหม่ ให้ขยับเลขตรงนี้ (เช่น v2 -> v3)
-const CACHE_NAME = 'pos-cache-v16';
+const CACHE_NAME = 'pos-cache-v17';
 
 const STATIC_ASSETS = [
   './',

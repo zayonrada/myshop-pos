@@ -3334,6 +3334,11 @@ function handleSearchInput() {
   }
 }
 
+// 📱 ฟังก์ชันสลับหมวดหมู่สำหรับจอมือถือ
+function selectPosCategoryMobile(cat) {
+  setPosCategory(cat);
+}
+
 function setPosCategory(cat) {
   if (selectedPosCategory === cat) return;
   selectedPosCategory = cat;

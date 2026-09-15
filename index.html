@@ -22,6 +22,8 @@
   <!-- JsBarcode & html2canvas -->
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <!-- 📊 Chart.js สำหรับแสดงกราฟ -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- 📱 QRCode.js สำหรับสร้าง QR Code สมาชิก -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <!-- Firebase SDKs -->
@@ -122,6 +124,27 @@
   <!-- Leaflet.js สำหรับแสดงแผนที่ปักหมุด (ฟรี) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+  /* ล็อกแถบ Scrollbar ไม่ให้ขยับหน้าจอเวลาสินค้าลดลง */
+  html {
+    scrollbar-gutter: stable;
+  }
+
+  /* บังคับปุ่มหมวดหมู่ให้ขนาดคงที่ถาวร ห้ามยืดหด */
+  .cat-btn {
+    box-sizing: border-box !important;
+    transform: none !important;
+    backface-visibility: hidden;
+  }
+</style>
+<style>
+  /* 🛑 บังคับกล่องเนื้อหาหลักขวาเปิดแถบ Scrollbar ไว้ถาวร ป้องกันหน้าเด้งยืดหด */
+  .overflow-y-auto,
+  .overflow-y-scroll {
+    overflow-y: scroll !important;
+    scrollbar-gutter: stable;
+  }
+</style>
 </head>
 <body class="h-screen flex flex-row relative bg-[#E5E7EB] overflow-hidden">
 
@@ -262,7 +285,7 @@
     <div id="sidebarBackdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden backdrop-blur-sm transition-opacity"></div>
 
   <!-- 🟢 ส่วนเนื้อหาหลักฝั่งขวา -->
-  <div class="flex-1 min-w-0 h-screen overflow-y-auto">
+  <div class="flex-1 min-w-0 h-screen overflow-y-scroll">
 
   <!-- 📱 แถบ Header มือถือ (มีปุ่ม 3 ขีด) แสดงเฉพาะจอมือถือ -->
       <header class="lg:hidden bg-white shadow-sm border-b px-4 py-3 flex items-center justify-between z-30 shrink-0 sticky top-0">
@@ -737,11 +760,31 @@
       <!-- 2. กล่องสรุปผล 4 การ์ดล่าง (เต็มความกว้าง 100%) -->
       <div id="reportSummary" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
 
-      <!-- 3. ส่วนประวัติรายการย้อนหลัง (เต็มความกว้าง 100%) -->
-      <div class="font-bold font-display text-lg pt-3 border-t-2 border-[#DEDACB]">ประวัติการทำรายการย้อนหลัง</div>
-      <div id="salesHistory" class="divide-y-2 divide-[#DEDACB] border-t-2 border-[#DEDACB]"></div>
-    </div>
+<!-- 📊 การ์ดแสดงกราฟคู่แบบ Dashboard (วงกลม + แท่งรายวัน) -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 my-4">
+        <!-- กราฟวงกลม: สัดส่วนภาพรวม -->
+        <div class="bg-[#F5F3EE] p-5 rounded-2xl border-2 border-[#DEDACB] flex flex-col justify-between">
+          <div class="font-bold text-base font-display text-[#1C2321] mb-2">🍩 สัดส่วนยอดขาย ต้นทุน และรายจ่าย</div>
+          <div class="w-full h-56 bg-white p-3 rounded-xl border border-[#DEDACB] relative flex items-center justify-center">
+            <canvas id="salesDoughnutChart"></canvas>
+          </div>
+        </div>
 
+        <!-- กราฟแท่ง: แนวโน้มรายวัน/รายสัปดาห์ -->
+        <div class="bg-[#F5F3EE] p-5 rounded-2xl border-2 border-[#DEDACB] flex flex-col justify-between">
+          <div class="font-bold text-base font-display text-[#1C2321] mb-2">📊 แนวโน้มยอดขายเทียบรายจ่าย (รายวัน)</div>
+          <div class="w-full h-56 bg-white p-3 rounded-xl border border-[#DEDACB] relative">
+            <canvas id="salesTrendBarChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+<!-- 3. ส่วนประวัติรายการย้อนหลัง -->
+     <div class="font-bold font-display text-lg pt-4 border-t-2 border-[#DEDACB]">ประวัติการทำรายการย้อนหลัง</div>
+      <div id="salesHistory" class="divide-y-2 divide-[#DEDACB] border-t-2 border-[#DEDACB]"></div>
+
+    </div>
+      
     <!-- แท็บ 5: พนักงาน -->
     <div id="tab-staff" class="hidden flex justify-center py-6">
       <div class="bg-white p-8 rounded-2xl border-2 border-[#DEDACB] shadow-sm max-w-xl w-full space-y-6">
@@ -1108,6 +1151,18 @@
     <span id="p-sales-drawer-cash" class="font-bold font-display text-[#0F5C52] text-xl"></span>
   </div>
 </div>
+
+<!-- 🖨️ รูปภาพกราฟสำหรับแสดงผลตอนสั่งพิมพ์ A4 หน้าแรก -->
+    <div id="p-chart-container" class="grid grid-cols-2 gap-3 pt-2">
+      <div class="border border-black p-2 rounded-xl text-center">
+        <div class="text-xs font-bold font-display mb-1">สัดส่วนภาพรวม</div>
+        <img id="p-chart-doughnut-img" class="max-h-36 mx-auto object-contain">
+      </div>
+      <div class="border border-black p-2 rounded-xl text-center">
+        <div class="text-xs font-bold font-display mb-1">แนวโน้มเปรียบเทียบรายวัน</div>
+        <img id="p-chart-bar-img" class="max-h-36 mx-auto object-contain">
+      </div>
+    </div>
 
     <div>
       <h3 class="font-bold text-lg font-display mb-2">สรุปตัวเลขทางบัญชี</h3>
@@ -3226,7 +3281,6 @@ function handleSearchInput() {
     }
 
     function updateCategoryDropdowns() {
-  // 📌 กำหนดลำดับหมวดหมู่ให้คงที่ถาวร (ปุ่มจะไม่ขยับสลับตำแหน่งอีกต่อไป)
   const masterOrder = [
     'ทั้งหมด',
     'กล่องพัสดุ',
@@ -3241,11 +3295,7 @@ function handleSearchInput() {
   ];
 
   const existingCats = new Set(products.map(p => p.category || 'ทั่วไป'));
-  
-  // ดึงเฉพาะหมวดที่มีสินค้าจริง โดยเรียงตาม masterOrder
   let cats = masterOrder.filter(c => c === 'ทั้งหมด' || existingCats.has(c));
-
-  // หากมีหมวดหมู่อื่นๆ นอกเหนือจากนี้ ให้นำมาต่อท้ายแบบเรียงตามอักษร ก-ฮ
   const extraCats = Array.from(existingCats).filter(c => !masterOrder.includes(c)).sort((a, b) => a.localeCompare(b, 'th'));
   cats = [...cats, ...extraCats];
 
@@ -3254,8 +3304,8 @@ function handleSearchInput() {
     posFilter.innerHTML = cats.map(c => {
       const isActive = (c === selectedPosCategory);
       return `
-        <button onclick="setPosCategory('${c}')" 
-          class="w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition border-2 leading-tight ${isActive ? 'bg-[#0F5C52] text-white border-[#0F5C52] shadow-md' : 'bg-white text-[#6B6A61] border-transparent hover:border-[#DEDACB]'}">
+        <button onclick="setPosCategory('${c}')" data-cat="${c}"
+          class="cat-btn w-full text-left px-4 py-2.5 rounded-xl text-sm font-bold border-2 leading-tight transition-colors duration-150 shadow-sm ${isActive ? 'bg-[#0F5C52] text-white border-[#0F5C52]' : 'bg-white text-[#6B6A61] border-slate-200 hover:bg-slate-50'}">
           ${c}
         </button>
       `;
@@ -3274,30 +3324,43 @@ function handleSearchInput() {
   if (stockSelect) { stockSelect.innerHTML = optionsHtml; stockSelect.value = curStockVal || 'ทั้งหมด'; }
   if (lowStockSelect) { lowStockSelect.innerHTML = optionsHtml; lowStockSelect.value = curLowStockVal || 'ทั้งหมด'; }
 
-  // 📱 ยิงรายชื่อหมวดหมู่เข้า Dropdown มือถือ
-    const mobilePosSelect = document.getElementById('posCategorySelectMobile');
-    if (mobilePosSelect) {
-      mobilePosSelect.innerHTML = cats.map(c => 
-        `<option value="${c}" ${c === selectedPosCategory ? 'selected' : ''}>
-          ${c === 'ทั้งหมด' ? 'หมวดหมู่ทั้งหมด' : c}
-        </option>`
-      ).join('');
-    }
+  const mobilePosSelect = document.getElementById('posCategorySelectMobile');
+  if (mobilePosSelect) {
+    mobilePosSelect.innerHTML = cats.map(c => 
+      `<option value="${c}" ${c === selectedPosCategory ? 'selected' : ''}>
+        ${c === 'ทั้งหมด' ? 'หมวดหมู่ทั้งหมด' : c}
+      </option>`
+    ).join('');
+  }
 }
 
-// 📱 ฟังก์ชันกดเปลี่ยนหมวดหมู่จาก Dropdown บนมือถือ
-function selectPosCategoryMobile(cat) {
-  setPosCategory(cat); // วิ่งไปเรียกใช้งานฟังก์ชันดึงสินค้าเดิมที่มีอยู่แล้ว
-}
+function setPosCategory(cat) {
+  if (selectedPosCategory === cat) return;
+  selectedPosCategory = cat;
+  currentPage = 1;
 
-    function setPosCategory(cat) {
-      selectedPosCategory = cat;
-      currentPage = 1;
-      clearSearchInput();
-      updateCategoryDropdowns();
-      renderProducts();
-      focusScanInput();
-    }
+  // ⚡ สลับสีปุ่มด้วย class นิ่งๆ ไม่สลับโครงสร้าง
+  const buttons = document.querySelectorAll('#posCategoryFilter button');
+  if (buttons.length > 0) {
+    buttons.forEach(btn => {
+      const isTarget = btn.getAttribute('data-cat') === cat;
+      if (isTarget) {
+        btn.className = "cat-btn w-full text-left px-4 py-2.5 rounded-xl text-sm font-bold border-2 leading-tight transition-colors duration-150 shadow-sm bg-[#0F5C52] text-white border-[#0F5C52]";
+      } else {
+        btn.className = "cat-btn w-full text-left px-4 py-2.5 rounded-xl text-sm font-bold border-2 leading-tight transition-colors duration-150 shadow-sm bg-white text-[#6B6A61] border-slate-200 hover:bg-slate-50";
+      }
+    });
+  } else {
+    updateCategoryDropdowns();
+  }
+
+  const mobilePosSelect = document.getElementById('posCategorySelectMobile');
+  if (mobilePosSelect) mobilePosSelect.value = cat;
+
+  clearSearchInput();
+  renderProducts();
+  focusScanInput();
+}
 
     function changePage(delta) {
       currentPage += delta;
@@ -4870,11 +4933,15 @@ function refundStockToProduct(productId, qtyToRefund) {
       const unpaidSales = sales.filter(s => (s.creditPart > 0 || s.method === 'credit') && !s.settled);
       
       const totalAll = unpaidSales.reduce((sum, s) => sum + (s.creditPart || s.total), 0);
-      document.getElementById('totalDebtAll').innerText = '฿' + totalAll.toFixed(2);
+      document.getElementById('totalDebtAll').innerText = '฿' + totalAll.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
       if (unpaidSales.length === 0) {
-        return list.innerHTML = `<p class="py-12 text-center text-base text-[#6B6A61] font-bold">🎉 ไม่มีลูกหนี้ค้างชำระเลย ทุกคนจ่ายครบแล้ว!</p>`;
+        list.className = "";
+        return list.innerHTML = `<p class="py-12 text-center text-lg text-[#6B6A61] font-bold">🎉 ไม่มีลูกหนี้ค้างชำระเลย ทุกคนจ่ายครบแล้ว!</p>`;
       }
+
+      // 🎯 เลย์เอาต์ Grid 4 บล็อกต่อแถว
+      list.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 mt-3";
 
       const debtorGroups = {};
       unpaidSales.forEach(s => {
@@ -4888,32 +4955,55 @@ function refundStockToProduct(productId, qtyToRefund) {
         if (s.ts > debtorGroups[name].lastTs) debtorGroups[name].lastTs = s.ts;
       });
 
-      list.innerHTML = Object.values(debtorGroups).map(g => `
-        <div class="flex justify-between items-center py-4 px-4 hover:bg-[#F5F3EE] rounded-2xl transition border-b border-gray-100">
-          <div onclick="openDebtDetailModal('${g.name}')" class="cursor-pointer flex-1">
-            <div class="font-bold text-xl font-display text-[#1C2321]">${g.name}</div>
-            <div class="text-sm text-[#6B6A61] font-medium mt-0.5">ติดหนี้สะสมไว้ ${g.billsCount} รายการ (ล่าสุด: ${new Date(g.lastTs).toLocaleDateString('th-TH')})</div>
-          </div>
+      // 🔄 เรียงลำดับจากคนที่ติดหนี้ล่าสุดมาอยู่อันแรกสุด (lastTs มากไปน้อย)
+      const sortedDebtors = Object.values(debtorGroups).sort((a, b) => b.lastTs - a.lastTs);
+
+      list.innerHTML = sortedDebtors.map(g => `
+        <div class="bg-[#F5F3EE] p-5 rounded-3xl border-2 border-[#DEDACB] hover:border-[#0F5C52] transition flex flex-col justify-between shadow-sm relative text-center space-y-3">
           
-          <div class="flex items-center gap-2">
-            <div class="font-bold text-[#B3432B] font-display text-2xl mr-2">฿${g.total.toFixed(2)}</div>
-            
-            <!-- ✏️ ปุ่มกดแก้ไขชื่อรวดเดียวทุกบิล -->
-            <button onclick="renameDebtorGlobal('${g.name}')" class="bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 font-display" title="แก้ไขชื่อนี้ทุกบิล">
-              ✏️ แก้ชื่อ
+          <!-- 🛠️ ปุ่มแก้ไข/ลบ แอบไว้มุมขวาบน -->
+          <div class="absolute top-3.5 right-3.5 flex items-center gap-1 z-10">
+            <button onclick="renameDebtorGlobal('${g.name}')" class="p-1.5 text-gray-400 hover:text-amber-700 hover:bg-amber-100/50 rounded-lg transition" title="แก้ไขชื่อ">
+              <i data-lucide="pencil" class="w-4.5 h-4.5"></i>
             </button>
-
-            <!-- 🗑️ ปุ่มกดลบชื่อออกจากระบบ -->
-            <button onclick="deleteDebtorGlobal('${g.name}')" class="bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded-xl text-xs font-bold transition" title="ลบชื่อนี้ออกจากระบบ">
-              🗑️
-            </button>
-
-            <button onclick="openDebtDetailModal('${g.name}')" class="bg-[#0F5C52] text-white text-base px-4 py-2 rounded-xl font-bold font-display hover:opacity-90 shadow-sm ml-1">
-              ดูรายการ / รับชำระ
+            <button onclick="deleteDebtorGlobal('${g.name}')" class="p-1.5 text-gray-400 hover:text-[#B3432B] hover:bg-red-100/50 rounded-lg transition" title="ลบชื่อออก">
+              <i data-lucide="trash-2" class="w-4.5 h-4.5"></i>
             </button>
           </div>
+
+          <!-- 🎯 ส่วนเนื้อหาหลัก -->
+          <div onclick="openDebtDetailModal('${g.name}')" class="cursor-pointer space-y-2">
+            <!-- 1. ชื่อบุคคลใหญ่ที่สุด เด่นสะดุดตา -->
+            <div class="font-extrabold text-2xl sm:text-3xl font-display text-[#1C2321] truncate px-7 pt-1 leading-tight" title="${g.name}">
+              ${g.name}
+            </div>
+
+            <!-- 2. เส้นประคั่นสวยงามแบ่งโซน -->
+            <div class="border-b-2 border-dashed border-[#DEDACB] my-2"></div>
+
+            <!-- 3. ป้ายสถานะจำนวนบิล + วันที่ล่าสุด -->
+            <div class="text-sm text-[#6B6A61] font-semibold flex items-center justify-center gap-1.5 flex-wrap pt-1">
+              <span class="bg-amber-100 text-amber-900 px-3 py-1 rounded-full font-bold text-xs sm:text-sm">ติดหนี้ ${g.billsCount} รายการ</span>
+              <span class="text-gray-500 font-medium text-xs sm:text-sm">(${new Date(g.lastTs).toLocaleDateString('th-TH')})</span>
+            </div>
+
+            <!-- 4. ยอดเงินติดหนี้ ขยายใหญ่ชัดเจน -->
+            <div class="pt-2">
+              <span class="text-xs sm:text-sm font-bold text-[#6B6A61] block">ยอดติดหนี้สะสม</span>
+              <div class="font-extrabold text-[#B3432B] font-display text-3xl sm:text-4xl tracking-tight mt-0.5">
+                ฿${g.total.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. ปุ่มกดเข้าดูรายละเอียด -->
+          <button onclick="openDebtDetailModal('${g.name}')" class="w-full bg-[#0F5C52] hover:opacity-90 text-white py-3 rounded-2xl font-bold font-display text-base shadow-sm transition">
+            ดูรายการ / รับชำระ
+          </button>
         </div>
       `).join('');
+
+      if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
 // ✏️ ฟังก์ชันแก้ไขยอดเงินบิลติดหนี้ (แก้ไขเฉพาะยอดเงินของบิลนี้)
@@ -5519,122 +5609,220 @@ function closeDebtDetailModal() {
     }
 
     function printSalesReport() {
-      const { startTime, endTime } = getReportFilterTimes();
+      try {
+        const { startTime, endTime } = getReportFilterTimes();
 
-      const filteredSales = sales.filter(s => s.ts >= startTime && s.ts <= endTime);
-      const filteredExpenses = expenses.filter(e => e.ts >= startTime && e.ts <= endTime);
-      const filteredDebtPayments = debtPayments.filter(dp => dp.ts >= startTime && dp.ts <= endTime);
-      const filteredMovements = cashMovements.filter(cm => cm.ts >= startTime && cm.ts <= endTime);
+        const filteredSales = sales.filter(s => s.ts >= startTime && s.ts <= endTime);
+        const filteredExpenses = expenses.filter(e => e.ts >= startTime && e.ts <= endTime);
+        const filteredDebtPayments = debtPayments.filter(dp => dp.ts >= startTime && dp.ts <= endTime);
+        const filteredMovements = cashMovements.filter(cm => cm.ts >= startTime && cm.ts <= endTime);
 
-      const todayStr = getTodayString();
-      const todayFloatObj = dailyFloats.find(f => f.dateStr === todayStr);
-      const todayFloatVal = todayFloatObj ? todayFloatObj.amount : 0;
+        const now = new Date();
+        let periodText = "ทั้งหมด";
 
-      const now = new Date();
-      let periodText = "ทั้งหมด";
+        if (currentReportRange === 'today') {
+          periodText = `ประจำวันที่ ${formatThaiDateFull(now)}`;
+        } else if (currentReportRange === '7d') {
+          const startD = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+          periodText = `ย้อนหลัง 7 วัน (${formatThaiDateShort(startD)} - ${formatThaiDateShort(now)})`;
+        } else if (currentReportRange === 'month') {
+          periodText = `ประจำเดือน${THAI_MONTHS[now.getMonth()]} ${now.getFullYear() + 543} (วันที่ 1 - ${formatThaiDateShort(now)})`;
+        } else if (currentReportRange === 'custom') {
+          const sVal = document.getElementById('startDateInput')?.value;
+          const eVal = document.getElementById('endDateInput')?.value;
+          const sDate = sVal ? new Date(sVal) : now;
+          const eDate = eVal ? new Date(eDate) : now;
+          periodText = `ระหว่างวันที่ ${formatThaiDateFull(sDate)} ถึงวันที่ ${formatThaiDateFull(eDate)}`;
+        }
 
-      if(currentReportRange === 'today') {
-        periodText = `ประจำวันที่ ${formatThaiDateFull(now)}`;
-      } else if(currentReportRange === '7d') {
-        const startD = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
-        periodText = `ย้อนหลัง 7 วัน (${formatThaiDateShort(startD)} - ${formatThaiDateShort(now)})`;
-      } else if(currentReportRange === 'month') {
-        periodText = `ประจำเดือน${THAI_MONTHS[now.getMonth()]} ${now.getFullYear() + 543} (วันที่ 1 - ${formatThaiDateShort(now)})`;
-      } else if(currentReportRange === 'custom') {
-        const sVal = document.getElementById('startDateInput').value;
-        const eVal = document.getElementById('endDateInput').value;
-        const sDate = sVal ? new Date(sVal) : now;
-        const eDate = eVal ? new Date(eDate) : now;
-        periodText = `ระหว่างวันที่ ${formatThaiDateFull(sDate)} ถึงวันที่ ${formatThaiDateFull(eDate)}`;
+        if (document.getElementById('p-sales-period')) document.getElementById('p-sales-period').innerText = "ช่วงเวลาทำรายการ: " + periodText;
+        if (document.getElementById('p-sales-print-date')) document.getElementById('p-sales-print-date').innerText = new Date().toLocaleString('th-TH');
+
+        const normalSalesOnly = filteredSales.filter(s => !s.isHomeUse && !s.isWorkerUse);
+        const totalSalesVal = normalSalesOnly.reduce((a, b) => a + (b.total || 0), 0);
+        const totalCostVal = normalSalesOnly.reduce((a, b) => a + (b.totalCost || 0), 0);
+        const totalExp = filteredExpenses.reduce((a, b) => a + (b.amount || 0), 0);
+        const netProfit = (totalSalesVal - totalCostVal) - totalExp;
+
+        const totalCashInVal = filteredSales.reduce((sum, s) => {
+          if (s.method === 'cash') return sum + (s.total || 0);
+          return sum + (s.cashPart || 0);
+        }, 0);
+        const netCashInDrawer = totalCashInVal - totalExp;
+
+        if (document.getElementById('p-sales-cash-in')) document.getElementById('p-sales-cash-in').innerText = fmtMoney(totalSalesVal);
+        if (document.getElementById('p-sales-total-cost')) document.getElementById('p-sales-total-cost').innerText = fmtMoney(totalCostVal);
+        if (document.getElementById('p-sales-exp-out')) document.getElementById('p-sales-exp-out').innerText = fmtMoney(totalExp);
+        if (document.getElementById('p-sales-net-profit')) document.getElementById('p-sales-net-profit').innerText = fmtMoney(netProfit);
+        if (document.getElementById('p-sales-drawer-cash')) document.getElementById('p-sales-drawer-cash').innerText = fmtMoney(netCashInDrawer);
+
+        const homeUseTotal = filteredSales.filter(s => s.isHomeUse).reduce((a, b) => a + (b.totalCost || 0), 0);
+        const workerUseTotal = filteredSales.filter(s => s.isWorkerUse).reduce((a, b) => a + (b.totalCost || 0), 0);
+
+        if (document.getElementById('p-sales-summary-table')) {
+          document.getElementById('p-sales-summary-table').innerHTML = `
+            <tr><td class="border border-black p-2">ยอดขายสินค้ารวมสุทธิ (ขายจริง)</td><td class="border border-black p-2 text-right font-display font-bold text-emerald-800">${fmtMoney(totalSalesVal)}</td></tr>
+            <tr><td class="border border-black p-2">ต้นทุนสินค้าที่ขายได้</td><td class="border border-black p-2 text-right font-display font-bold text-gray-800">${fmtMoney(totalCostVal)}</td></tr>
+            <tr class="bg-gray-50"><td class="border border-black p-2">กำไรขั้นต้นจากการขาย (Sales Profit)</td><td class="border border-black p-2 text-right font-display font-bold text-blue-800">${fmtMoney(totalSalesVal - totalCostVal)}</td></tr>
+            <tr><td class="border border-black p-2">รายจ่ายประจำวันออก</td><td class="border border-black p-2 text-right font-display font-bold text-red-800">-${fmtMoney(totalExp)}</td></tr>
+            <tr class="bg-blue-100 font-bold"><td class="border border-black p-2">กำไรสุทธิจริงช่วงเวลานี้ (Net Profit)</td><td class="border border-black p-2 text-right font-display text-blue-900">${fmtMoney(netProfit)}</td></tr>
+            <tr><td class="border border-black p-2">มูลค่าสินค้าหยิบกิน/ใช้เองในบ้าน (ต้นทุน)</td><td class="border border-black p-2 text-right font-display font-bold text-amber-800">${fmtMoney(homeUseTotal)}</td></tr>
+            <tr><td class="border border-black p-2">มูลค่าสินค้าเลี้ยงคนงาน (ต้นทุน)</td><td class="border border-black p-2 text-right font-display font-bold text-[#B3432B]">${fmtMoney(workerUseTotal)}</td></tr>
+          `;
+        }
+
+        const combinedHistory = [
+          ...filteredSales.map(s => ({ ...s, type: 'sale' })),
+          ...filteredDebtPayments.map(dp => ({ ...dp, type: 'debt_payment' })),
+          ...filteredMovements.map(cm => ({ ...cm, type: 'cash_movement' }))
+        ].sort((a, b) => (b.ts || 0) - (a.ts || 0));
+
+        if (document.getElementById('p-sales-history-table')) {
+          document.getElementById('p-sales-history-table').innerHTML = combinedHistory.map(item => {
+            let note = '';
+            let itemsSummary = '';
+
+            if (item.items && item.items.length > 0) {
+              itemsSummary = `<br/><span class="text-gray-600 font-normal">รายการ: ${item.items.map(i => `${i.name} x${i.qty}`).join(', ')}</span>`;
+            }
+
+            if (item.isHomeUse) note = '🏠 ใช้เองในบ้าน (คิดต้นทุน)';
+            else if (item.isWorkerUse) note = '👷 เลี้ยงคนงาน (คิดต้นทุน)';
+            else if (item.type === 'debt_payment') note = `รับชำระหนี้ (${item.debtorName || ''})`;
+            else if (item.type === 'cash_movement') note = (item.amount || 0) > 0 ? 'เติมเงินส่วนตัวใส่เก๊ะ' : 'คืนเงินยืมส่วนตัว';
+            else note = (item.creditPart || 0) > 0 ? `ผสม/ติดหนี้ (${item.debtorName || ''})` : (item.method === 'transfer' ? 'โอนเงิน' : 'เงินสด');
+
+            const amtDisplay = item.type === 'cash_movement'
+              ? ((item.amount || 0) > 0 ? `+฿${(item.amount || 0).toFixed(2)}` : `-฿${Math.abs(item.amount || 0).toFixed(2)}`)
+              : ((item.isHomeUse || item.isWorkerUse) ? `ต้นทุน ฿${(item.totalCost || 0).toFixed(2)}` : `฿${(item.total || 0).toFixed(2)}`);
+
+            return `
+              <tr>
+                <td class="border border-black p-2">${new Date(item.ts || Date.now()).toLocaleString('th-TH')}</td>
+                <td class="border border-black p-2 font-bold">${note}${itemsSummary}</td>
+                <td class="border border-black p-2">${item.cashierName || 'ไม่ระบุ'}</td>
+                <td class="border border-black p-2 text-right font-display font-bold">${amtDisplay}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+        // 📊 สั่งวาดกราฟแบบปิด Animation เพื่อเตรียมเซฟรูป
+        renderDashboardCharts(totalSalesVal, totalCostVal, totalExp, filteredSales, filteredExpenses);
+
+        // 🖨️ ดึงภาพถ่ายกราฟจาก Canvas ลงใบพิมพ์ A4
+        const canvasDoughnut = document.getElementById('salesDoughnutChart');
+        const canvasBar = document.getElementById('salesTrendBarChart');
+
+        if (canvasDoughnut && document.getElementById('p-chart-doughnut-img')) {
+          document.getElementById('p-chart-doughnut-img').src = canvasDoughnut.toDataURL('image/png');
+        }
+        if (canvasBar && document.getElementById('p-chart-bar-img')) {
+          document.getElementById('p-chart-bar-img').src = canvasBar.toDataURL('image/png');
+        }
+
+        const printArea = document.getElementById('printSalesArea');
+        if (printArea) {
+          printArea.classList.remove('hidden');
+          setTimeout(() => {
+            window.print();
+            setTimeout(() => {
+              printArea.classList.add('hidden');
+            }, 1000);
+          }, 200);
+        }
+      } catch (err) {
+        console.error("Print error:", err);
+        alert("เกิดข้อผิดพลาดในการสั่งพิมพ์: " + err.message);
       }
-
-      document.getElementById('p-sales-period').innerText = "ช่วงเวลาทำรายการ: " + periodText;
-      document.getElementById('p-sales-print-date').innerText = new Date().toLocaleString('th-TH');
-
-      const normalSalesOnly = filteredSales.filter(s => !s.isHomeUse && !s.isWorkerUse);
-      const totalSalesVal = normalSalesOnly.reduce((a, b) => a + b.total, 0);
-      const totalCostVal = normalSalesOnly.reduce((a, b) => a + (b.totalCost || 0), 0);
-      const totalExp = filteredExpenses.reduce((a, b) => a + b.amount, 0);
-      const netProfit = (totalSalesVal - totalCostVal) - totalExp;
-
-      const directCashSales = normalSalesOnly.reduce((a, b) => a + (b.cashPart || (b.method === 'cash' ? b.total : 0)), 0);
-      const debtPaidCash = filteredDebtPayments.reduce((a, b) => a + b.total, 0);
-      const totalCashSales = directCashSales + debtPaidCash;
-
-      const totalNetBorrowed = filteredMovements.reduce((sum, cm) => {
-        if (cm.amount > 0) {
-          return sum + Math.max(0, cm.amount - (cm.repaidAmt || 0));
-        }
-        return sum + cm.amount;
-      }, 0);
-
-      // 🟢 คำนวณเงินสดสุทธิเฉพาะของวันนี้ใหม่ทั้งหมด (ขายสด + รับชำระหนี้สด - รายจ่ายสด)
-const totalCashInVal = filteredSales.reduce((sum, s) => {
-  if (s.method === 'cash') return sum + (s.total || 0);
-  return sum + (s.cashPart || 0);
-}, 0);
-
-const netCashInDrawer = totalCashInVal - totalExp;
-
-document.getElementById('p-sales-cash-in').innerText = fmtMoney(totalSalesVal);
-document.getElementById('p-sales-total-cost').innerText = fmtMoney(totalCostVal);
-document.getElementById('p-sales-exp-out').innerText = fmtMoney(totalExp);
-document.getElementById('p-sales-net-profit').innerText = fmtMoney(netProfit);
-document.getElementById('p-sales-drawer-cash').innerText = fmtMoney(netCashInDrawer);
-
-      const homeUseTotal = filteredSales.filter(s => s.isHomeUse).reduce((a, b) => a + (b.totalCost || 0), 0);
-      const workerUseTotal = filteredSales.filter(s => s.isWorkerUse).reduce((a, b) => a + (b.totalCost || 0), 0);
-
-      document.getElementById('p-sales-summary-table').innerHTML = `
-        <tr><td class="border border-black p-2">ยอดขายสินค้ารวมสุทธิ (ขายจริง)</td><td class="border border-black p-2 text-right font-display font-bold text-emerald-800">฿${totalSalesVal.toFixed(2)}</td></tr>
-        <tr><td class="border border-black p-2">ต้นทุนสินค้าที่ขายได้</td><td class="border border-black p-2 text-right font-display font-bold text-gray-800">฿${totalCostVal.toFixed(2)}</td></tr>
-        <tr class="bg-gray-50"><td class="border border-black p-2">กำไรขั้นต้นจากการขาย (Sales Profit)</td><td class="border border-black p-2 text-right font-display font-bold text-blue-800">฿${(totalSalesVal - totalCostVal).toFixed(2)}</td></tr>
-        <tr><td class="border border-black p-2">รายจ่ายประจำวันออก</td><td class="border border-black p-2 text-right font-display font-bold text-red-800">-฿${totalExp.toFixed(2)}</td></tr>
-        <tr class="bg-blue-100 font-bold"><td class="border border-black p-2">กำไรสุทธิจริงช่วงเวลานี้ (Net Profit)</td><td class="border border-black p-2 text-right font-display text-blue-900">฿${netProfit.toFixed(2)}</td></tr>
-        <tr><td class="border border-black p-2">มูลค่าสินค้าหยิบกิน/ใช้เองในบ้าน (ต้นทุน)</td><td class="border border-black p-2 text-right font-display font-bold text-amber-800">฿${homeUseTotal.toFixed(2)}</td></tr>
-        <tr><td class="border border-black p-2">มูลค่าสินค้าเลี้ยงคนงาน (ต้นทุน)</td><td class="border border-black p-2 text-right font-display font-bold text-[#B3432B]">฿${workerUseTotal.toFixed(2)}</td></tr>
-      `;
-
-      const combinedHistory = [
-        ...filteredSales.map(s => ({ ...s, type: 'sale' })),
-        ...filteredDebtPayments.map(dp => ({ ...dp, type: 'debt_payment' })),
-        ...filteredMovements.map(cm => ({ ...cm, type: 'cash_movement' }))
-      ].sort((a, b) => b.ts - a.ts);
-
-      document.getElementById('p-sales-history-table').innerHTML = combinedHistory.map(item => {
-        let note = '';
-        let itemsSummary = '';
-
-        if(item.items && item.items.length > 0) {
-          itemsSummary = `<br/><span class="text-gray-600 font-normal">รายการ: ${item.items.map(i => `${i.name} x${i.qty}`).join(', ')}</span>`;
-        }
-
-        if(item.isHomeUse) note = '🏠 ใช้เองในบ้าน (คิดต้นทุน)';
-        else if(item.isWorkerUse) note = '👷 เลี้ยงคนงาน (คิดต้นทุน)';
-        else if(item.type === 'debt_payment') note = `รับชำระหนี้ (${item.debtorName})`;
-        else if(item.type === 'cash_movement') note = item.amount > 0 ? 'เติมเงินส่วนตัวใส่เก๊ะ' : 'คืนเงินยืมส่วนตัว';
-        else note = item.creditPart > 0 ? `ผสม/ติดหนี้ (${item.debtorName})` : (item.method === 'transfer' ? 'โอนเงิน' : 'เงินสด');
-
-        const amtDisplay = item.type === 'cash_movement' 
-          ? (item.amount > 0 ? `+฿${item.amount.toFixed(2)}` : `-฿${Math.abs(item.amount).toFixed(2)}`)
-          : ((item.isHomeUse || item.isWorkerUse) ? `ต้นทุน ฿${item.totalCost.toFixed(2)}` : `฿${item.total.toFixed(2)}`);
-
-        return `
-          <tr>
-            <td class="border border-black p-2">${new Date(item.ts).toLocaleString('th-TH')}</td>
-            <td class="border border-black p-2 font-bold">${note}${itemsSummary}</td>
-            <td class="border border-black p-2">${item.cashierName || 'ไม่ระบุ'}</td>
-            <td class="border border-black p-2 text-right font-display font-bold">${amtDisplay}</td>
-          </tr>
-        `;
-      }).join('');
-
-      document.getElementById('printSalesArea').classList.remove('hidden');
-      window.print();
-      setTimeout(() => {
-        document.getElementById('printSalesArea').classList.add('hidden');
-      }, 1000);
     }
+
+let chartDoughnutInstance = null;
+let chartBarInstance = null;
+
+function renderDashboardCharts(salesVal, costVal, expVal, filteredSales, filteredExpenses) {
+  // 1. 🍩 วาดกราฟวงกลม (Doughnut Chart) สัดส่วนภาพรวม
+  const ctxDoughnut = document.getElementById('salesDoughnutChart');
+  if (ctxDoughnut) {
+    if (chartDoughnutInstance) chartDoughnutInstance.destroy();
+
+    chartDoughnutInstance = new Chart(ctxDoughnut, {
+      type: 'doughnut',
+      data: {
+        labels: ['ยอดขายจริง', 'ต้นทุนสินค้า', 'รายจ่ายออก'],
+        datasets: [{
+          data: [salesVal, costVal, expVal],
+          backgroundColor: ['#0F5C52', '#6B6A61', '#B3432B'],
+          borderWidth: 2
+        }]
+      },
+      options: {
+        animation: false, // 🛑 ปิด Animation เพื่อให้ภาพวาดเสร็จทันที 100%
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { family: 'Kanit', size: 11 } } }
+        }
+      }
+    });
+  }
+
+  // 2. 📊 คำนวณข้อมูลแยกรายวัน และวาดกราฟแท่ง (Bar Chart)
+  const dailyData = {};
+  
+  filteredSales.forEach(s => {
+    if (s.isHomeUse || s.isWorkerUse) return;
+    const d = new Date(s.ts);
+    const dateKey = `${d.getDate()}/${d.getMonth()+1}`;
+    if (!dailyData[dateKey]) dailyData[dateKey] = { sales: 0, exp: 0 };
+    dailyData[dateKey].sales += (s.total || 0);
+  });
+
+  filteredExpenses.forEach(e => {
+    const d = new Date(e.ts);
+    const dateKey = `${d.getDate()}/${d.getMonth()+1}`;
+    if (!dailyData[dateKey]) dailyData[dateKey] = { sales: 0, exp: 0 };
+    dailyData[dateKey].exp += (e.amount || 0);
+  });
+
+  // เรียงลำดับวันที่จากน้อยไปมาก (เรียงตามเดือน และวัน)
+  const labels = Object.keys(dailyData).sort((a, b) => {
+    const [dayA, monthA] = a.split('/').map(Number);
+    const [dayB, monthB] = b.split('/').map(Number);
+    if (monthA !== monthB) return monthA - monthB;
+    return dayA - dayB;
+  });
+
+  const salesDaily = labels.map(k => dailyData[k].sales);
+  const expDaily = labels.map(k => dailyData[k].exp);
+
+  const ctxBar = document.getElementById('salesTrendBarChart');
+  if (ctxBar) {
+    if (chartBarInstance) chartBarInstance.destroy();
+
+    chartBarInstance = new Chart(ctxBar, {
+      type: 'bar',
+      data: {
+        labels: labels.length > 0 ? labels : ['ไม่มีข้อมูล'],
+        datasets: [
+          { label: 'ยอดขาย', data: salesDaily, backgroundColor: '#0F5C52', borderRadius: 6 },
+          { label: 'รายจ่าย', data: expDaily, backgroundColor: '#B3432B', borderRadius: 6 }
+        ]
+      },
+      options: {
+        animation: false, // 🛑 ปิด Animation
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top', labels: { font: { family: 'Kanit', size: 11 } } }
+        },
+        scales: {
+          y: { beginAtZero: true, ticks: { callback: v => '฿' + v } }
+        }
+      }
+    });
+  }
+}
 
     function renderReports() {
       const { startTime, endTime } = getReportFilterTimes();
@@ -5727,6 +5915,14 @@ document.getElementById('p-sales-drawer-cash').innerText = fmtMoney(netCashInDra
         ...filteredMovements.map(cm => ({ ...cm, type: 'cash_movement' }))
       ].sort((a, b) => b.ts - a.ts);
 
+// 📊 สั่งวาดกราฟคู่ Dashboard (นำมาวางไว้ตรงนี้ ก่อนเช็กประวัติ)
+      renderDashboardCharts(totalSalesVal, totalCostVal, totalExp, filteredSales, filteredExpenses);
+
+      if (combinedHistory.length === 0) {
+        document.getElementById('salesHistory').innerHTML = `<p class="py-10 text-center text-base text-[#6B6A61] font-bold">ไม่มีรายการทำธุรกรรมในช่วงเวลานี้</p>`;
+        return;
+      }
+
       if (combinedHistory.length === 0) {
         document.getElementById('salesHistory').innerHTML = `<p class="py-10 text-center text-base text-[#6B6A61] font-bold">ไม่มีรายการทำธุรกรรมในช่วงเวลานี้</p>`;
         return;
@@ -5792,7 +5988,7 @@ if (item.type === 'sale') {
         `;
       }).join('');
       lucide.createIcons();
-    }
+}
 
     function showTab(name) {
       ['pos', 'stock', 'lowstock', 'rewards', 'debts', 'expenses', 'reports', 'staff'].forEach(t => {
@@ -5810,6 +6006,7 @@ if (item.type === 'sale') {
       });
       document.getElementById(`tab-${name}`).classList.remove('hidden');
       if(name==='pos') focusScanInput();
+      if(name==='reports') renderReports(); // 👈 แทรกบรรทัดนี้เพิ่มเข้าไปครับ
     }
 
     lucide.createIcons();

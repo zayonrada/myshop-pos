@@ -76,7 +76,7 @@
           <select id="langSelect" onchange="changeAppLanguage(this.value)" class="bg-emerald-50 border border-[#008B47] text-[#008B47] font-bold text-xs rounded-full px-2 py-1.5 focus:outline-none cursor-pointer shadow-sm">
             <option value="th">🇹🇭 TH</option>
             <option value="en">🇬🇧 EN</option>
-            <option value="lo">🇱ående LO</option>
+            <option value="lo">🇱🇦 LO</option>
             <option value="my">🇲🇲 MY</option>
           </select>
         </div>
@@ -388,19 +388,19 @@
           </div>
 
           <div id="bankTransferBox" class="pt-2 border-t space-y-2.5">
-            <!-- 📱 QR Code สำหรับสแกนชำระเงิน (แทนเลขบัญชีเดิม) -->
-            <div class="bg-emerald-50 p-4 rounded-2xl border-2 border-[#008B47] text-center space-y-2.5 shadow-sm">
+            <!-- 📱 QR Code สำหรับสแกนชำระเงิน ขยายเต็มความกว้างการ์ด -->
+            <div class="bg-emerald-50 p-4 rounded-2xl border-2 border-[#008B47] text-center space-y-3 shadow-sm">
               <div class="font-bold text-[#008B47] text-sm md:text-base flex items-center justify-center gap-1.5 font-display">
                 <i data-lucide="qr-code" class="w-5 h-5"></i> สแกน QR Code เพื่อชำระเงิน
               </div>
               
-              <!-- 🖼️ รูป QR Code ถุงเงิน / พร้อมเพย์ -->
-              <div class="bg-white p-3 rounded-2xl inline-block shadow-sm border border-emerald-100">
-                <img src="qr-payment.jpg" alt="QR Code รับเงินร้านค้าขวัญใจ" class="w-48 h-48 md:w-56 md:h-56 object-cover mx-auto rounded-xl">
+              <!-- 🖼️ รูป QR Code ปรับขนาดเต็มกรอบ max-w-[340px] -->
+              <div class="bg-white p-2 md:p-3 rounded-2xl inline-block shadow-sm border border-emerald-100 w-full max-w-[340px] mx-auto">
+                <img src="qr-payment.jpg" alt="QR Code รับเงินร้านค้าขวัญใจ" class="w-full aspect-square object-contain mx-auto rounded-xl">
               </div>
 
               <div class="space-y-0.5">
-                <div class="text-xs md:text-sm font-bold text-gray-800 font-display" id="lblBankAccName">ชื่อบัญชี: ดณยา ฉิมพาลี (ร้านค้าขวัญใจ)</div>
+                <div class="text-xs md:text-sm font-bold text-gray-800 font-display" id="lblBankAccName">ชื่อบัญชี: ยลรดา ฉิมพาลี (ร้านค้าขวัญใจ)</div>
                 <div class="text-[11px] text-gray-500 font-medium">สแกนผ่านแอปธนาคาร หรือแอปถุงเงินได้ทุกธนาคาร</div>
               </div>
             </div>
@@ -572,7 +572,7 @@
         bankName: "สแกน QR Code รับเงิน",
         bankAccNo: "ชำระผ่าน QR Code:",
         copyAccBtn: "คัดลอก",
-        bankAccName: "ชื่อบัญชี: ดณยา ฉิมพาลี (ร้านค้าขวัญใจ)",
+        bankAccName: "ชื่อบัญชี: ยลรดา ฉิมพาลี (ร้านค้าขวัญใจ)",
         attachSlip: "แนบรูปสลิปการโอนเงิน *",
         subtotal: "ค่าสินค้า",
         deliveryFee: "ค่าจัดส่ง",
@@ -944,6 +944,7 @@
     let deliveryType = 'delivery';
     let payOption = 'transfer';
     let slipBase64 = "";
+    let isProductsLoaded = false; // 🛑 ตัวแปรเช็กสถานะการดึงสินค้า
     
     let currentMember = null;
     try {
@@ -1331,10 +1332,13 @@
       });
 
       products = freshProducts;
+      isProductsLoaded = true; // 🎯 ยืนยันว่าดึงข้อมูลสินค้าจาก Firebase สำเร็จแล้ว
       renderCategoryFilters();
       renderCustomerProducts();
     }, err => {
       console.error("Firebase fetch error:", err);
+      isProductsLoaded = true;
+      renderCustomerProducts();
     });
 
     db.collection("rewards").onSnapshot(s => {
@@ -1816,6 +1820,14 @@
 
     function renderCustomerProducts() {
       const grid = document.getElementById('custProductGrid');
+      if (!grid) return;
+
+      // 🛑 ถ้าข้อมูลงยังดึงจาก Firebase ไม่เสร็จ ให้คงข้อความกำลังโหลดไว้ก่อน
+      if (!isProductsLoaded) {
+        grid.innerHTML = `<p class="col-span-full text-center py-12 text-[#008B47] font-bold animate-pulse font-display">⏳ กำลังโหลดสินค้าสดใหม่...</p>`;
+        return;
+      }
+
       const searchRaw = document.getElementById('custSearchInput')?.value || '';
       const searchVal = normalizeThaiText(searchRaw);
       const t = translations[currentLang] || translations.th;

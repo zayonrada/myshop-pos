@@ -76,7 +76,7 @@
           <select id="langSelect" onchange="changeAppLanguage(this.value)" class="bg-emerald-50 border border-[#008B47] text-[#008B47] font-bold text-xs rounded-full px-2 py-1.5 focus:outline-none cursor-pointer shadow-sm">
             <option value="th">🇹🇭 TH</option>
             <option value="en">🇬🇧 EN</option>
-            <option value="lo">🇱🇦 LO</option>
+            <option value="lo">🇱ående LO</option>
             <option value="my">🇲🇲 MY</option>
           </select>
         </div>
@@ -388,21 +388,20 @@
           </div>
 
           <div id="bankTransferBox" class="pt-2 border-t space-y-2.5">
-            <div class="bg-emerald-50 p-3.5 rounded-xl border border-emerald-300 text-xs space-y-2">
-              <div class="flex justify-between items-center border-b border-emerald-200 pb-2">
-                <span class="font-bold text-[#008B47] text-sm" id="lblBankName">ธนาคารกสิกรไทย (K-Bank)</span>
-                <span class="text-[10px] bg-[#008B47] text-white px-2 py-0.5 rounded-full font-bold">กสิกร</span>
+            <!-- 📱 QR Code สำหรับสแกนชำระเงิน (แทนเลขบัญชีเดิม) -->
+            <div class="bg-emerald-50 p-4 rounded-2xl border-2 border-[#008B47] text-center space-y-2.5 shadow-sm">
+              <div class="font-bold text-[#008B47] text-sm md:text-base flex items-center justify-center gap-1.5 font-display">
+                <i data-lucide="qr-code" class="w-5 h-5"></i> สแกน QR Code เพื่อชำระเงิน
               </div>
               
-              <div class="space-y-1">
-                <div class="text-gray-500 text-[11px]" id="lblBankAccNo">เลขที่บัญชี:</div>
-                <div class="flex justify-between items-center bg-white p-2.5 rounded-lg border">
-                  <span class="text-gray-900 font-bold text-lg font-display tracking-wider">855-2-19984-8</span>
-                  <button type="button" onclick="copyBankAcc()" class="bg-[#008B47] text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm active:scale-95 flex items-center gap-1">
-                    <i data-lucide="copy" class="w-3.5 h-3.5"></i> <span id="lblCopyAccBtn">ก๊อปปี้เลขบัญชี</span>
-                  </button>
-                </div>
-                <div class="text-gray-700 text-xs font-bold pt-1" id="lblBankAccName">ชื่อบัญชี: ยลรดา ฉิมพาลี</div>
+              <!-- 🖼️ รูป QR Code ถุงเงิน / พร้อมเพย์ -->
+              <div class="bg-white p-3 rounded-2xl inline-block shadow-sm border border-emerald-100">
+                <img src="qr-payment.jpg" alt="QR Code รับเงินร้านค้าขวัญใจ" class="w-48 h-48 md:w-56 md:h-56 object-cover mx-auto rounded-xl">
+              </div>
+
+              <div class="space-y-0.5">
+                <div class="text-xs md:text-sm font-bold text-gray-800 font-display" id="lblBankAccName">ชื่อบัญชี: ดณยา ฉิมพาลี (ร้านค้าขวัญใจ)</div>
+                <div class="text-[11px] text-gray-500 font-medium">สแกนผ่านแอปธนาคาร หรือแอปถุงเงินได้ทุกธนาคาร</div>
               </div>
             </div>
 
@@ -570,10 +569,10 @@
         payOption: "วิธีการชำระเงิน",
         payTransfer: "📱 โอนเงินผ่านบัญชี",
         payCash: "💵 เงินสดปลายทาง",
-        bankName: "ธนาคารกสิกรไทย (K-Bank)",
-        bankAccNo: "เลขที่บัญชี:",
-        copyAccBtn: "ก๊อปปี้เลขบัญชี",
-        bankAccName: "ชื่อบัญชี: ยลรดา ฉิมพาลี",
+        bankName: "สแกน QR Code รับเงิน",
+        bankAccNo: "ชำระผ่าน QR Code:",
+        copyAccBtn: "คัดลอก",
+        bankAccName: "ชื่อบัญชี: ดณยา ฉิมพาลี (ร้านค้าขวัญใจ)",
         attachSlip: "แนบรูปสลิปการโอนเงิน *",
         subtotal: "ค่าสินค้า",
         deliveryFee: "ค่าจัดส่ง",
@@ -646,12 +645,12 @@
         subPickupStore: "Pick up at store<br>until 20:00",
         after18NoticeText: `<div class="text-amber-800 font-bold text-sm">🌙 It is past 18:00:</div><div>• 🛵 <strong>Home Delivery:</strong> Orders will be delivered <strong>next day from 08:00 onwards</strong>.</div><div>• 🏪 To receive items tonight: Please select <strong>"Pick up at Store"</strong>.</div>`,
         payOption: "Payment Method",
-        payTransfer: "📱 Bank Transfer",
+        payTransfer: "📱 QR Payment",
         payCash: "💵 Cash on Delivery",
-        bankName: "Kasikornbank (K-Bank)",
-        bankAccNo: "Account No.:",
-        copyAccBtn: "Copy Acc. No.",
-        bankAccName: "Account Name: Yonlada Chimphali",
+        bankName: "Scan QR Code",
+        bankAccNo: "Pay via QR Code:",
+        copyAccBtn: "Copy",
+        bankAccName: "Account Name: Yonlada Chimphali (Kwanjai)",
         attachSlip: "Attach Transfer Slip *",
         subtotal: "Subtotal",
         deliveryFee: "Delivery Fee",
@@ -724,12 +723,12 @@
         subPickupStore: "ມາຮັບໜ້າຮ້ານໄດ້ເຖິງ<br>ເວລາ 20:00 ນ.",
         after18NoticeText: `<div class="text-amber-800 font-bold text-sm">🌙 ຂະນະນີ້ເກີນເວລາ 18:00 ນ. ແລ້ວ:</div><div>• 🛵 <strong>ໃຫ້ໄປສົ່ງຢູ່ບ້ານ:</strong> ທາງຮ້ານຈະຈັດສົ່ງໃຫ້ໃນ<strong>ວັນຖັດໄປ ຕັ້ງແຕ່ເວລາ 08:00 ນ.</strong> ເປັນຕົ້ນໄປ</div><div>• 🏪 ຫາກຕ້ອງການຮັບສິນຄ້າທັນທີຄືນນີ້: ແນະນຳໃຫ້ເລືອກ <strong>"ມາຮັບເອງຢູ່ຮ້ານ"</strong></div>`,
         payOption: "ວິທີການຊຳລະເງິນ",
-        payTransfer: "📱 ໂອນເງິນຜ່ານບັນຊີ",
+        payTransfer: "📱 ໂອນເງິນຜ່ານ QR Code",
         payCash: "💵 ເງິນສົດປາຍທາງ",
-        bankName: "ທະນາຄານກາສິກອນໄທ (K-Bank)",
+        bankName: "ສະແກນ QR Code",
         bankAccNo: "ເລກບັນຊີ:",
-        copyAccBtn: "ກັອບປີ້ເລກບັນຊີ",
-        bankAccName: "ຊື່ບັນຊີ: ຍົນລະດາ ສິມພະລີ",
+        copyAccBtn: "ກັອບປີ້",
+        bankAccName: "ຊື່ບັນຊີ: ຍົນລະດາ ສິມພະລີ (ຂວັນໃຈ)",
         attachSlip: "ແນບຮູບສະລິບການໂອນເງິນ *",
         subtotal: "ຄ່າສິນຄ້າ",
         deliveryFee: "ຄ່າຈັດສົ່ງ",
@@ -802,12 +801,12 @@
         subPickupStore: "ဆိုင်တွင် ည ၈:၀ဝ အထိ<br>လာရောက်ယူနိုင်ပါသည်",
         after18NoticeText: `<div class="text-amber-800 font-bold text-sm">🌙 ည ၆:၀ဝ ကျော်လွန်သွားပါပြီ:</div><div>• 🛵 <strong>အိမ်တိုင်ရာရောက်ပို့ပေးပါ:</strong> နောက်နေ့နံနက် ၈:၀ဝ မှစတင်၍ ပို့ဆောင်ပေးပါမည်။</div><div>• 🏪 ယခုည ပစ္စည်းချက်ချင်းလိုပါက <strong>"ဆိုင်တွင်လာယူမည်"</strong> ကိုရွေးချယ်ပါ။</div>`,
         payOption: "ငွေပေးချေမှုနည်းလမ်း",
-        payTransfer: "📱 ဘဏ်မှတဆင့်ငွေလွှဲမည်",
+        payTransfer: "📱 QR ငွေလွှဲမည်",
         payCash: "💵 ပစ္စည်းရောက်မှငွေချေမည်",
-        bankName: "ကစီကွန်ဘဏ် (K-Bank)",
-        bankAccNo: "ဘဏ်အကောင့်နံပါတ်:",
-        copyAccBtn: "အကောင့်နံပါတ်ကူးယူမည်",
-        bankAccName: "အကောင့်အမည်: Yonlada Chimphali",
+        bankName: "QR Code Scan ဖတ်ပါ",
+        bankAccNo: "အကောင့်နံပါတ်:",
+        copyAccBtn: "ကူးယူမည်",
+        bankAccName: "အကောင့်အမည်: Yonlada Chimphali (Kwanjai)",
         attachSlip: "ငွေလွှဲဖြတ်ပိုင်းပုံထည့်ပါ *",
         subtotal: "ပစ္စည်းတန်ဖိုး",
         deliveryFee: "ပို့ဆောင်ခ",
@@ -1690,11 +1689,6 @@
         btnTransfer.className = "py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm border-2 border-gray-200 bg-white text-gray-700 flex items-center justify-center gap-1.5 transition";
         transferBox.classList.add('hidden');
       }
-    }
-
-    function copyBankAcc() {
-      navigator.clipboard.writeText('8552199848');
-      alert('คัดลอกเลขบัญชี 855-2-19984-8 (ยลรดา Chimphali / ฉิมพาลี) เรียบร้อยแล้วครับ');
     }
 
     function previewPaySlip(e) {

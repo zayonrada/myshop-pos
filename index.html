@@ -1457,113 +1457,398 @@
     </div>
   </div>
 
-  <!-- Modal เพิ่ม/แก้ไข/เติมสต็อกสินค้า -->
-  <div id="productModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 no-print">
-    <div class="bg-[#F5F3EE] p-6 rounded-3xl max-w-md w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
-      <div class="flex justify-between items-center border-b-2 border-[#DEDACB] pb-3">
-        <h3 id="pModalTitle" class="font-bold text-2xl font-display">แก้ไขข้อมูลสินค้า</h3>
-        <button onclick="closeProductModal()"><i data-lucide="x" class="w-6 h-6"></i></button>
-      </div>
-      <div>
-        <label class="text-sm font-bold block mb-1">รูปภาพสินค้า</label>
-        <input type="file" id="p-file" accept="image/*" onchange="previewImageFile(event)" class="w-full text-sm p-2.5 bg-white rounded-xl border-2 border-[#DEDACB]">
-        <div id="imgPreviewBlock" class="mt-2 hidden flex justify-center">
-          <img id="imgPreview" src="" class="w-24 h-24 object-cover rounded-2xl border-2 border-[#DEDACB]">
-        </div>
-      </div>
-      <div>
-        <div class="flex justify-between items-center mb-1">
-          <label class="text-sm font-bold">บาร์โค้ด</label>
-          <button type="button" onclick="generateAutoBarcode()" class="text-xs bg-[#0F5C52] text-white px-2.5 py-1 rounded-lg font-bold hover:opacity-90 transition">
-            🎲 รันรหัสอัตโนมัติ (KZ-XXXXX)
-          </button>
-        </div>
-        <input type="text" id="p-barcode" placeholder="สแกนบาร์โค้ด หรือกดรันรหัสอัตโนมัติ..." class="w-full p-2.5 border-2 rounded-xl bg-white text-lg font-bold">
-      </div>
-      <div>
-        <label class="text-sm font-bold">ชื่อสินค้า</label>
-        <input type="text" id="p-name" oninput="autoDetectCategory(this.value); populateParentProductsDropdown();" placeholder="เช่น แก๊สโซฮอล์ 95, น้ำดื่ม, ลิปสติก" class="w-full p-2.5 border-2 rounded-xl bg-white text-lg font-bold">
-      </div>
-      <div>
-        <label class="text-sm font-bold block mb-1">หมวดหมู่สินค้า</label>
-        <select id="p-category" class="w-full p-2.5 border-2 rounded-xl bg-white font-bold text-lg text-[#0F5C52]">
-          <option value="ทั่วไป">ทั่วไป / อื่นๆ</option>
-          <option value="กล่องพัสดุ">📦 กล่องพัสดุ / อุปกรณ์แพ็ค</option>
-          <option value="เชื้อเพลิง/พลังงาน">เชื้อเพลิง / พลังงาน (น้ำมัน)</option>
-          <option value="อาหาร/เครื่องดื่ม">อาหาร / เครื่องดื่ม</option>
-          <option value="เครื่องสำอาง">เครื่องสำอาง / เสริมความงาม</option>
-          <option value="ยา/เวชภัณฑ์">ยา / สินค้าสุขภาพ</option>
-          <option value="เนื้อสัตว์/ของสด">เนื้อสัตว์ / ของสด</option>
-          <option value="ของใช้">ของใช้ในบ้าน</option>
-          <option value="สัตว์เลี้ยง">สินค้าสัตว์เลี้ยง</option>
-        </select>
-      </div>
+  <!-- Modal เพิ่ม/แก้ไข/เติมสต็อกสินค้า (ปรับเป็นจอสี่เหลี่ยมผืนผ้าใหญ่ กว้างขวาง สบายตา) -->
+<div id="productModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[9999] no-print">
+  <div class="bg-[#F5F3EE] p-6 sm:p-8 rounded-3xl max-w-3xl w-full shadow-2xl max-h-[90vh] overflow-y-auto border border-gray-200">
+    
+    <!-- หัวข้อ Pop-up -->
+    <div class="flex justify-between items-center border-b-2 border-[#DEDACB] pb-4 mb-5">
+      <h3 id="pModalTitle" class="font-bold text-2xl font-display text-[#0F5C52]">แก้ไขข้อมูลสินค้า</h3>
+      <button type="button" onclick="closeProductModal()" class="text-gray-400 hover:text-black p-1 transition">
+        <i data-lucide="x" class="w-7 h-7"></i>
+      </button>
+    </div>
 
-      <div>
-        <label class="text-sm font-bold text-[#0284C7] block mb-1">ราคาขายหน้าร้าน (บาท)</label>
-        <input type="number" id="p-price" placeholder="0.00" class="w-full p-2.5 border-2 border-[#0284C7] rounded-xl bg-white text-xl font-bold font-display text-[#0284C7]">
-      </div>
-
-      <!-- 🚫 ปุ่มเปิด-ปิดในเดลิเวอรี -->
-          <div class="bg-red-50 p-4 rounded-2xl border-2 border-red-200 mt-3">
-            <label class="flex items-center gap-2 cursor-pointer font-bold text-sm text-red-900 font-display">
-              <input type="checkbox" id="p-hideInDelivery" class="w-5 h-5 accent-red-600 rounded cursor-pointer">
-              <span>🚫 ซ่อนสินค้านี้ในระบบสั่งออนไลน์ (เดลิเวอรี)</span>
-            </label>
+    <!-- ฟอร์มข้อมูล (จัดโครงสร้างแนวตั้ง ป้องกันโค้ดไหลออกข้าง) -->
+    <div class="space-y-4">
+      
+      <!-- โซน 1: รูปภาพสินค้า + บาร์โค้ด + ชื่อสินค้า -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+        <!-- รูปภาพ -->
+        <div class="sm:col-span-1 space-y-2">
+          <label class="text-sm font-bold block text-gray-700">รูปภาพสินค้า</label>
+          <input type="file" id="p-file" accept="image/*" onchange="previewImageFile(event)" class="w-full text-xs p-2 bg-gray-50 rounded-xl border border-gray-300 cursor-pointer">
+          <div id="imgPreviewBlock" class="hidden mt-2 flex justify-center">
+            <img id="imgPreview" src="" class="w-24 h-24 object-cover rounded-2xl border-2 border-[#DEDACB] shadow-sm">
           </div>
+        </div>
 
-      <div class="bg-amber-50 p-4 rounded-2xl border-2 border-amber-300 space-y-3">
-        <label class="flex items-center gap-2 cursor-pointer font-bold text-sm text-amber-900 font-display">
-          <input type="checkbox" id="p-isSubProduct" onchange="toggleChildProductBox()" class="w-5 h-5 accent-amber-600 rounded cursor-pointer">
-          <span>☑️ เป็นสินค้าแบ่งขาย (ตัดสต็อกสินค้าหลัก)</span>
-        </label>
-
-        <div id="subProductBox" class="hidden space-y-3 pt-2 border-t border-amber-200">
+        <!-- บาร์โค้ด & ชื่อสินค้า -->
+        <div class="sm:col-span-2 space-y-3">
           <div>
             <div class="flex justify-between items-center mb-1">
-              <label class="text-xs font-bold text-amber-900 block">เลือกสินค้าหลัก (ค้นหาคำให้อัตโนมัติ)</label>
-              <span id="parentMatchCount" class="text-[11px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full"></span>
+              <label class="text-sm font-bold text-gray-700">บาร์โค้ด *</label>
+              <button type="button" onclick="generateAutoBarcode()" class="text-xs bg-[#0F5C52] text-white px-2.5 py-1 rounded-lg font-bold hover:opacity-90 transition">
+                ⚡ รันรหัสอัตโนมัติ (KZ-XXXXX)
+              </button>
             </div>
-            <select id="p-parentId" class="w-full p-2.5 border-2 border-amber-400 rounded-xl bg-white text-sm font-bold text-black">
-              <option value="">-- เลือกรายชื่อสินค้าหลัก --</option>
+            <input type="text" id="p-barcode" placeholder="สแกนบาร์โค้ด หรือกดรันรหัสอัตโนมัติ..." class="w-full p-2.5 border-2 rounded-xl bg-gray-50 font-bold text-base text-gray-800 focus:outline-none focus:border-[#0F5C52]">
+          </div>
+
+          <div>
+            <label class="text-sm font-bold block mb-1 text-gray-700">ชื่อสินค้า *</label>
+            <input type="text" id="p-name" oninput="autoDetectCategory(this.value); populateParentProductsDropdown();" placeholder="เช่น ข้าวหน้าหมูสไลด์ เทอริยากิ..." class="w-full p-2.5 border-2 rounded-xl bg-white font-bold text-base text-gray-800 focus:outline-none focus:border-[#0F5C52]">
+          </div>
+        </div>
+      </div>
+
+      <!-- โซน 2: หมวดหมู่สินค้า + ราคาขายหน้าร้าน -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="text-sm font-bold block mb-1 text-gray-700">หมวดหมู่สินค้า *</label>
+          <select id="p-category" onchange="toggleFoodFields()" class="w-full p-2.5 border-2 rounded-xl bg-white font-bold text-base text-[#0F5C52] focus:outline-none cursor-pointer">
+            <option value="ทั่วไป">ทั่วไป / อื่นๆ</option>
+            <option value="อาหารพร้อมทาน/เดลิเวอรี">🛵 อาหารพร้อมทาน / เดลิเวอรี</option>
+            <option value="อาหารจานเดียว">🍲 อาหารจานเดียว</option>
+            <option value="กับข้าว">🥘 กับข้าว</option>
+            <option value="ของทานเล่น">ขนม / ของทานเล่น</option>
+            <option value="กล่องพัสดุ">📦 กล่องพัสดุ / อุปกรณ์แพ็ค</option>
+            <option value="อาหาร/เครื่องดื่ม">🍹 อาหาร / เครื่องดื่ม</option>
+            <option value="เครื่องสำอาง">💄 เครื่องสำอาง / เสริมความงาม</option>
+            <option value="ยา/เวชภัณฑ์">💊 ยา / สินค้าสุขภาพ</option>
+            <option value="เนื้อสัตว์/ของสด">🥩 เนื้อสัตว์ / ของสด</option>
+            <option value="ของใช้">🧹 ของใช้ในบ้าน</option>
+            <option value="สัตว์เลี้ยง">🐾 สินค้าสัตว์เลี้ยง</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="text-sm font-bold block mb-1 text-[#0284C7]">ราคาขายหน้าร้าน (บาท) *</label>
+          <input type="number" id="p-price" placeholder="0.00" class="w-full p-2.5 border-2 border-[#0284C7] rounded-xl bg-white font-bold text-xl text-[#0284C7] focus:outline-none">
+        </div>
+      </div>
+
+      <!-- โซน 3: อาหารพร้อมทาน (คำอธิบายเมนู + ท็อปปิ้ง) -->
+      <div id="foodFieldsSection" class="hidden space-y-3 pt-1">
+        <div>
+          <label class="text-sm font-bold block mb-1 text-gray-700">คำอธิบายเมนู / รายละเอียด</label>
+          <textarea id="p-description" rows="2" placeholder="เช่น ในเมนูมีไข่ออนเซ็น 1 ฟอง..." class="w-full p-2.5 border-2 rounded-xl bg-white font-medium text-sm focus:outline-none focus:border-[#0F5C52]"></textarea>
+        </div>
+
+        <div class="bg-amber-50 p-4 rounded-2xl border-2 border-amber-300 space-y-3">
+          <div class="flex justify-between items-center flex-wrap gap-2">
+            <label class="text-sm font-bold text-amber-900 font-display">🍡 ตัวเลือกเพิ่มเติม / ท็อปปิ้ง (เช่น ไข่ดาว +10฿)</label>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="openCopyOptionsModal()" class="text-xs bg-amber-200 hover:bg-amber-300 text-amber-900 px-2.5 py-1.5 rounded-lg font-bold shadow-sm transition">
+                📋 ดึงตัวเลือกที่เคยพิมพ์ไว้
+              </button>
+              <button type="button" onclick="addOptionRow()" class="text-xs bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1.5 rounded-lg font-bold shadow-sm transition">
+                + เพิ่มตัวเลือก
+              </button>
+            </div>
+          </div>
+          <div id="productOptionsContainer" class="space-y-2 max-h-40 overflow-y-auto pr-1"></div>
+        </div>
+      </div>
+
+      <!-- โซน 4: ตัวเลือกตั้งค่าพิเศษ -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <label class="flex items-center gap-2.5 p-3 rounded-2xl bg-red-50 border border-red-200 cursor-pointer hover:bg-red-100/50 transition">
+          <input type="checkbox" id="p-hideInDelivery" class="w-5 h-5 accent-red-600 rounded cursor-pointer">
+          <span class="text-xs font-bold text-red-900">🚫 ซ่อนสินค้านี้ในระบบสั่งออนไลน์ (เดลิเวอรี)</span>
+        </label>
+
+        <label class="flex items-center gap-2.5 p-3 rounded-2xl bg-amber-50 border border-amber-200 cursor-pointer hover:bg-amber-100/50 transition">
+          <input type="checkbox" id="p-isSubProduct" onchange="toggleChildProductBox()" class="w-5 h-5 accent-amber-600 rounded cursor-pointer">
+          <span class="text-xs font-bold text-amber-900">☑️ เป็นสินค้าแบ่งขาย (ตัดสต็อกสินค้าหลัก)</span>
+        </label>
+      </div>
+
+      <!-- โซน 5: สินค้าแบ่งขาย (แสดงเมื่อติ๊กแบ่งขาย) -->
+      <div id="subProductBox" class="hidden bg-amber-100/70 p-4 rounded-2xl border-2 border-amber-300 space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-bold block mb-1 text-amber-900">เลือกสินค้าหลัก *</label>
+            <select id="p-parentId" class="w-full p-2 border rounded-xl bg-white font-bold text-sm focus:outline-none">
+              <option value="">-- เลือกสินค้าหลัก --</option>
             </select>
           </div>
           <div>
-            <label class="text-xs font-bold text-amber-900 block mb-1">จำนวนหน่วยย่อยใน 1 หน่วยหลัก (เช่น 20 มวน/ซอง หรือ 4 กั๊ก/ขวด)</label>
-            <input type="number" step="0.01" id="p-ratio" placeholder="20" class="w-full p-2 border-2 border-amber-400 rounded-xl bg-white text-lg font-bold font-display text-amber-900">
+            <label class="text-xs font-bold block mb-1 text-amber-900">สัดส่วนการตัดสต็อกหลัก *</label>
+            <input type="number" step="0.01" id="p-ratio" placeholder="เช่น 1 หรือ 0.5" class="w-full p-2 border rounded-xl bg-white font-bold text-sm focus:outline-none">
           </div>
         </div>
       </div>
 
-      <div id="normalStockSection" class="bg-white p-4 rounded-2xl border-2 border-[#DEDACB] space-y-3">
-        <div class="flex justify-between items-center">
-          <span id="batchTitleText" class="text-sm font-bold text-[#0F5C52]">📦 จัดการสต็อกและต้นทุน</span>
-          <span id="currentStockBadgeText" class="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full font-bold"></span>
+      <!-- โซน 6: สต็อกและต้นทุน -->
+      <div id="normalStockSection" class="bg-white p-4 rounded-2xl border-2 border-gray-200 space-y-3 shadow-sm">
+        <div class="flex justify-between items-center border-b pb-2">
+          <span id="batchTitleText" class="text-sm font-bold text-gray-800">📦 ใส่สต็อกและต้นทุนแรกเริ่ม</span>
+          <span id="currentStockBadgeText" class="text-xs font-bold text-[#0F5C52]"></span>
         </div>
-
+        
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label id="lblStockQty" class="text-xs font-bold text-[#1C2321] block mb-1">จำนวนสต็อกรวม</label>
-            <input type="number" id="p-addQty" placeholder="0" class="w-full p-2.5 border-2 border-[#DEDACB] rounded-xl bg-[#F5F3EE] text-xl font-bold font-display">
+            <label id="lblStockQty" class="text-xs font-bold block mb-1 text-gray-600">จำนวนสต็อกแรกเริ่ม</label>
+            <input type="number" id="p-addQty" placeholder="0" class="w-full p-2.5 border rounded-xl bg-gray-50 font-bold text-base focus:outline-none focus:border-[#0F5C52]">
           </div>
           <div>
-            <label id="lblStockCost" class="text-xs font-bold text-[#1C2321] block mb-1">ต้นทุนต่อชิ้น (บาท)</label>
-            <input type="number" step="0.01" id="p-addCost" placeholder="0.00" class="w-full p-2.5 border-2 border-[#DEDACB] rounded-xl bg-[#F5F3EE] text-xl font-bold font-display">
+            <label id="lblStockCost" class="text-xs font-bold block mb-1 text-gray-600">ต้นทุนต่อชิ้น (บาท)</label>
+            <input type="number" step="0.01" id="p-addCost" placeholder="0.00" class="w-full p-2.5 border rounded-xl bg-gray-50 font-bold text-base focus:outline-none focus:border-[#0F5C52]">
           </div>
         </div>
 
+        <!-- รายการลอตสต็อกย่อย (ถ้ามี) -->
         <div id="batchHistoryBox" class="hidden pt-2 border-t space-y-1">
-          <div class="text-xs font-bold text-[#6B6A61]">แก้ไขจำนวนและต้นทุนแยกรายลอต:</div>
+          <div class="text-xs font-bold text-gray-500 mb-1">แก้ไขจำนวนและต้นทุนแยกรายลอต:</div>
           <div id="batchHistoryList" class="space-y-1.5 max-h-40 overflow-y-auto pr-1"></div>
         </div>
       </div>
 
-      <button onclick="saveProduct()" class="w-full bg-[#0F5C52] text-white py-3.5 rounded-2xl font-bold text-lg font-display mt-2 shadow-md">บันทึกข้อมูลสินค้า</button>
+      <!-- ปุ่มบันทึก -->
+      <div class="pt-2">
+        <button type="button" onclick="saveProduct()" class="w-full bg-[#0F5C52] hover:bg-[#0b4840] text-white py-3.5 rounded-2xl font-bold font-display text-lg shadow-lg transition transform active:scale-[0.99]">
+          💾 บันทึกข้อมูลสินค้า
+        </button>
+      </div>
+
     </div>
   </div>
+</div>
 
   <script>
   let currentCardPhone = "";
+
+  function openCopyOptionsModal() {
+  const listContainer = document.getElementById('copyOptionsList');
+  if (!listContainer) return;
+
+  const allUniqueOptions = [];
+  const optionMap = new Set();
+
+  if (typeof products !== 'undefined' && Array.isArray(products)) {
+    products.forEach(p => {
+      if (p.options && p.options.length > 0) {
+        p.options.forEach(opt => {
+          const optName = (opt.name || '').trim();
+          const optPrice = Number(opt.price) || 0;
+          const key = `${optName.toLowerCase()}_${optPrice}`;
+
+          if (optName && !optionMap.has(key)) {
+            optionMap.add(key);
+            allUniqueOptions.push({ name: optName, price: optPrice, fromProduct: p.name });
+          }
+        });
+      }
+    });
+  }
+
+  if (allUniqueOptions.length === 0) {
+    listContainer.innerHTML = `<p class="py-8 text-center text-sm text-gray-400 font-bold">ยังไม่มีประวัติการพิมพ์ตัวเลือกในเมนูอื่นเลยครับ<br/>ลองพิมพ์เพิ่มแล้วกดบันทึกในเมนูแรกก่อนได้เลย</p>`;
+  } else {
+    listContainer.innerHTML = allUniqueOptions.map((opt) => `
+      <label class="flex items-center justify-between p-2.5 rounded-xl bg-amber-50/50 border border-amber-200 cursor-pointer hover:bg-amber-100/60 transition">
+        <div class="flex items-center gap-2.5">
+          <input type="checkbox" class="copyOptCheck w-5 h-5 accent-amber-600 rounded cursor-pointer" data-name="${opt.name}" data-price="${opt.price}">
+          <div>
+            <span class="text-sm font-bold text-gray-800">${opt.name}</span>
+            <span class="text-xs font-mono font-bold text-[#0F5C52] ml-1">(+฿${opt.price})</span>
+          </div>
+        </div>
+        <span class="text-[10px] text-gray-400 font-semibold truncate max-w-[110px]" title="จากเมนู: ${opt.fromProduct}">จาก: ${opt.fromProduct}</span>
+      </label>
+    `).join('');
+  }
+
+  document.getElementById('copyOptionsModal').classList.remove('hidden');
+}
+
+function closeCopyOptionsModal() {
+  const modal = document.getElementById('copyOptionsModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function confirmImportOptions() {
+  const checkedBoxes = document.querySelectorAll('.copyOptCheck:checked');
+  if (checkedBoxes.length === 0) {
+    return alert('กรุณาติ๊กเลือกตัวเลือกอย่างน้อย 1 รายการครับ');
+  }
+
+  checkedBoxes.forEach(cb => {
+    const name = cb.dataset.name;
+    const price = cb.dataset.price;
+    addOptionRow(name, price);
+  });
+
+  closeCopyOptionsModal();
+}
+
+let currentSelectingProduct = null;
+
+// 1. ปรับฟังก์ชัน addToCart ให้เช็กว่ามีตัวเลือกไหม
+function addToCart(id) {
+  const p = products.find(i => i.id === id);
+  if (!p) return;
+
+  // เช็กสต็อกสินค้า
+  if (p.isSubProduct && p.parentId) {
+    const parent = products.find(prod => prod.id === p.parentId);
+    if (!parent || parent.stock <= 0) return alert('สินค้าตัวหลักในสต็อกหมดแล้ว');
+  } else if (p.stock <= 0) {
+    return alert('สินค้าหมดสต็อก');
+  }
+
+  // 🛵 ถ้าสินค้ามี options ให้เปิด Modal เลือกตัวเลือกก่อน
+  if (p.options && p.options.length > 0) {
+    openOptionSelectModal(p);
+  } else {
+    // ถ้าไม่มีตัวเลือก ให้ลงตะกร้าตามปกติ
+    pushToCartDirect(p, p.price, p.name);
+  }
+}
+
+// 2. เปิด Pop-up แสดงตัวเลือกฟรี (Radio) vs ตัวเลือกคิดเงิน (Checkbox)
+function openOptionSelectModal(p) {
+  currentSelectingProduct = p;
+  document.getElementById('optModalProdName').innerText = p.name;
+  
+  const freeOpts = p.options.filter(o => Number(o.price) === 0);
+  const paidOpts = p.options.filter(o => Number(o.price) > 0);
+
+  let html = '';
+
+  // 🔘 กลุ่มฟรี (0 บาท) -> บังคับเลือก 1 อย่างด้วย Radio Button
+  if (freeOpts.length > 0) {
+    html += `
+      <div class="bg-amber-50 p-3.5 rounded-2xl border border-amber-200 space-y-2">
+        <div class="text-xs font-bold text-amber-900 font-display">🥣 เลือกน้ำจิ้มฟรี (เลือกได้ 1 อย่าง) *</div>
+        <div class="space-y-1.5">
+          ${freeOpts.map((o, idx) => `
+            <label class="flex items-center justify-between p-2.5 rounded-xl bg-white border cursor-pointer hover:bg-amber-100/50 transition">
+              <span class="text-sm font-bold text-gray-800">${o.name} <span class="text-xs text-emerald-700">(ฟรี)</span></span>
+              <input type="radio" name="freeOptionRadio" value="${o.name}" ${idx === 0 ? 'checked' : ''} class="w-5 h-5 accent-[#0F5C52]">
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  // ☑️ กลุ่มคิดเงิน (> 0 บาท) -> เลือกกี่อย่างก็ได้ด้วย Checkbox
+  if (paidOpts.length > 0) {
+    html += `
+      <div class="bg-gray-50 p-3.5 rounded-2xl border space-y-2">
+        <div class="text-xs font-bold text-gray-700 font-display">🍡 สั่งน้ำจิ้มเพิ่ม / ท็อปปิ้ง (เลือกเพิ่มได้)</div>
+        <div class="space-y-1.5">
+          ${paidOpts.map(o => `
+            <label class="flex items-center justify-between p-2.5 rounded-xl bg-white border cursor-pointer hover:bg-gray-100 transition">
+              <span class="text-sm font-bold text-gray-800">${o.name} <span class="text-xs text-[#0F5C52] font-mono">(+฿${o.price})</span></span>
+              <input type="checkbox" class="paidOptionCheck w-5 h-5 accent-[#0F5C52]" data-name="${o.name}" data-price="${o.price}">
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  document.getElementById('optModalContent').innerHTML = html;
+  document.getElementById('productOptionSelectModal').classList.remove('hidden');
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function closeOptionSelectModal() {
+  document.getElementById('productOptionSelectModal').classList.add('hidden');
+  currentSelectingProduct = null;
+}
+
+// 3. ยืนยันการเลือก และคำนวณราคารวมตัวเลือกเข้าตะกร้า
+function confirmAddToCartWithOptions() {
+  if (!currentSelectingProduct) return;
+
+  const p = currentSelectingProduct;
+  let finalPrice = p.price;
+  let selectedNames = [];
+
+  // ดึงค่าน้ำจิ้มฟรีที่เลือก (Radio)
+  const selectedRadio = document.querySelector('input[name="freeOptionRadio"]:checked');
+  if (selectedRadio) {
+    selectedNames.push(selectedRadio.value);
+  }
+
+  // ดึงค่าท็อปปิ้งคิดเงินที่ติ๊กเลือก (Checkbox)
+  const paidChecks = document.querySelectorAll('.paidOptionCheck:checked');
+  paidChecks.forEach(cb => {
+    const addPrice = Number(cb.dataset.price) || 0;
+    finalPrice += addPrice;
+    selectedNames.push(`${cb.dataset.name} (+฿${addPrice})`);
+  });
+
+  // สร้างชื่อสินค้าลงตะกร้าพร้อมวงเล็บตัวเลือก
+  const displayName = selectedNames.length > 0 
+    ? `${p.name} (${selectedNames.join(', ')})` 
+    : p.name;
+
+  pushToCartDirect(p, finalPrice, displayName);
+  closeOptionSelectModal();
+}
+
+// 4. บันทึกลงตะกร้า
+function pushToCartDirect(p, price, name) {
+  const cartKey = p.id + '_' + name; // แยกแถวในตะกร้าหากเลือกน้ำจิ้มต่างกัน
+  const idx = cart.findIndex(c => c.cartKey === cartKey);
+  
+  if (idx >= 0) {
+    cart[idx].qty++;
+  } else {
+    cart.push({
+      cartKey: cartKey,
+      productId: p.id,
+      name: name,
+      price: price,
+      cost: p.cost,
+      qty: 1
+    });
+  }
+  renderCart();
+  focusScanInput();
+}
+
+// 🛵 ฟังก์ชันเปิด-ปิด โซนคำอธิบายเมนูและท็อปปิ้งอัตโนมัติ
+function toggleFoodFields() {
+  const catVal = (document.getElementById('p-category')?.value || '').trim();
+  const foodSection = document.getElementById('foodFieldsSection');
+  if (!foodSection) return;
+
+  // เปิดช่องท็อปปิ้งเมื่อเลือกหมวดเดลิเวอรี, อาหารจานเดียว, กับข้าว หรือ ของทานเล่น
+  if (
+    catVal.includes('อาหารพร้อมทาน') || 
+    catVal.includes('เดลิเวอรี') || 
+    catVal.includes('อาหารจานเดียว') || 
+    catVal.includes('กับข้าว') || 
+    catVal.includes('ของทานเล่น')
+  ) {
+    foodSection.classList.remove('hidden');
+  } else {
+    foodSection.classList.add('hidden');
+  }
+}
+
+// 🍡 แทรกวางตรงนี้ได้เลย
+function addOptionRow(name = '', price = '') {
+  const container = document.getElementById('productOptionsContainer');
+  const rowId = 'opt_row_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+
+  const div = document.createElement('div');
+  div.id = rowId;
+  div.className = "flex gap-2 items-center bg-white p-2 rounded-xl border border-amber-200 shadow-sm";
+  div.innerHTML = `
+    <input type="text" placeholder="ชื่อตัวเลือก (เช่น ไข่ออนเซ็น, เพิ่มข้าว)..." value="${name}" class="opt-name flex-1 p-1.5 border rounded-lg text-sm font-bold focus:outline-none focus:border-[#0F5C52]">
+    <input type="number" step="0.5" placeholder="+ราคา" value="${price}" class="opt-price w-24 p-1.5 border rounded-lg text-sm font-bold font-display text-right text-[#0F5C52] focus:outline-none">
+    <span class="text-xs font-bold text-gray-500">บาท</span>
+    <button type="button" onclick="document.getElementById('${rowId}').remove();" class="text-red-500 hover:text-red-700 p-1 font-bold">✕</button>
+  `;
+  container.appendChild(div);
+}
 
   let membersList = [];
 let unsubscribeMembers = null;
@@ -2571,26 +2856,31 @@ function handleSearchInput() {
     }
 
     function autoDetectCategory(name) {
-      if(!name) return;
-      const n = name.toLowerCase();
-      const catSelect = document.getElementById('p-category');
+  if(!name) return;
+  const n = name.toLowerCase();
+  const catSelect = document.getElementById('p-category');
 
-      if (/แก๊สโซฮอล์|แก๊ส|แก๊สโซฮอล|แกสโซฮอล|เบนซิน|ดีเซล|น้ำมันเครื่อง|ก๊าซ|เชื้อเพลิง|E20|E85|91|95/.test(n)) {
-        catSelect.value = 'เชื้อเพลิง/พลังงาน';
-      } else if (/ลิป|แป้ง|ครีม|เซรั่ม|สบู่|แชมพู|โฟม|โลชั่น|รองพื้น|มาสคาร่า|บรัชออน|น้ำหอม|เครื่องสำอาง/.test(n)) {
-        catSelect.value = 'เครื่องสำอาง';
-      } else if (/ยา|พารา|แก้ปวด|ยาน้ำ|ยานวด|พลาสเตอร์|เวชภัณฑ์|วิตามิน|แอลกอฮอล์/.test(n)) {
-        catSelect.value = 'ยา/เวชภัณฑ์';
-      } else if (/น้ำ|โค้ก|เป๊ปซี่|นม|ขนม|ขนมปัง|กาแฟ|ชา|ชาเขียว|มาม่า|บะหมี่|ข้าว|ปลากระป๋อง|เครื่องดื่ม/.test(n)) {
-        catSelect.value = 'อาหาร/เครื่องดื่ม';
-      } else if (/หมู|ไก่|เนื้อ|กุ้ง|ปลา|ไข่|ผัก|ของสด/.test(n)) {
-        catSelect.value = 'เนื้อสัตว์/ของสด';
-      } else if (/หมา|สุนัข|แมว|อาหารหมา|อาหารแมว|ทรายแมว|สัตว์เลี้ยง/.test(n)) {
-        catSelect.value = 'สัตว์เลี้ยง';
-      } else if (/แฟ้บ|ผงซักฟอก|น้ำยา|ถุงขยะ|กระดาษทิชชู่|จาน|ชาม|ของใช้/.test(n)) {
-        catSelect.value = 'ของใช้';
-      }
-    }
+  if (/กะเพรา|ข้าวผัด|ต้มยำ|แกง|ผัด|ยำ|ส้มตำ|ทอด|ก๋วยเตี๋ยว|ราดหน้า|ผัดซีอิ๊ว|สเต๊ก|เบอร์เกอร์|พร้อมทาน|ชุดอาหาร|ข้าวกล่อง/.test(n)) {
+    catSelect.value = 'อาหารพร้อมทาน/เดลิเวอรี';
+  } else if (/แก๊สโซฮอล์|แก๊ส|เบนซิน|ดีเซล|น้ำมันเครื่อง|E20|E85|91|95/.test(n)) {
+    catSelect.value = 'เชื้อเพลิง/พลังงาน';
+  } else if (/ลิป|แป้ง|ครีม|เซรั่ม|สบู่|แชมพู|โฟม|โลชั่น/.test(n)) {
+    catSelect.value = 'เครื่องสำอาง';
+  } else if (/ยา|พารา|แก้ปวด|ยาน้ำ|เวชภัณฑ์|วิตามิน/.test(n)) {
+    catSelect.value = 'ยา/เวชภัณฑ์';
+  } else if (/น้ำ|โค้ก|เป๊ปซี่|นม|ขนม|ขนมปัง|กาแฟ|ชา|มาม่า|ข้าวสาร|ปลากระป๋อง/.test(n)) {
+    catSelect.value = 'อาหาร/เครื่องดื่ม';
+  } else if (/หมู|ไก่|เนื้อ|กุ้ง|ปลา|ไข่|ผัก|ของสด/.test(n)) {
+    catSelect.value = 'เนื้อสัตว์/ของสด';
+  } else if (/หมา|สุนัข|แมว|อาหารหมา|อาหารแมว/.test(n)) {
+    catSelect.value = 'สัตว์เลี้ยง';
+  } else if (/แฟ้บ|ผงซักฟอก|น้ำยา|ถุงขยะ|กระดาษทิชชู่/.test(n)) {
+    catSelect.value = 'ของใช้';
+  }
+
+  // 🟢 เพิ่มบรรทัดนี้ไว้ล่างสุด เพื่อสั่งเปิด/ซ่อนช่องท็อปปิ้งทันทีที่จับคำได้
+  toggleFoodFields();
+}
 
     function compressAndResizeImage(file, callback) {
       const reader = new FileReader();
@@ -3283,6 +3573,7 @@ function handleSearchInput() {
     function updateCategoryDropdowns() {
   const masterOrder = [
     'ทั้งหมด',
+    'อาหารพร้อมทาน/เดลิเวอรี',
     'กล่องพัสดุ',
     'ทั่วไป',
     'อาหาร/เครื่องดื่ม',
@@ -3468,7 +3759,9 @@ function setPosCategory(cat) {
 
         return `
           <button onclick="addToCart('${p.id}')" class="text-left bg-[#F5F3EE] p-3.5 rounded-2xl border-2 border-[#DEDACB] hover:border-[#0F5C52] transition flex flex-col items-center justify-between relative shadow-sm">
-            <span class="absolute top-2.5 left-2.5 bg-[#1C2321]/80 text-white text-xs px-2.5 py-0.5 rounded-full font-bold z-10">${p.category || 'ทั่วไป'}</span>
+            <span class="absolute top-2.5 left-2.5 text-xs px-2.5 py-0.5 rounded-full font-bold z-10 ${p.category === 'อาหารพร้อมทาน/เดลิเวอรี' ? 'bg-orange-500 text-white font-display shadow-sm' : 'bg-[#1C2321]/80 text-white'}">
+  ${p.category === 'อาหารพร้อมทาน/เดลิเวอรี' ? '🛵 พร้อมทาน' : (p.category || 'ทั่วไป')}
+</span>
             ${p.isSubProduct ? `<span class="absolute top-2.5 right-2.5 bg-amber-600 text-white text-xs px-2 py-0.5 rounded-full font-bold z-10">แบ่งขาย</span>` : ''}
             
             <div class="w-full aspect-square bg-white rounded-xl mb-2.5 overflow-hidden flex items-center justify-center border border-[#DEDACB] relative">
@@ -4441,31 +4734,35 @@ function toggleChildProductBox() {
 }
 
     function openAddProductModal() {
-      editingProductId = null;
-      activeEditingProductObj = null;
-      uploadedBase64Image = "";
-      isReStockMode = false;
-      document.getElementById('pModalTitle').innerText = 'เพิ่มสินค้าใหม่';
-      ['p-barcode','p-name','p-price','p-addQty','p-addCost','p-file','p-ratio','p-parentId'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-      });
-      document.getElementById('p-category').value = 'ทั่วไป';
-      document.getElementById('p-isSubProduct').checked = false;
-      document.getElementById('p-hideInDelivery').checked = false;
-      toggleChildProductBox();
+  editingProductId = null;
+  activeEditingProductObj = null;
+  uploadedBase64Image = "";
+  isReStockMode = false;
+  document.getElementById('pModalTitle').innerText = 'เพิ่มสินค้าใหม่';
+  ['p-barcode','p-name','p-price','p-addQty','p-addCost','p-file','p-ratio','p-parentId'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('p-description').value = '';
+  document.getElementById('productOptionsContainer').innerHTML = '';
+  document.getElementById('p-category').value = 'ทั่วไป';
+  document.getElementById('p-isSubProduct').checked = false;
+  document.getElementById('p-hideInDelivery').checked = false;
+  toggleChildProductBox();
+  
+  // 🟢 เพิ่มบรรทัดนี้เพื่อสั่งเช็กเปิด/ซ่อนโซนท็อปปิ้งอาหาร
+  toggleFoodFields();
 
-      document.getElementById('imgPreviewBlock').classList.add('hidden');
-      document.getElementById('batchHistoryBox').classList.add('hidden');
-      document.getElementById('currentStockBadgeText').innerText = '';
+  document.getElementById('imgPreviewBlock').classList.add('hidden');
+  document.getElementById('batchHistoryBox').classList.add('hidden');
+  document.getElementById('currentStockBadgeText').innerText = '';
 
-      document.getElementById('batchTitleText').innerText = "📦 ใส่สต็อกและต้นทุนแรกเริ่ม";
-      document.getElementById('lblStockQty').innerText = "จำนวนสต็อกแรกเริ่ม";
-      document.getElementById('lblStockCost').innerText = "ต้นทุนต่อชิ้น (บาท)";
+  document.getElementById('batchTitleText').innerText = "📦 ใส่สต็อกและต้นทุนแรกเริ่ม";
+  document.getElementById('lblStockQty').innerText = "จำนวนสต็อกแรกเริ่ม";
+  document.getElementById('lblStockCost').innerText = "ต้นทุนต่อชิ้น (บาท)";
 
-      document.getElementById('productModal').classList.remove('hidden');
-    }
-
+  document.getElementById('productModal').classList.remove('hidden');
+}
     // 🔄 คำนวณยอดรวมใหม่เมื่อมีการพิมพ์แก้ตัวเลขในช่องลอตย่อย
     function recalcBatchTotal() {
       const qtyInputs = document.querySelectorAll('.edit-batch-qty');
@@ -4477,81 +4774,85 @@ function toggleChildProductBox() {
     }
 
     function openEditProductModal(id, isReStock = false) {
-      editingProductId = id;
-      isReStockMode = isReStock;
-      const p = products.find(i => i.id === id);
-      activeEditingProductObj = p;
-      uploadedBase64Image = p.imageUrl || "";
+  editingProductId = id;
+  isReStockMode = isReStock;
+  const p = products.find(i => i.id === id);
+  activeEditingProductObj = p;
+  uploadedBase64Image = p.imageUrl || "";
 
-      document.getElementById('p-barcode').value = p.barcode || '';
-      document.getElementById('p-name').value = p.name || '';
-      document.getElementById('p-category').value = p.category || 'ทั่วไป';
-      document.getElementById('p-price').value = p.price || '';
-      
-      const isSub = !!p.isSubProduct;
-      document.getElementById('p-isSubProduct').checked = isSub;
-      toggleChildProductBox();
-      document.getElementById('p-hideInDelivery').checked = !!p.hideInDelivery;
+  document.getElementById('p-barcode').value = p.barcode || '';
+  document.getElementById('p-name').value = p.name || '';
+  document.getElementById('p-category').value = p.category || 'ทั่วไป';
+  document.getElementById('p-price').value = p.price || '';
 
-      if (isSub) {
-        document.getElementById('p-parentId').value = p.parentId || '';
-        document.getElementById('p-ratio').value = p.ratio || '';
-      }
+  // 🟢 ดึงคำอธิบายและท็อปปิ้งเดิมมาแสดง
+  document.getElementById('p-description').value = p.description || '';
+  const optionsContainer = document.getElementById('productOptionsContainer');
+  optionsContainer.innerHTML = '';
+  if (p.options && p.options.length > 0) {
+    p.options.forEach(opt => addOptionRow(opt.name, opt.price));
+  }
 
-      if (isReStock) {
-        document.getElementById('pModalTitle').innerText = '⚡ เติมสต็อกสินค้าลอตใหม่';
-        document.getElementById('batchTitleText').innerText = "⚡ เติมสต็อกลอตใหม่";
-        document.getElementById('lblStockQty').innerText = "จำนวนที่นำมาเติมเพิ่ม";
-        document.getElementById('lblStockCost').innerText = "ต้นทุนต่อชิ้นรอบนี้ (บาท)";
-        document.getElementById('p-addQty').value = '';
-        document.getElementById('p-addCost').value = p.cost || '';
-        document.getElementById('currentStockBadgeText').innerText = `ของเดิมเหลือ ${fmtStk(p.stock)} ชิ้น`;
-      } else {
-        document.getElementById('pModalTitle').innerText = '✏️ แก้ไขข้อมูลสินค้า';
-        document.getElementById('batchTitleText').innerText = "📦 จัดการสต็อกและต้นทุน";
-        document.getElementById('lblStockQty').innerText = "จำนวนสต็อกรวม";
-        document.getElementById('lblStockCost').innerText = "ต้นทุนล่าสุด (บาท)";
-        document.getElementById('p-addQty').value = fmtStk(p.stock);
-        document.getElementById('p-addCost').value = p.cost || '';
-        document.getElementById('currentStockBadgeText').innerText = '';
-      }
+  toggleFoodFields(); // เช็กเปิด/ซ่อนช่องอาหาร
 
-      if (uploadedBase64Image) {
-        document.getElementById('imgPreview').src = uploadedBase64Image;
-        document.getElementById('imgPreviewBlock').classList.remove('hidden');
-      } else {
-        document.getElementById('imgPreviewBlock').classList.add('hidden');
-      }
+  const isSub = !!p.isSubProduct;
+  document.getElementById('p-isSubProduct').checked = isSub;
+  toggleChildProductBox();
+  document.getElementById('p-hideInDelivery').checked = !!p.hideInDelivery;
 
-      // 🔄 ส่วนสร้างช่องกรอกแก้ไขข้อมูลลอตย่อย
-      const batches = p.batches || [];
-      const batchContainer = document.getElementById('batchHistoryList');
-      if (batches.length > 0 && !isReStock) {
-        batchContainer.innerHTML = batches.map((b, idx) => `
-          <div class="flex items-center gap-2 bg-white p-2 rounded-xl border border-gray-300 shadow-sm">
-            <span class="text-xs font-bold w-12 text-[#0F5C52]">ลอต ${idx+1}:</span>
-            <div class="flex-1 flex gap-1.5 items-center">
-              <input type="number" value="${fmtStk(b.qty)}" oninput="recalcBatchTotal()" class="edit-batch-qty w-full p-1.5 border border-gray-300 rounded-lg text-center font-bold text-sm focus:outline-none focus:border-[#0F5C52]" placeholder="จำนวน">
-              <span class="text-xs text-gray-500 font-bold">ชิ้น</span>
-              <input type="number" step="0.01" value="${b.cost}" class="edit-batch-cost w-full p-1.5 border border-gray-300 rounded-lg text-right font-bold text-sm text-[#0F5C52] focus:outline-none focus:border-[#0F5C52]" placeholder="ต้นทุน">
-              <span class="text-xs text-gray-500 font-bold">฿</span>
-            </div>
-            <button type="button" onclick="this.parentElement.remove(); recalcBatchTotal();" class="text-red-500 hover:text-red-700 p-1 font-bold text-base" title="ลบลอตนี้">✕</button>
-          </div>
-        `).join('');
-        document.getElementById('batchHistoryBox').classList.remove('hidden');
-      } else {
-        batchContainer.innerHTML = '';
-        document.getElementById('batchHistoryBox').classList.add('hidden');
-      }
+  if (isSub) {
+    document.getElementById('p-parentId').value = p.parentId || '';
+    document.getElementById('p-ratio').value = p.ratio || '';
+  }
 
-      document.getElementById('productModal').classList.remove('hidden');
-    }
+  if (isReStock) {
+    document.getElementById('pModalTitle').innerText = '⚡ เติมสต็อกสินค้าลอตใหม่';
+    document.getElementById('batchTitleText').innerText = "⚡ เติมสต็อกลอตใหม่";
+    document.getElementById('lblStockQty').innerText = "จำนวนที่นำมาเติมเพิ่ม";
+    document.getElementById('lblStockCost').innerText = "ต้นทุนต่อชิ้นรอบนี้ (บาท)";
+    document.getElementById('p-addQty').value = '';
+    document.getElementById('p-addCost').value = p.cost || '';
+    document.getElementById('currentStockBadgeText').innerText = `ของเดิมเหลือ ${fmtStk(p.stock)} ชิ้น`;
+  } else {
+    document.getElementById('pModalTitle').innerText = '✏️ แก้ไขข้อมูลสินค้า';
+    document.getElementById('batchTitleText').innerText = "📦 จัดการสต็อกและต้นทุน";
+    document.getElementById('lblStockQty').innerText = "จำนวนสต็อกรวม";
+    document.getElementById('lblStockCost').innerText = "ต้นทุนล่าสุด (บาท)";
+    document.getElementById('p-addQty').value = fmtStk(p.stock);
+    document.getElementById('p-addCost').value = p.cost || '';
+    document.getElementById('currentStockBadgeText').innerText = '';
+  }
 
-    function closeProductModal() { 
-      document.getElementById('productModal').classList.add('hidden'); 
-      focusScanInput();
-    }
+  if (uploadedBase64Image) {
+    document.getElementById('imgPreview').src = uploadedBase64Image;
+    document.getElementById('imgPreviewBlock').classList.remove('hidden');
+  } else {
+    document.getElementById('imgPreviewBlock').classList.add('hidden');
+  }
+
+  const batches = p.batches || [];
+  const batchContainer = document.getElementById('batchHistoryList');
+  if (batches.length > 0 && !isReStock) {
+    batchContainer.innerHTML = batches.map((b, idx) => `
+      <div class="flex items-center gap-2 bg-white p-2 rounded-xl border border-gray-300 shadow-sm">
+        <span class="text-xs font-bold w-12 text-[#0F5C52]">ลอต ${idx+1}:</span>
+        <div class="flex-1 flex gap-1.5 items-center">
+          <input type="number" value="${fmtStk(b.qty)}" oninput="recalcBatchTotal()" class="edit-batch-qty w-full p-1.5 border border-gray-300 rounded-lg text-center font-bold text-sm focus:outline-none focus:border-[#0F5C52]" placeholder="จำนวน">
+          <span class="text-xs text-gray-500 font-bold">ชิ้น</span>
+          <input type="number" step="0.01" value="${b.cost}" class="edit-batch-cost w-full p-1.5 border border-gray-300 rounded-lg text-right font-bold text-sm text-[#0F5C52] focus:outline-none focus:border-[#0F5C52]" placeholder="ต้นทุน">
+          <span class="text-xs text-gray-500 font-bold">฿</span>
+        </div>
+        <button type="button" onclick="this.parentElement.remove(); recalcBatchTotal();" class="text-red-500 hover:text-red-700 p-1 font-bold text-base" title="ลบลอตนี้">✕</button>
+      </div>
+    `).join('');
+    document.getElementById('batchHistoryBox').classList.remove('hidden');
+  } else {
+    batchContainer.innerHTML = '';
+    document.getElementById('batchHistoryBox').classList.add('hidden');
+  }
+
+  document.getElementById('productModal').classList.remove('hidden');
+}
 
 // 🔄 ฟังก์ชันกลางสำหรับคืนสินค้ากลับเข้าสต็อกและคืนลงลอตย่อยให้อัตโนมัติ
 function refundStockToProduct(productId, qtyToRefund) {
@@ -4596,100 +4897,121 @@ function refundStockToProduct(productId, qtyToRefund) {
   });
 }
 
-    function saveProduct() {
-      const barcode = document.getElementById('p-barcode').value.trim();
-      const name = document.getElementById('p-name').value.trim();
-      const category = document.getElementById('p-category').value;
-      const price = Number(document.getElementById('p-price').value);
+    // 🟢 1. ฟังก์ชันปิด Pop-up แบบปลอดภัย (กด X แล้วปิดหน้าต่างแน่ 100%)
+function closeProductModal() { 
+  const modal = document.getElementById('productModal');
+  if (modal) modal.classList.add('hidden'); 
+  try {
+    focusScanInput();
+  } catch(e) {
+    console.error(e);
+  }
+}
 
-      const isSubProduct = document.getElementById('p-isSubProduct').checked;
-      const parentId = document.getElementById('p-parentId').value;
-      const ratio = Number(document.getElementById('p-ratio').value) || 1;
-      const hideInDelivery = document.getElementById('p-hideInDelivery').checked;
+// 🟢 2. ฟังก์ชันบันทึกสินค้า ป้องกันระบบค้างและรองรับข้อมูลทุกประเภท
+function saveProduct() {
+  try {
+    const barcode = (document.getElementById('p-barcode')?.value || '').trim();
+    const name = (document.getElementById('p-name')?.value || '').trim();
+    const category = (document.getElementById('p-category')?.value || '').trim() || 'ทั่วไป';
+    const description = (document.getElementById('p-description')?.value || '').trim();
+    const price = Number(document.getElementById('p-price')?.value) || 0;
 
-      const addQty = Number(document.getElementById('p-addQty').value) || 0;
-      const addCost = Number(document.getElementById('p-addCost').value) || 0;
-
-      if (!name || isNaN(price)) return alert('กรุณาระบุชื่อสินค้าและราคาขายให้ถูกต้อง');
-      if (isSubProduct && (!parentId || ratio <= 0)) {
-        return alert('กรุณาเลือกรายชื่อสินค้าหลัก และระบุจำนวนสัดส่วนการแบ่งขายให้ถูกต้องครับ');
+    // 🍡 ดึงรายการตัวเลือกเพิ่มเติม / ท็อปปิ้ง
+    const optNameInputs = document.querySelectorAll('.opt-name');
+    const optPriceInputs = document.querySelectorAll('.opt-price');
+    const options = [];
+    optNameInputs.forEach((input, i) => {
+      const optName = (input.value || '').trim();
+      const optPrice = Number(optPriceInputs[i]?.value) || 0;
+      if (optName) {
+        options.push({ name: optName, price: optPrice });
       }
+    });
 
-      if (editingProductId && activeEditingProductObj) {
-        let batches = [];
+    const isSubProduct = document.getElementById('p-isSubProduct')?.checked || false;
+    const parentId = document.getElementById('p-parentId')?.value || null;
+    const ratio = Number(document.getElementById('p-ratio')?.value) || 1;
+    const hideInDelivery = document.getElementById('p-hideInDelivery')?.checked || false;
+    const addQty = Number(document.getElementById('p-addQty')?.value) || 0;
+    const addCost = Number(document.getElementById('p-addCost')?.value) || 0;
 
-        if (isReStockMode) {
-          // โหมดเติมสต็อกลอตใหม่
-          batches = activeEditingProductObj.batches ? [...activeEditingProductObj.batches] : [];
-          if (addQty > 0) {
-            batches.push({ qty: addQty, cost: addCost, ts: Date.now() });
-          }
-        } else {
-          // โหมดแก้ไข: ดึงข้อมูลจากช่อง Input แต่ละลอตที่ผู้ใช้กรอก
-          const qtyInputs = document.querySelectorAll('.edit-batch-qty');
-          const costInputs = document.querySelectorAll('.edit-batch-cost');
+    if (!name || isNaN(price)) {
+      return alert('กรุณาระบุชื่อสินค้าและราคาขายให้ถูกต้อง');
+    }
+    if (isSubProduct && (!parentId || ratio <= 0)) {
+      return alert('กรุณาเลือกรายชื่อสินค้าหลัก และระบุจำนวนสัดส่วนการแบ่งขายให้ถูกต้องครับ');
+    }
 
-          if (qtyInputs.length > 0) {
-            qtyInputs.forEach((input, idx) => {
-              const q = Number(input.value) || 0;
-              const c = Number(costInputs[idx].value) || 0;
-              if (q > 0) {
-                const origTs = (activeEditingProductObj.batches && activeEditingProductObj.batches[idx]) 
-                               ? activeEditingProductObj.batches[idx].ts : Date.now();
-                batches.push({ qty: q, cost: c, ts: origTs });
-              }
-            });
-          } else {
-            // กรณีไม่มีรายการลอตเดิม ให้สร้างลอตใหม่จากยอดรวม
-            if (addQty > 0) {
-              batches = [{ qty: addQty, cost: addCost, ts: Date.now() }];
-            }
-          }
-        }
+    // ป้องกันค่า undefined ส่งไป Firebase
+    const safeImageUrl = (typeof uploadedBase64Image !== 'undefined' && uploadedBase64Image) ? uploadedBase64Image : "";
 
-        const data = {
-          barcode,
-          name,
-          category,
-          price,
-          imageUrl: uploadedBase64Image,
-          isSubProduct: isSubProduct,
-          parentId: isSubProduct ? parentId : null,
-          ratio: isSubProduct ? ratio : 1,
-          batches: isSubProduct ? [] : batches,
-          cost: addCost,
-          hideInDelivery: hideInDelivery,
-          stock: isSubProduct ? 0 : batches.reduce((sum, b) => sum + b.qty, 0)
-        };
+    const productData = {
+      barcode: barcode || "",
+      name: name,
+      category: category,
+      description: description || "",
+      options: options,
+      price: price,
+      imageUrl: safeImageUrl,
+      isSubProduct: isSubProduct,
+      parentId: isSubProduct ? parentId : null,
+      ratio: isSubProduct ? ratio : 1,
+      cost: addCost,
+      hideInDelivery: hideInDelivery,
+    };
 
-        db.collection("products").doc(editingProductId).update(data);
-      } else {
-        // เพิ่มสินค้าใหม่
-        let batches = [];
-        if (addQty > 0 && !isSubProduct) {
+    if (editingProductId && typeof activeEditingProductObj !== 'undefined' && activeEditingProductObj) {
+      let batches = [];
+      if (typeof isReStockMode !== 'undefined' && isReStockMode) {
+        batches = activeEditingProductObj.batches ? [...activeEditingProductObj.batches] : [];
+        if (addQty > 0) {
           batches.push({ qty: addQty, cost: addCost, ts: Date.now() });
         }
-
-        const data = {
-          barcode,
-          name,
-          category,
-          price,
-          imageUrl: uploadedBase64Image,
-          isSubProduct: isSubProduct,
-          parentId: isSubProduct ? parentId : null,
-          ratio: isSubProduct ? ratio : 1,
-          batches: batches,
-          cost: addCost,
-          hideInDelivery: hideInDelivery,
-          stock: isSubProduct ? 0 : addQty
-        };
-
-        db.collection("products").add(data);
+      } else {
+        const qtyInputs = document.querySelectorAll('.edit-batch-qty');
+        const costInputs = document.querySelectorAll('.edit-batch-cost');
+        if (qtyInputs.length > 0) {
+          qtyInputs.forEach((input, idx) => {
+            const q = Number(input.value) || 0;
+            const c = Number(costInputs[idx]?.value) || 0;
+            if (q > 0) {
+              const origTs = (activeEditingProductObj.batches && activeEditingProductObj.batches[idx]) 
+                             ? activeEditingProductObj.batches[idx].ts : Date.now();
+              batches.push({ qty: q, cost: c, ts: origTs });
+            }
+          });
+        } else {
+          if (addQty > 0) {
+            batches = [{ qty: addQty, cost: addCost, ts: Date.now() }];
+          }
+        }
       }
 
-      closeProductModal();
+      productData.batches = isSubProduct ? [] : batches;
+      productData.stock = isSubProduct ? 0 : batches.reduce((sum, b) => sum + (b.qty || 0), 0);
+
+      db.collection("products").doc(editingProductId).update(productData);
+    } else {
+      let batches = [];
+      if (addQty > 0 && !isSubProduct) {
+        batches.push({ qty: addQty, cost: addCost, ts: Date.now() });
+      }
+
+      productData.batches = batches;
+      productData.stock = isSubProduct ? 0 : addQty;
+
+      db.collection("products").add(productData);
     }
+
+    // ปิด Modal ทันทีเมื่อบันทึกเสร็จ
+    closeProductModal();
+
+  } catch (err) {
+    console.error("Save Product Error:", err);
+    alert("เกิดข้อผิดพลาดในการบันทึก: " + err.message);
+  }
+}
 
     function deleteProduct(id) {
       if (confirm('ต้องการลบสินค้าใช่หรือไม่?')) db.collection("products").doc(id).delete();
@@ -6642,6 +6964,53 @@ function bindPhoneToDebtor(debtorName) {
           <tr><td colspan="4" class="text-center py-8 text-gray-400 font-bold">กำลังโหลดข้อมูลสมาชิก...</td></tr>
         </tbody>
       </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal สำหรับเลือกตัวเลือก/น้ำจิ้มก่อนลงตะกร้า -->
+<div id="productOptionSelectModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[9999]">
+  <div class="bg-white p-6 rounded-3xl max-w-md w-full space-y-4 shadow-2xl">
+    <div class="flex justify-between items-center border-b pb-3">
+      <h3 id="optModalProdName" class="font-bold text-xl font-display text-[#0F5C52]">เลือกตัวเลือกสินค้า</h3>
+      <button onclick="closeOptionSelectModal()" class="text-gray-400 hover:text-black p-1"><i data-lucide="x" class="w-6 h-6"></i></button>
+    </div>
+    
+    <!-- รายการตัวเลือกแบบสลับ Radio / Checkbox อัตโนมัติ -->
+    <div id="optModalContent" class="space-y-4 max-h-[60vh] overflow-y-auto pr-1"></div>
+
+    <button onclick="confirmAddToCartWithOptions()" class="w-full bg-[#0F5C52] text-white py-3.5 rounded-2xl font-bold font-display text-lg shadow-md hover:opacity-90">
+      🛒 ยืนยันใส่ตะกร้า
+    </button>
+  </div>
+</div>
+
+<!-- Modal เลือกดึงตัวเลือก/ท็อปปิ้งที่เคยพิมพ์ไว้ในระบบ -->
+<div id="copyOptionsModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[99999]">
+  <div class="bg-white p-6 rounded-3xl max-w-md w-full space-y-4 shadow-2xl">
+    <div class="flex justify-between items-center border-b pb-3">
+      <h3 class="font-bold text-xl font-display text-amber-900 flex items-center gap-2">
+        📋 เลือกตัวเลือกที่เคยพิมพ์ไว้
+      </h3>
+      <button type="button" onclick="closeCopyOptionsModal()" class="text-gray-400 hover:text-black p-1">
+        ✕
+      </button>
+    </div>
+
+    <p class="text-xs text-gray-500 font-medium">
+      ติ๊กเลือกตัวเลือก/น้ำจิ้มที่คุณเคยพิมพ์ไว้ในเมนูอื่น เพื่อดึงมาใส่ในเมนูนี้ได้ทันที
+    </p>
+
+    <!-- รายการตัวเลือกย้อนหลัง -->
+    <div id="copyOptionsList" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
+
+    <div class="grid grid-cols-2 gap-2 pt-2 border-t">
+      <button type="button" onclick="closeCopyOptionsModal()" class="py-2.5 bg-gray-200 text-gray-800 rounded-xl font-bold font-display hover:bg-gray-300 transition">
+        ยกเลิก
+      </button>
+      <button type="button" onclick="confirmImportOptions()" class="py-2.5 bg-amber-600 text-white rounded-xl font-bold font-display hover:bg-amber-700 transition shadow-md">
+        ✅ เพิ่มรายการที่เลือก
+      </button>
     </div>
   </div>
 </div>

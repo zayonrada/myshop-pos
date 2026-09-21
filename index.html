@@ -84,6 +84,56 @@
         overflow: visible !important;
       }
 
+/* 📱 โค้ดล็อกสเกลหน้าจอมือถืออัตโนมัติทั้งแอป (รองรับทุกหน้าจอ <= 768px) */
+@media (max-width: 768px) {
+  
+  /* 1. ป้องกันหน้าจอดันออกข้างไถลหลุดเฟรม */
+  html, body {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 2. บังคับ Container หลัก ป๊อปอัป และการ์ดทุกตัวให้กว้างไม่เกินจอมือถือ */
+  main, 
+  .flex-1, 
+  [id*="Modal"] > div, 
+  [id*="Container"] {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+
+  /* 3. แก้ปัญหาปุ่มกดและช่องกรอกเบี้ยว/ทับกัน ให้ปรับเป็นแนวตั้งอัตโนมัติ */
+  .flex:not(.flex-row-always) {
+    flex-wrap: wrap !important;
+  }
+
+  /* 4. บังคับช่อง Input และ ปุ่มกด ให้ยืดหดตามสเกลจอ */
+  input[type="text"], 
+  input[type="number"], 
+  input[type="tel"], 
+  select, 
+  textarea {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 5. ครอบตารางสินค้า/ประวัติ ไม่ให้ดันหน้าจอเบี้ยว */
+  .overflow-x-auto, table {
+    display: block !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 6. ล็อกปุ่มกดในตารางไม่ให้ตัวหนังสือตัดบรรทัดเบี้ยว */
+  table button, table span {
+    white-space: nowrap !important;
+  }
+}
+
       .receipt-print-box {
         position: static !important; /* ❌ เปลี่ยนจาก absolute เป็น static เพื่อให้เบราว์เซอร์แบ่งขึ้นหน้า 2 ได้ */
         margin: 0 auto !important;

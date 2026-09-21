@@ -549,12 +549,20 @@
               <span id="btnGpsText">🎯 กดตรงนี้เพื่อดึงตำแหน่งบ้านปัจจุบัน (GPS)</span>
             </button>
 
+            <!-- 🔍 ช่องค้นหาสถานที่/หมู่บ้านบนแผนที่ -->
+            <div class="flex gap-2">
+              <input type="text" id="mapSearchInput" onkeydown="if(event.key==='Enter'){event.preventDefault();searchMapLocation();}" placeholder="พิมพ์ค้นหาชื่อหมู่บ้าน / สถานที่จัดส่ง..." class="flex-1 p-2.5 rounded-xl border bg-white font-bold text-xs md:text-sm focus:outline-none focus:border-[#008B47]">
+              <button type="button" onclick="searchMapLocation()" class="bg-[#008B47] text-white px-3.5 py-2.5 rounded-xl font-bold text-xs font-display whitespace-nowrap shadow-sm hover:bg-[#007438] active:scale-95 transition flex items-center gap-1">
+                <i data-lucide="search" class="w-4 h-4"></i> ค้นหา
+              </button>
+            </div>
+
             <div id="mapPicker" class="shadow-inner border-2 border-gray-300 rounded-2xl"></div>
 
             <div id="gpsStatusText" class="text-xs font-bold text-emerald-800 bg-emerald-50 p-2.5 rounded-xl border border-emerald-200 text-center hidden"></div>
 
             <div class="text-xs text-gray-500 font-medium text-center bg-amber-50 p-2 rounded-xl border border-amber-200" id="lblGpsTip">
-              💡 <b>คำแนะนำ:</b> สามารถเอานิ้วลากหมุดสีแดงบนแผนที่ไปวางตรงหลังคาบ้านของคุณได้เลยครับ
+              💡 <b>คำแนะนำ:</b> สามารถพิมพ์ค้นหาชื่อหมู่บ้าน หรือลากหมุดสีแดงบนแผนที่ไปวางตรงหลังคาบ้านของคุณได้เลยครับ
             </div>
 
             <textarea id="custAddress" rows="2" placeholder="ระบุบ้านเลขที่ / ซอย / จุดสังเกตเพิ่มเติม..." class="w-full p-3 rounded-xl border bg-white font-bold text-sm focus:outline-none focus:border-[#008B47]"></textarea>
@@ -673,7 +681,7 @@
         recipientName: "ชื่อผู้รับสินค้า *",
         gpsTitle: "📍 ตำแหน่งจัดส่งสินค้าบนแผนที่ *",
         btnGps: "🎯 กดตรงนี้เพื่อดึงตำแหน่งบ้านปัจจุบัน (GPS)",
-        gpsTip: "💡 <b>คำแนะนำ:</b> สามารถเอานิ้วลากหมุดสีแดงบนแผนที่ไปวางตรงหลังคาบ้านของคุณได้เลยครับ",
+        gpsTip: "💡 <b>คำแนะนำ:</b> สามารถพิมพ์ค้นหาชื่อหมู่บ้าน หรือลากหมุดสีแดงบนแผนที่ไปวางตรงหลังคาบ้านของคุณได้เลยครับ",
         addrPlaceholder: "ระบุบ้านเลขที่ / ซอย / จุดสังเกตเพิ่มเติม...",
         confirmOrder: "🚀 ยืนยันการสั่งซื้อ",
         orderStatus: "สถานะออเดอร์",
@@ -978,7 +986,7 @@
         'ของทานเล่น': 'ຂອງທານຫຼິ້ນ',
         'อาหาร/เครื่องดื่ม': 'อาหาร/ເຄື່ອງດື່ມ',
         'ทั่วไป': 'ທົ່ວໄປ',
-        'กล่องพັດສະດຸ': 'ກ່ອງພັດສະດຸ',
+        'กล่องພັດສະດຸ': 'ກ່ອງພັດສະດຸ',
         'ยา/เวชภัณฑ์': 'ຢາ/ເວຊະພັນ',
         'เครื่องสำອາງ': 'ເຄື່ອງສຳອາງ',
         'ของใช้': 'ເຄື່ອງໃຊ້',
@@ -1570,6 +1578,49 @@
       
       userLocation = { lat: defaultLat, lng: defaultLng };
       updateLocationStatus(defaultLat, defaultLng);
+    }
+
+    // 🔍 ฟังก์ชันค้นหาชื่อหมู่บ้าน / สถานที่จัดส่งบนแผนที่
+    function searchMapLocation() {
+      const query = document.getElementById('mapSearchInput')?.value.trim();
+      if (!query) return alert('กรุณากรอกชื่อหมู่บ้าน หรือสถานที่ที่ต้องการค้นหาครับ');
+
+      const statusText = document.getElementById('gpsStatusText');
+      if (statusText) {
+        statusText.innerText = "⏳ กำลังค้นหาสถานที่...";
+        statusText.className = "text-xs font-bold text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200 text-center block animate-pulse";
+      }
+
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.length > 0) {
+            const lat = parseFloat(data[0].lat);
+            const lng = parseFloat(data[0].lon);
+
+            if (leafletMap && leafletMarker) {
+              leafletMap.setView([lat, lng], 16);
+              leafletMarker.setLatLng([lat, lng]);
+            } else {
+              initLeafletMap(lat, lng);
+            }
+
+            userLocation = { lat, lng };
+            updateLocationStatus(lat, lng);
+          } else {
+            alert('ไม่พบสถานที่ที่คุณค้นหา กรุณาลองระบุชื่อสถานที่ หรือชื่ออำเภอ/จังหวัดเพิ่มเติมครับ');
+            if (statusText && userLocation) {
+              updateLocationStatus(userLocation.lat, userLocation.lng);
+            }
+          }
+        })
+        .catch(err => {
+          console.error("Map search error:", err);
+          alert('เกิดข้อผิดพลาดในการค้นหาสถานที่ กรุณาลองใหม่อีกครั้งครับ');
+          if (statusText && userLocation) {
+            updateLocationStatus(userLocation.lat, userLocation.lng);
+          }
+        });
     }
 
     function updateLocationStatus(lat, lng) {

@@ -434,7 +434,10 @@
         </div>
 
         <div class="bg-gray-50 p-3 rounded-2xl border space-y-2">
-          <div class="text-xs font-bold text-gray-700 font-display" id="lblPayOptionSection">วิธีการชำระเงิน</div>
+          <div class="text-xs font-bold text-gray-700 font-display flex justify-between items-center">
+            <span id="lblPayOptionSection">วิธีการชำระเงิน</span>
+            <span class="text-[10px] text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">🛡️ ชำระเงินสดปลายทางได้ไม่เกิน 300.-</span>
+          </div>
           <div class="grid grid-cols-2 gap-2">
             <button type="button" onclick="setPayOption('transfer')" id="btnPayTransfer" class="py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm border-2 border-[#008B47] bg-[#008B47] text-white flex items-center justify-center gap-1.5 transition">
               <i data-lucide="credit-card" class="w-4 h-4"></i> <span id="lblBtnPayTransfer">📱 โอนเงินผ่านบัญชี</span>
@@ -455,7 +458,7 @@
               </div>
 
               <div class="space-y-0.5">
-                <div class="text-xs md:text-sm font-bold text-gray-800 font-display" id="lblBankAccName">ชื่อบัญชี: ยลรดา ฉิมพาลี (ร้านค้าขวัญใจ)</div>
+                <div class="text-xs md:text-sm font-bold text-gray-800 font-display" id="lblBankAccName">ชื่อบัญชี: ดณยา ฉิมพาลี (ร้านค้าขวัญใจ)</div>
                 <div class="text-[11px] text-gray-500 font-medium">สแกนผ่านแอปธนาคาร หรือแอปถุงเงินได้ทุกธนาคาร</div>
               </div>
             </div>
@@ -659,7 +662,7 @@
         bankName: "สแกน QR Code รับเงิน",
         bankAccNo: "ชำระผ่าน QR Code:",
         copyAccBtn: "คัดลอก",
-        bankAccName: "ชื่อบัญชี: ยลรดา ฉิมพาลี (ร้านค้าขวัญใจ)",
+        bankAccName: "ชื่อบัญชี: ดณยา ฉิมพาลี (ร้านค้าขวัญใจ)",
         attachSlip: "แนบรูปสลิปการโอนเงิน *",
         subtotal: "ค่าสินค้า",
         deliveryFee: "ค่าจัดส่ง",
@@ -1345,7 +1348,7 @@
 
       let yearLabel = "ปี (พ.ศ.)";
       if (currentLang === 'en') yearLabel = "Year";
-      else if (currentLang === 'lo') yearLabel = "ปี (ພ.ສ.)";
+      else if (currentLang === 'lo') yearLabel = "ປີ (ພ.ສ.)";
       else if (currentLang === 'my') yearLabel = "ခုနှစ်";
 
       let yearHtml = `<option value="">${yearLabel}</option>`;
@@ -1765,7 +1768,25 @@
       }
     }
 
+    // 🛵 ระบบสลับวิธีการชำระเงิน + ล็อกความปลอดภัยจำกัดยอดเงินสดสูงสุด 300 บาท
     function setPayOption(opt) {
+      const subtotal = custCart.reduce((sum, c) => sum + (c.price * c.qty), 0);
+      let deliveryFee = 0;
+      if (deliveryType === 'delivery') {
+        const distanceKm = calculateDistanceInKm(STORE_LOCATION.lat, STORE_LOCATION.lng, userLocation.lat, userLocation.lng);
+        const baseFee = subtotal >= 100 ? 0 : 20;
+        const extraDist = Math.max(0, distanceKm - FREE_DISTANCE_LIMIT_KM);
+        const extraFee = Math.ceil(extraDist) * EXTRA_FEE_PER_KM;
+        deliveryFee = baseFee + extraFee;
+      }
+      const totalNet = subtotal + deliveryFee;
+
+      // 🛡️ บล็อกไม่ให้กดเลือกเงินสดปลายทาง ถ้ายอดรวมเกิน 300 บาท
+      if (opt === 'cash' && totalNet > 300) {
+        alert('⚠️ ยอดสั่งซื้อรวมค่าจัดส่งเกิน 300 บาท เพื่อความปลอดภัยทางร้านรับเฉพาะ "โอนเงินผ่านบัญชี" เท่านั้นครับ');
+        opt = 'transfer';
+      }
+
       payOption = opt;
       const btnTransfer = document.getElementById('btnPayTransfer');
       const btnCash = document.getElementById('btnPayCash');
@@ -1780,6 +1801,7 @@
         btnTransfer.className = "py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm border-2 border-gray-200 bg-white text-gray-700 flex items-center justify-center gap-1.5 transition";
         transferBox.classList.add('hidden');
 
+        // 🛑 ถ้าจ่ายเงินสดปลายทาง แล้วดันเลือก "แขวนวางไว้" อยู่ ให้เด้งสลับไปเป็น "ส่งถึงมือ" ทันที
         const currentDropVal = document.querySelector('input[name="custDropOption"]:checked')?.value;
         if (currentDropVal === 'dropoff') {
           const handRadio = document.querySelector('input[name="custDropOption"][value="hand"]');
@@ -2138,7 +2160,6 @@
       if (qtyText) qtyText.innerText = custModalQty;
     }
 
-    // ฟังก์ชันสร้างตัวเลือกท็อปปิ้ง (ถ้าไม่มีท็อปปิ้ง จะล้างพื้นที่ทิ้ง ไม่โชว์กล่องว่าง)
     function renderModalOptionsContent() {
       const container = document.getElementById('custOptModalContent');
       if (!container || !currentSelectingCustProduct) return;
@@ -2148,7 +2169,6 @@
       const freeOpts = options.filter(o => Number(o.price) === 0);
       const paidOpts = options.filter(o => Number(o.price) > 0);
 
-      // ถ้าสินค้าไม่มีตัวเลือกท็อปปิ้งเลย ให้ล้างพื้นที่ทิ้งโดยตรง
       if (freeOpts.length === 0 && paidOpts.length === 0) {
         container.innerHTML = '';
         return;
@@ -2229,13 +2249,11 @@
         let finalPrice = Number(p.price) || 0;
         let selectedDetails = [];
 
-        // 1. ดึงค่าน้ำจิ้มฟรีประจำชิ้นนั้น
         const selectedRadio = document.querySelector(`input[name="custFreeOptRadio_${itemIdx}"]:checked`);
         if (selectedRadio) {
           selectedDetails.push(selectedRadio.value);
         }
 
-        // 2. ดึงค่าท็อปปิ้งสั่งเพิ่มประจำชิ้นนั้น
         const paidChecks = document.querySelectorAll(`.custPaidOptCheck_${itemIdx}:checked`);
         paidChecks.forEach(cb => {
           const addPrice = Number(cb.dataset.price) || 0;
@@ -2243,12 +2261,10 @@
           selectedDetails.push(`${cb.dataset.name} (+฿${addPrice})`);
         });
 
-        // 3. ดึงค่าตัวเลือกช้อนส้อม (เฉพาะอาหารพร้อมทาน)
         if (isFoodCategory && cutleryVal === 'ไม่รับช้อนส้อม') {
           selectedDetails.push('🌱 ไม่รับช้อนส้อม');
         }
 
-        // 4. ดึงข้อความเพิ่มเติม
         if (itemNote) {
           selectedDetails.push(`📝 ${itemNote}`);
         }
@@ -2336,6 +2352,11 @@
       }
 
       const totalNet = subtotal + deliveryFee;
+
+      // 🛡️ เช็กถ้ายอดรวมเกิน 300 บาท แล้วเลือกเงินสดอยู่ ให้เด้งสลับไปโอนเงินทันที
+      if (totalNet > 300 && payOption === 'cash') {
+        setPayOption('transfer');
+      }
 
       document.getElementById('badgeCount').innerText = totalQty;
       document.getElementById('badgeCount').classList.toggle('hidden', totalQty === 0);
@@ -2431,6 +2452,24 @@
         return alert('กรุณากรอกชื่อ เบอร์โทร และที่อยู่จัดส่งให้ครบถ้วนครับ');
       }
 
+      const subtotal = custCart.reduce((sum, c) => sum + (c.price * c.qty), 0);
+      let deliveryFee = 0;
+      let distanceKm = 0;
+      if (deliveryType === 'delivery') {
+        distanceKm = calculateDistanceInKm(STORE_LOCATION.lat, STORE_LOCATION.lng, userLocation.lat, userLocation.lng);
+        const baseFee = subtotal >= 100 ? 0 : 20;
+        const extraDist = Math.max(0, distanceKm - FREE_DISTANCE_LIMIT_KM);
+        const extraFee = Math.ceil(extraDist) * EXTRA_FEE_PER_KM;
+        deliveryFee = baseFee + extraFee;
+      }
+      const totalNet = subtotal + deliveryFee;
+
+      // 🛡️ ตรวจเช็กระบบความปลอดภัย ยอดเกิน 300 บาท บังคับโอนเงินเท่านั้น
+      if (payOption === 'cash' && totalNet > 300) {
+        setPayOption('transfer');
+        return alert('⚠️ ยอดสั่งซื้อรวมค่าจัดส่งเกิน 300 บาท บังคับชำระด้วยการโอนเงินผ่านบัญชีเท่านั้นครับ');
+      }
+
       if (payOption === 'transfer' && !slipBase64) {
         if(!confirm('คุณยังไม่ได้แนบหลักฐานสลิปโอนเงิน ยืนยันที่จะส่งออเดอร์โดยไม่แนบสลิปใช่หรือไม่?')) return;
       }
@@ -2455,19 +2494,6 @@
         lastOrderTs: Date.now()
       }, { merge: true });
 
-      const subtotal = custCart.reduce((sum, c) => sum + (c.price * c.qty), 0);
-      
-      let deliveryFee = 0;
-      let distanceKm = 0;
-      if (deliveryType === 'delivery') {
-        distanceKm = calculateDistanceInKm(STORE_LOCATION.lat, STORE_LOCATION.lng, userLocation.lat, userLocation.lng);
-        const baseFee = subtotal >= 100 ? 0 : 20;
-        const extraDist = Math.max(0, distanceKm - FREE_DISTANCE_LIMIT_KM);
-        const extraFee = Math.ceil(extraDist) * EXTRA_FEE_PER_KM;
-        deliveryFee = baseFee + extraFee;
-      }
-
-      const totalNet = subtotal + deliveryFee;
       const shortOrderId = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
 
       let finalAddress = address + dropInstructionText;

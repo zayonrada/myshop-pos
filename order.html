@@ -75,7 +75,7 @@
           <select id="langSelect" onchange="changeAppLanguage(this.value)" class="bg-emerald-50 border border-[#008B47] text-[#008B47] font-bold text-xs rounded-full px-2 py-1.5 focus:outline-none cursor-pointer shadow-sm">
             <option value="th">🇹🇭 TH</option>
             <option value="en">🇬🇧 EN</option>
-            <option value="lo">🇱🇦 LO</option>
+            <option value="lo">🇱ående LO</option>
             <option value="my">🇲🇲 MY</option>
           </select>
         </div>
@@ -565,7 +565,7 @@
               💡 <b>คำแนะนำ:</b> สามารถพิมพ์ค้นหาชื่อหมู่บ้าน หรือลากหมุดสีแดงบนแผนที่ไปวางตรงหลังคาบ้านของคุณได้เลยครับ
             </div>
 
-            <textarea id="custAddress" rows="2" placeholder="ระบุบ้านเลขที่ / ซอย / จุดสังเกตเพิ่มเติม..." class="w-full p-3 rounded-xl border bg-white font-bold text-sm focus:outline-none focus:border-[#008B47]"></textarea>
+            <textarea id="custAddress" rows="2" placeholder="ระบุบ้านเลขที่ / ซอย / จุดสังเกตเพิ่มเติม... " class="w-full p-3 rounded-xl border bg-white font-bold text-sm focus:outline-none focus:border-[#008B47]"></textarea>
           </div>
         </div>
 
@@ -986,7 +986,7 @@
         'ของทานเล่น': 'ຂອງທານຫຼິ້ນ',
         'อาหาร/เครื่องดื่ม': 'อาหาร/ເຄື່ອງດື່ມ',
         'ทั่วไป': 'ທົ່ວໄປ',
-        'กล่องພັດສະດຸ': 'ກ່ອງພັດສະດຸ',
+        'กล่องพัดสะດຸ': 'ກ່ອງພັດສະດຸ',
         'ยา/เวชภัณฑ์': 'ຢາ/ເວຊະພັນ',
         'เครื่องสำອາງ': 'ເຄື່ອງສຳອາງ',
         'ของใช้': 'ເຄື່ອງໃຊ້',
@@ -2056,7 +2056,9 @@
       const searchVal = normalizeThaiText(searchRaw);
       const t = translations[currentLang] || translations.th;
 
+      // 1. กรองเฉพาะสินค้าที่ไม่ซ่อนเดลิเวอรี (hideInDelivery != true)
       let displayList = products.filter(p => !p.hideInDelivery);
+
       if (selectedCategory !== 'ทั้งหมด') {
         displayList = displayList.filter(p => p.category === selectedCategory);
       }
@@ -2068,12 +2070,13 @@
         });
       }
 
+      // 2. จัดเรียง: สินค้าหมด หรือ ปิดขายชั่วคราว (isClosed) ให้ตกไปอยู่ล่างสุด
       displayList.sort((a, b) => {
-        const aStock = (a.isSubProduct && a.parentId) ? (products.find(p => p.id === a.parentId)?.stock || 0) : a.stock;
-        const bStock = (b.isSubProduct && b.parentId) ? (products.find(p => p.id === b.parentId)?.stock || 0) : b.stock;
+        const aStock = (a.isSubProduct && a.parentId) ? (products.find(p => String(p.id) === String(a.parentId))?.stock || 0) : a.stock;
+        const bStock = (b.isSubProduct && b.parentId) ? (products.find(p => String(p.id) === String(b.parentId))?.stock || 0) : b.stock;
 
-        const aOut = aStock <= 0;
-        const bOut = bStock <= 0;
+        const aOut = aStock <= 0 || a.isClosed === true;
+        const bOut = bStock <= 0 || b.isClosed === true;
 
         if (aOut !== bOut) return aOut ? 1 : -1;
         return a.name.localeCompare(b.name, 'th');
@@ -2087,24 +2090,27 @@
       grid.innerHTML = displayList.map(p => {
         let availStock = 0;
         if (p.isSubProduct && p.parentId) {
-          const parent = products.find(prod => prod.id === p.parentId);
+          const parent = products.find(prod => String(prod.id) === String(p.parentId));
           availStock = parent ? (parent.stock || 0) * (p.ratio || 1) : 0;
         } else {
           availStock = p.stock || 0;
         }
 
-        const isOutOfStock = availStock <= 0;
+        // 🟢 เช็กทั้งสต็อกจริงและสวิตช์ iOS ปิดขาย
+        const isOutOfStock = availStock <= 0 || p.isClosed === true;
+        const statusBadgeText = p.isClosed ? '🔴 ปิดขาย' : (availStock <= 0 ? t.outOfStock : `${t.leftQty} ${fmtStk(availStock)} ${t.unit}`);
+        const overlayText = p.isClosed ? '🔴 ปิดขายชั่วคราว' : t.outOfStock;
 
         return `
           <div class="bg-white p-2.5 md:p-3.5 rounded-2xl border border-gray-100 flex flex-col justify-between shadow-sm relative overflow-hidden">
             <span class="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] md:text-xs font-bold z-10 ${isOutOfStock ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'}">
-              ${isOutOfStock ? t.outOfStock : `${t.leftQty} ${fmtStk(availStock)} ${t.unit}`}
+              ${statusBadgeText}
             </span>
 
             <div>
               <div class="w-full aspect-square bg-gray-50 rounded-xl mb-2 overflow-hidden flex items-center justify-center border border-gray-100 relative">
-                ${p.imageUrl ? `<img src="${p.imageUrl}" loading="lazy" class="w-full h-full object-contain p-1">` : `<i data-lucide="package" class="w-10 h-10 md:w-12 md:h-12 text-gray-300"></i>`}
-                ${isOutOfStock ? `<div class="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-xs md:text-sm font-bold font-display">${t.outOfStock}</div>` : ''}
+                ${p.imageUrl ? `<img src="${p.imageUrl}" loading="lazy" class="w-full h-full object-contain p-1 ${isOutOfStock ? 'grayscale opacity-60' : ''}">` : `<i data-lucide="package" class="w-10 h-10 md:w-12 md:h-12 text-gray-300 ${isOutOfStock ? 'grayscale opacity-60' : ''}"></i>`}
+                ${isOutOfStock ? `<div class="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-xs md:text-sm font-bold font-display px-1 text-center">${overlayText}</div>` : ''}
               </div>
               <div class="font-bold text-xs md:text-sm text-gray-800 line-clamp-2 leading-snug">${p.name}</div>
               ${p.description ? `<div class="text-[10px] md:text-xs text-gray-500 line-clamp-2 mt-0.5">${p.description}</div>` : ''}
@@ -2126,12 +2132,17 @@
     }
 
     function addCustCart(id) {
-      const p = products.find(prod => prod.id === id);
+      const p = products.find(prod => String(prod.id) === String(id));
       if (!p) return;
+
+      // 🔴 บล็อกเมื่อร้านค้าเปิดสวิตช์ปิดการขายชั่วคราว (isClosed = true)
+      if (p.isClosed) {
+        return alert('ขออภัยครับ เมนูอาหารนี้ปิดการขายชั่วคราว');
+      }
 
       let availStock = 0;
       if (p.isSubProduct && p.parentId) {
-        const parent = products.find(prod => prod.id === p.parentId);
+        const parent = products.find(prod => String(prod.id) === String(p.parentId));
         availStock = parent ? (parent.stock || 0) * (p.ratio || 1) : 0;
       } else {
         availStock = p.stock || 0;
@@ -2360,11 +2371,11 @@
       const item = custCart[idx];
       if (!item) return;
 
-      const p = products.find(prod => prod.id === item.productId);
+      const p = products.find(prod => String(prod.id) === String(item.productId));
       let availStock = item.maxStock || 999;
       if (p) {
         if (p.isSubProduct && p.parentId) {
-          const parent = products.find(prod => prod.id === p.parentId);
+          const parent = products.find(prod => String(prod.id) === String(p.parentId));
           availStock = parent ? (parent.stock || 0) * (p.ratio || 1) : 0;
         } else {
           availStock = p.stock || 0;

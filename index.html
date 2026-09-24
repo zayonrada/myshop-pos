@@ -3962,7 +3962,7 @@ function setPosCategory(cat) {
       stockLabel = isOutOfStock ? 'หมด' : `คลังหลักเหลือ ${fmtStk(parentStock)}`;
     } else {
       isOutOfStock = (p.stock || 0) <= 0.001 || (isFoodCategory && p.isClosed);
-      stockLabel = (isFoodCategory && p.isClosed) ? '🔴 ปิดขาย' : (isOutOfStock ? 'หมด' : `เหลือ ${fmtStk(p.stock)}`);
+      stockLabel = (isFoodCategory && p.isClosed) ? '🔴 หมด' : (isOutOfStock ? 'หมด' : `เหลือ ${fmtStk(p.stock)}`);
     }
 
     return `
@@ -3979,7 +3979,7 @@ function setPosCategory(cat) {
           </span>
           ${isFoodCategory ? `
             <span onclick="toggleFoodStatus(event, '${p.id}')" class="text-[10px] cursor-pointer font-bold px-2 py-0.5 rounded-full border shadow-sm transition active:scale-95 ${p.isClosed ? 'bg-red-600 text-white border-red-700' : 'bg-emerald-600 text-white border-emerald-700'}">
-              ${p.isClosed ? '🔴 ปิดขาย' : '🟢 เปิดขาย'}
+              ${p.isClosed ? '🔴 หมด' : '🟢 เปิดขาย'}
             </span>
           ` : ''}
         </div>
@@ -3989,7 +3989,7 @@ function setPosCategory(cat) {
           ${isOutOfStock ? `
             <div class="absolute inset-0 bg-black/50 flex items-center justify-center z-20 rounded-xl">
               <span class="bg-[#B3432B] text-white text-xs sm:text-base font-bold px-3 py-1 rounded-xl shadow-md font-display">
-                ${p.isClosed ? 'ปิดขาย' : 'หมด'}
+                ${p.isClosed ? 'หมด' : 'หมด'}
               </span>
             </div>
           ` : ''}

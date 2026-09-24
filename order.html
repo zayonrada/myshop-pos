@@ -49,6 +49,16 @@
     
     #mapPicker { height: 220px; width: 100%; border-radius: 1rem; z-index: 10; touch-action: none; }
     .custom-leaflet-marker { display: flex; align-items: center; justify-content: center; }
+
+    /* 🐱 อนิเมชันน้องแมวดุ๊กดิ๊ก */
+    @keyframes cuteWiggle {
+      0%, 100% { transform: rotate(-10deg) scale(1); }
+      50% { transform: rotate(10deg) scale(1.15); }
+    }
+    .animate-wiggle {
+      display: inline-block;
+      animation: cuteWiggle 1.2s infinite ease-in-out;
+    }
   </style>
 </head>
 <body class="min-h-screen flex justify-center bg-[#E5E7EB]">
@@ -199,6 +209,12 @@
         </button>
       </div>
     </div>
+
+<!-- 🐱 ปุ่มน้องแมวกลับขึ้นด้านบน (ดุ๊กดิ๊ก) -->
+    <button id="backToTopBtn" onclick="scrollToTop()" class="hidden fixed bottom-28 right-4 md:right-8 z-50 bg-white/95 backdrop-blur-md border-2 border-[#008B47] p-2.5 rounded-full shadow-2xl transition-all duration-300 active:scale-90 flex flex-col items-center justify-center cursor-pointer hover:bg-emerald-50">
+      <span class="text-2xl animate-wiggle">🐱</span>
+      <span class="text-[9px] font-black font-display text-[#008B47] -mt-0.5 tracking-wider">▲ TOP</span>
+    </button>
 
     <!-- 👤 Modal สมาชิก -->
     <div id="memberModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
@@ -2883,6 +2899,26 @@ function updateBannerDotsOnScroll() {
     updateDotHighlights(newIdx, customerBanners.length);
   }
 }
+
+// 🐱 ระบบตรวจจับ Scroll หน้าจอ + ปุ่มกลับขึ้นด้านบนนุ่มนวล
+    window.addEventListener('scroll', function() {
+      const topBtn = document.getElementById('backToTopBtn');
+      if (topBtn) {
+        // เมื่อไถจอลงมาเกิน 300px ให้โชว์ปุ่มน้องแมว
+        if (window.scrollY > 300) {
+          topBtn.classList.remove('hidden');
+        } else {
+          topBtn.classList.add('hidden');
+        }
+      }
+    });
+
+    function scrollToTop() {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
 </script>
 </body>
 </html>

@@ -1589,47 +1589,6 @@
         </div>
       </div>
 
-<!-- 🍱 สวิตช์เปิด/ปิดการขายสไตล์ iOS (เขียว = เปิดขาย / แดง = ปิดขาย) -->
-        <div id="foodToggleBox" class="hidden my-3">
-          <div class="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-white border-2 border-gray-200 shadow-sm">
-            <div class="flex items-center gap-3">
-              <span id="foodStatusIcon" class="text-xl sm:text-2xl">🟢</span>
-              <div>
-                <span id="foodStatusTitle" class="text-xs sm:text-sm font-bold text-gray-800 block font-display">สถานะเมนูอาหาร</span>
-                <span id="foodStatusSubtitle" class="text-[11px] sm:text-xs text-gray-500 font-medium">เปิดขายปกติ (ลูกค้ากดสั่งซื้อได้)</span>
-              </div>
-            </div>
-
-            <!-- iOS Toggle Switch -->
-            <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
-              <input type="checkbox" id="p-isOpen" onchange="updateFoodToggleUI(this.checked)" class="sr-only peer" checked>
-              <div class="w-14 h-8 bg-red-500 peer-focus:outline-none rounded-full peer peer-checked:bg-emerald-500 transition-colors duration-300 relative after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-7 after:w-7 after:transition-all peer-checked:after:translate-x-6 shadow-inner"></div>
-            </label>
-          </div>
-        </div>
-
-<!-- 🍱 สวิตช์เปิด/ปิดการขายสไตล์ iOS (เขียว = เปิดขาย / แดง = ของหมด) -->
-        <div id="foodToggleBox" class="hidden my-3">
-          <div class="flex items-center justify-between p-4 rounded-2xl bg-white border-2 border-gray-200 shadow-sm">
-            <div class="flex items-center gap-3">
-              <span id="foodStatusIcon" class="text-2xl">🟢</span>
-              <div>
-                <span id="foodStatusTitle" class="text-sm font-bold text-gray-800 block font-display">เปิดขายปกติ</span>
-                <span id="foodStatusSubtitle" class="text-xs text-gray-500 font-medium">ลูกค้าสามารถกดสั่งเมนูนี้ได้ตามปกติ</span>
-              </div>
-            </div>
-
-            <!-- สวิตช์เลื่อน iOS ON/OFF -->
-            <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
-              <input type="checkbox" id="p-isOpen" onchange="updateFoodToggleUI(this.checked)" class="sr-only peer" checked>
-              <div class="w-16 h-8 bg-red-500 peer-focus:outline-none rounded-full peer peer-checked:bg-emerald-500 transition-colors duration-300 relative after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-7 after:w-7 after:transition-all peer-checked:after:translate-x-8 shadow-md">
-                <span class="absolute left-2 top-2 text-[10px] font-black text-white peer-checked:hidden font-mono">OFF</span>
-                <span class="absolute right-2.5 top-2 text-[10px] font-black text-white hidden peer-checked:block font-mono">ON</span>
-              </div>
-            </label>
-          </div>
-        </div>
-
 <!-- 🍱 สวิตช์เปิด/ปิดการขายสไตล์ iOS (เขียว = เปิดขาย / แดง = ของหมด) -->
         <div id="foodToggleBox" class="hidden my-3">
           <div class="flex items-center justify-between p-4 rounded-2xl bg-white border-2 border-gray-200 shadow-sm">
@@ -1875,6 +1834,89 @@ function pushToCartDirect(p, price, name) {
   }
   renderCart();
   focusScanInput();
+}
+
+// 2.5 เปิดป๊อปอัปเลือกตัวเลือกเสริม/ท็อปปิ้ง (เพิ่มใหม่ — ของเดิมเรียกใช้ฟังก์ชันนี้อยู่แล้วแต่ไม่เคยถูกสร้างไว้จริง)
+let currentOptionQty = 1;
+
+function openOptionSelectModal(p) {
+  currentSelectingProduct = p;
+  currentOptionQty = 1;
+
+  const titleEl = document.getElementById('optModalProdName');
+  if (titleEl) titleEl.innerText = p.name;
+
+  const content = document.getElementById('optModalContent');
+  if (!content) return;
+
+  const optsHtml = (p.options || []).map((opt, idx) => `
+    <label class="flex items-center justify-between p-3 rounded-2xl border-2 border-[#DEDACB] bg-[#F5F3EE] cursor-pointer hover:border-[#0F5C52] transition">
+      <div class="flex items-center gap-2.5">
+        <input type="checkbox" class="opt-select-check w-5 h-5 accent-[#0F5C52] rounded cursor-pointer" data-idx="${idx}">
+        <span class="font-bold text-base text-[#1C2321]">${opt.name}</span>
+      </div>
+      <span class="font-bold text-[#0F5C52] font-display">+฿${(Number(opt.price)||0).toFixed(2)}</span>
+    </label>
+  `).join('');
+
+  content.innerHTML = `
+    <div class="space-y-2">
+      <div class="text-sm font-bold text-[#6B6A61] mb-1">เลือกตัวเลือกเสริม (เลือกได้มากกว่า 1 อย่าง):</div>
+      ${optsHtml || '<p class="text-sm text-gray-400 py-4 text-center">ไม่มีตัวเลือกเสริม</p>'}
+    </div>
+    <div class="flex items-center justify-between bg-white p-3 rounded-2xl border-2 border-[#DEDACB] mt-4">
+      <span class="font-bold text-base text-[#1C2321]">จำนวน</span>
+      <div class="flex items-center gap-3">
+        <button type="button" onclick="changeOptionQty(-1)" class="w-9 h-9 rounded-xl bg-gray-200 hover:bg-gray-300 font-bold text-xl">-</button>
+        <span id="optModalQtyVal" class="w-8 text-center font-bold text-xl font-display">1</span>
+        <button type="button" onclick="changeOptionQty(1)" class="w-9 h-9 rounded-xl bg-gray-200 hover:bg-gray-300 font-bold text-xl">+</button>
+      </div>
+    </div>
+  `;
+
+  const modal = document.getElementById('productOptionSelectModal');
+  if (modal) modal.classList.remove('hidden');
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function changeOptionQty(delta) {
+  currentOptionQty = Math.max(1, (currentOptionQty || 1) + delta);
+  const el = document.getElementById('optModalQtyVal');
+  if (el) el.innerText = currentOptionQty;
+}
+
+function closeOptionSelectModal() {
+  const modal = document.getElementById('productOptionSelectModal');
+  if (modal) modal.classList.add('hidden');
+  currentSelectingProduct = null;
+  focusScanInput();
+}
+
+function confirmAddToCartWithOptions() {
+  const p = currentSelectingProduct;
+  if (!p) return closeOptionSelectModal();
+
+  const checks = document.querySelectorAll('.opt-select-check:checked');
+  let extraPrice = 0;
+  let extraNames = [];
+  checks.forEach(cb => {
+    const idx = Number(cb.dataset.idx);
+    const opt = (p.options || [])[idx];
+    if (opt) {
+      extraPrice += Number(opt.price) || 0;
+      extraNames.push(opt.name);
+    }
+  });
+
+  const finalPrice = (Number(p.price) || 0) + extraPrice;
+  const finalName = extraNames.length > 0 ? `${p.name} (${extraNames.join(', ')})` : p.name;
+  const qty = currentOptionQty || 1;
+
+  for (let i = 0; i < qty; i++) {
+    pushToCartDirect(p, finalPrice, finalName);
+  }
+
+  closeOptionSelectModal();
 }
 
 // 3. ปรับจำนวนชิ้นด้วยปุ่ม + / -
@@ -3947,19 +3989,6 @@ function setPosCategory(cat) {
   lucide.createIcons();
 }
 
-// สลับสถานะเปิด-ปิดบนการ์ดหน้าร้านได้ทันที
-function toggleFoodStatus(e, id) {
-  e.stopPropagation();
-  const p = products.find(prod => prod.id === id);
-  if (!p) return;
-
-  const newStatus = !p.isClosed;
-  db.collection("products").doc(id).update({ isClosed: newStatus }).then(() => {
-    const msg = newStatus ? `🔴 ปิดการขาย "${p.name}" เรียบร้อยแล้ว` : `🟢 เปิดการขาย "${p.name}" เรียบร้อยแล้ว`;
-    alert(msg);
-  });
-}
-
 // 🔄 ฟังก์ชันสร้างปุ่มเปลี่ยนหน้าแบบสไลด์ (Sliding Pagination) ไม่ให้รกจอ
 function generateSlidingPagination(currentPage, totalPages, goToFuncName) {
   const maxVisible = 10; // แสดงปุ่มเลขช่วงกลางไม่เกิน 10 ปุ่ม
@@ -4193,38 +4222,6 @@ function openBarcodeModalFromList(id) {
   lucide.createIcons();
 }
 
-    function addToCart(id) {
-      const p = products.find(i => i.id === id);
-      if (!p) return;
-
-      if (p.isSubProduct && p.parentId) {
-        const parent = products.find(prod => prod.id === p.parentId);
-        if (!parent || parent.stock <= 0) return alert('สินค้าตัวหลักในสต็อกหมดแล้ว');
-      } else {
-        if (p.stock <= 0) return alert('สินค้าหมดสต็อก');
-      }
-
-      const idx = cart.findIndex(c => c.productId === id);
-      if (idx >= 0) {
-        cart[idx].qty++;
-      } else {
-        cart.push({ productId: p.id, name: p.name, price: p.price, cost: p.cost, qty: 1 });
-      }
-      renderCart();
-      focusScanInput();
-    }
-
-    function updateCartQtyInput(idx, value) {
-      let newQty = parseInt(value, 10);
-      if (isNaN(newQty) || newQty <= 0) newQty = 1;
-
-      const c = cart[idx];
-      if (!c) return;
-
-      cart[idx].qty = newQty;
-      renderCart();
-    }
-
     function renderCart() {
       const container = document.getElementById('cartItems');
       document.getElementById('cartCount').innerText = cart.reduce((a, b) => a + b.qty, 0) + ' ชิ้น';
@@ -4294,13 +4291,6 @@ function openBarcodeModalFromList(id) {
   const qtyEl = document.getElementById('cartTotalQtyText');
   if (qtyEl) qtyEl.innerText = `(${totalQty} ชิ้น)`;
 }
-
-    function changeQty(idx, delta) {
-      cart[idx].qty += delta;
-      if (cart[idx].qty <= 0) cart.splice(idx, 1);
-      renderCart();
-      focusScanInput();
-    }
 
     function calculateTotalCostAndDeductStock(cartList) {
       let totalCostSum = 0;
@@ -5069,22 +5059,51 @@ function openEditProductModal(id, isReStock = false) {
 }
 
 // 🟢 2. ฟังก์ชันบันทึกสินค้า ป้องกันระบบค้างและรองรับข้อมูลทุกประเภท
+// 🟢 ฟังก์ชันบันทึกสินค้า (แก้ไขการอัปเดตข้อมูลค้าง และรองรับการเซฟแม่นยำ 100%)
 function saveProduct() {
   try {
+    // ปลดโฟกัสช่องพิมพ์ ดึงค่าตัวเลขล่าสุด
+    if (document.activeElement && typeof document.activeElement.blur === 'function') {
+      document.activeElement.blur();
+    }
+
+    const parseNum = (val) => {
+      if (val === null || val === undefined || val === '') return 0;
+      const clean = String(val).replace(/,/g, '.').trim();
+      const num = Number(clean);
+      return isNaN(num) ? 0 : num;
+    };
+
     const barcode = (document.getElementById('p-barcode')?.value || '').trim();
     const name = (document.getElementById('p-name')?.value || '').trim();
     const category = (document.getElementById('p-category')?.value || '').trim() || 'ทั่วไป';
     const description = (document.getElementById('p-description')?.value || '').trim();
-    const price = Number(document.getElementById('p-price')?.value) || 0;
+    const price = parseNum(document.getElementById('p-price')?.value);
 
-    // เช็กว่าเป็นหมวดหมู่อาหารพร้อมทานหรือไม่
+    const addQty = parseNum(document.getElementById('p-addQty')?.value);
+    const addCost = parseNum(document.getElementById('p-addCost')?.value);
+
+    if (!name || isNaN(price)) {
+      return alert('กรุณาระบุชื่อสินค้าและราคาขายให้ถูกต้อง');
+    }
+
+    // 🎯 ตรวจสอบสินค้าแบ่งขาย: ต้องเปิดกล่อง subProductBox อยู่เท่านั้นถึงจะนับว่าเป็นสินค้าแบ่งขาย
+    const subBox = document.getElementById('subProductBox');
+    const isSubProduct = subBox && !subBox.classList.contains('hidden') && (document.getElementById('p-isSubProduct')?.checked || false);
+    const parentId = document.getElementById('p-parentId')?.value || null;
+    const ratio = parseNum(document.getElementById('p-ratio')?.value) || 1;
+    const hideInDelivery = document.getElementById('p-hideInDelivery')?.checked || false;
+
+    if (isSubProduct && (!parentId || ratio <= 0)) {
+      return alert('กรุณาเลือกรายชื่อสินค้าหลัก และระบุสัดส่วนการแบ่งขายให้ถูกต้องครับ');
+    }
+
     const isFoodCategory = category.includes('อาหารพร้อมทาน') || 
                            category.includes('เดลิเวอรี') || 
                            category.includes('อาหารจานเดียว') || 
                            category.includes('กับข้าว') || 
                            category.includes('ของทานเล่น');
 
-    // ดึงค่าสวิตช์ iOS (p-isOpen): เปิดขาย = isClosed: false / ปิดขาย = isClosed: true
     const isOpen = isFoodCategory ? (document.getElementById('p-isOpen')?.checked ?? true) : true;
     const isClosed = !isOpen;
 
@@ -5093,19 +5112,9 @@ function saveProduct() {
     const options = [];
     optNameInputs.forEach((input, i) => {
       const optName = (input.value || '').trim();
-      const optPrice = Number(optPriceInputs[i]?.value) || 0;
+      const optPrice = parseNum(optPriceInputs[i]?.value);
       if (optName) options.push({ name: optName, price: optPrice });
     });
-
-    const isSubProduct = document.getElementById('p-isSubProduct')?.checked || false;
-    const parentId = document.getElementById('p-parentId')?.value || null;
-    const ratio = Number(document.getElementById('p-ratio')?.value) || 1;
-    const hideInDelivery = document.getElementById('p-hideInDelivery')?.checked || false;
-    const addQty = Number(document.getElementById('p-addQty')?.value) || 0;
-    const addCost = Number(document.getElementById('p-addCost')?.value) || 0;
-
-    if (!name || isNaN(price)) return alert('กรุณาระบุชื่อสินค้าและราคาขายให้ถูกต้อง');
-    if (isSubProduct && (!parentId || ratio <= 0)) return alert('กรุณาเลือกรายชื่อสินค้าหลัก และระบุสัดส่วนการแบ่งขายให้ถูกต้องครับ');
 
     const safeImageUrl = (typeof uploadedBase64Image !== 'undefined' && uploadedBase64Image) ? uploadedBase64Image : "";
 
@@ -5125,34 +5134,68 @@ function saveProduct() {
       isClosed: isClosed
     };
 
-    if (editingProductId && typeof activeEditingProductObj !== 'undefined' && activeEditingProductObj) {
-      let batches = [];
+    let currentProdObj = null;
+    if (editingProductId) {
+      currentProdObj = products.find(i => String(i.id) === String(editingProductId));
+    }
+    if (!currentProdObj && typeof activeEditingProductObj !== 'undefined') {
+      currentProdObj = activeEditingProductObj;
+    }
+
+    if (editingProductId && currentProdObj) {
+      let batches = currentProdObj.batches ? JSON.parse(JSON.stringify(currentProdObj.batches)) : [];
+
       if (typeof isReStockMode !== 'undefined' && isReStockMode) {
-        batches = activeEditingProductObj.batches ? [...activeEditingProductObj.batches] : [];
-        if (addQty > 0) batches.push({ qty: addQty, cost: addCost, ts: Date.now() });
+        if (addQty <= 0) return alert('กรุณาระบุจำนวนสินค้าที่ต้องการเติมเพิ่ม (ต้องมากกว่า 0 ชิ้น)');
+        batches.push({ qty: addQty, cost: addCost, ts: Date.now() });
       } else {
         const qtyInputs = document.querySelectorAll('.edit-batch-qty');
         const costInputs = document.querySelectorAll('.edit-batch-cost');
+
         if (qtyInputs.length > 0) {
+          let newBatches = [];
+          let batchSum = 0;
+
           qtyInputs.forEach((input, idx) => {
-            const q = Number(input.value) || 0;
-            const c = Number(costInputs[idx]?.value) || 0;
+            const q = parseNum(input.value);
+            const c = parseNum(costInputs[idx]?.value);
             if (q > 0) {
-              const origTs = (activeEditingProductObj.batches && activeEditingProductObj.batches[idx]) ? activeEditingProductObj.batches[idx].ts : Date.now();
-              batches.push({ qty: q, cost: c, ts: origTs });
+              const origTs = (batches[idx] && batches[idx].ts) ? batches[idx].ts : Date.now();
+              newBatches.push({ qty: q, cost: c, ts: origTs });
+              batchSum += q;
             }
           });
+
+          if (addQty !== batchSum && newBatches.length > 0) {
+            const diff = addQty - batchSum;
+            newBatches[newBatches.length - 1].qty += diff;
+            if (newBatches[newBatches.length - 1].qty < 0) {
+              newBatches[newBatches.length - 1].qty = 0;
+            }
+          }
+
+          batches = newBatches;
         } else {
-          if (addQty > 0) batches = [{ qty: addQty, cost: addCost, ts: Date.now() }];
+          if (addQty > 0) {
+            batches = [{ qty: addQty, cost: addCost, ts: Date.now() }];
+          } else {
+            batches = [];
+          }
         }
       }
 
       productData.batches = isSubProduct ? [] : batches;
       productData.stock = isSubProduct ? 0 : batches.reduce((sum, b) => sum + (b.qty || 0), 0);
 
+      // 🎯 สั่งปิดป๊อปอัปก่อน แล้วค่อยอัปเดตข้อมูลลง Firebase
+      closeProductModal();
+
       db.collection("products").doc(String(editingProductId)).update(productData).then(() => {
-        alert('บันทึกข้อมูลสินค้าเรียบร้อยแล้ว');
+        alert(isReStockMode ? '⚡ เติมสต็อกเรียบร้อยแล้ว!' : '✏️ บันทึกข้อมูลสินค้าเรียบร้อยแล้ว');
+      }).catch(err => {
+        alert('เกิดข้อผิดพลาดในการบันทึก: ' + err.message);
       });
+
     } else {
       let batches = [];
       if (addQty > 0 && !isSubProduct) {
@@ -5162,12 +5205,15 @@ function saveProduct() {
       productData.batches = batches;
       productData.stock = isSubProduct ? 0 : addQty;
 
+      closeProductModal();
+
       db.collection("products").add(productData).then(() => {
-        alert('เพิ่มสินค้าใหม่เรียบร้อยแล้ว');
+        alert('📦 เพิ่มสินค้าใหม่เรียบร้อยแล้ว');
+      }).catch(err => {
+        alert('เกิดข้อผิดพลาดในการเพิ่มสินค้า: ' + err.message);
       });
     }
 
-    closeProductModal();
   } catch (err) {
     console.error("Save Product Error:", err);
     alert("เกิดข้อผิดพลาดในการบันทึก: " + err.message);
@@ -5225,113 +5271,6 @@ function closeProductModal() {
     focusScanInput();
   } catch(e) {
     console.error(e);
-  }
-}
-
-// 🟢 2. ฟังก์ชันบันทึกสินค้า (รองรับสวิตช์เปิด-ปิดการขายสไตล์ iOS)
-function saveProduct() {
-  try {
-    const barcode = (document.getElementById('p-barcode')?.value || '').trim();
-    const name = (document.getElementById('p-name')?.value || '').trim();
-    const category = (document.getElementById('p-category')?.value || '').trim() || 'ทั่วไป';
-    const description = (document.getElementById('p-description')?.value || '').trim();
-    const price = Number(document.getElementById('p-price')?.value) || 0;
-
-    // เช็กว่าเป็นหมวดหมู่อาหารพร้อมทานหรือไม่
-    const isFoodCategory = category.includes('อาหารพร้อมทาน') || 
-                           category.includes('เดลิเวอรี') || 
-                           category.includes('อาหารจานเดียว') || 
-                           category.includes('กับข้าว') || 
-                           category.includes('ของทานเล่น');
-
-    // ดึงค่าสวิตช์ iOS (p-isOpen): เปิดขาย = isClosed: false / ปิดขาย = isClosed: true
-    const isOpen = isFoodCategory ? (document.getElementById('p-isOpen')?.checked ?? true) : true;
-    const isClosed = !isOpen;
-
-    // ดึงข้อมูลท็อปปิ้ง / ตัวเลือกเพิ่มเติม
-    const optNameInputs = document.querySelectorAll('.opt-name');
-    const optPriceInputs = document.querySelectorAll('.opt-price');
-    const options = [];
-    optNameInputs.forEach((input, i) => {
-      const optName = (input.value || '').trim();
-      const optPrice = Number(optPriceInputs[i]?.value) || 0;
-      if (optName) options.push({ name: optName, price: optPrice });
-    });
-
-    const isSubProduct = document.getElementById('p-isSubProduct')?.checked || false;
-    const parentId = document.getElementById('p-parentId')?.value || null;
-    const ratio = Number(document.getElementById('p-ratio')?.value) || 1;
-    const hideInDelivery = document.getElementById('p-hideInDelivery')?.checked || false;
-    const addQty = Number(document.getElementById('p-addQty')?.value) || 0;
-    const addCost = Number(document.getElementById('p-addCost')?.value) || 0;
-
-    if (!name || isNaN(price)) return alert('กรุณาระบุชื่อสินค้าและราคาขายให้ถูกต้อง');
-    if (isSubProduct && (!parentId || ratio <= 0)) return alert('กรุณาเลือกรายชื่อสินค้าหลัก และระบุสัดส่วนการแบ่งขายให้ถูกต้องครับ');
-
-    const safeImageUrl = (typeof uploadedBase64Image !== 'undefined' && uploadedBase64Image) ? uploadedBase64Image : "";
-
-    const productData = {
-      barcode: barcode || "",
-      name: name,
-      category: category,
-      description: description || "",
-      options: options,
-      price: price,
-      imageUrl: safeImageUrl,
-      isSubProduct: isSubProduct,
-      parentId: isSubProduct ? parentId : null,
-      ratio: isSubProduct ? ratio : 1,
-      cost: addCost,
-      hideInDelivery: hideInDelivery,
-      isClosed: isClosed
-    };
-
-    if (editingProductId && typeof activeEditingProductObj !== 'undefined' && activeEditingProductObj) {
-      let batches = [];
-      if (typeof isReStockMode !== 'undefined' && isReStockMode) {
-        batches = activeEditingProductObj.batches ? [...activeEditingProductObj.batches] : [];
-        if (addQty > 0) batches.push({ qty: addQty, cost: addCost, ts: Date.now() });
-      } else {
-        const qtyInputs = document.querySelectorAll('.edit-batch-qty');
-        const costInputs = document.querySelectorAll('.edit-batch-cost');
-        if (qtyInputs.length > 0) {
-          qtyInputs.forEach((input, idx) => {
-            const q = Number(input.value) || 0;
-            const c = Number(costInputs[idx]?.value) || 0;
-            if (q > 0) {
-              const origTs = (activeEditingProductObj.batches && activeEditingProductObj.batches[idx]) ? activeEditingProductObj.batches[idx].ts : Date.now();
-              batches.push({ qty: q, cost: c, ts: origTs });
-            }
-          });
-        } else {
-          if (addQty > 0) batches = [{ qty: addQty, cost: addCost, ts: Date.now() }];
-        }
-      }
-
-      productData.batches = isSubProduct ? [] : batches;
-      productData.stock = isSubProduct ? 0 : batches.reduce((sum, b) => sum + (b.qty || 0), 0);
-
-      db.collection("products").doc(String(editingProductId)).update(productData).then(() => {
-        alert('บันทึกข้อมูลสินค้าเรียบร้อยแล้ว');
-      });
-    } else {
-      let batches = [];
-      if (addQty > 0 && !isSubProduct) {
-        batches.push({ qty: addQty, cost: addCost, ts: Date.now() });
-      }
-
-      productData.batches = batches;
-      productData.stock = isSubProduct ? 0 : addQty;
-
-      db.collection("products").add(productData).then(() => {
-        alert('เพิ่มสินค้าใหม่เรียบร้อยแล้ว');
-      });
-    }
-
-    closeProductModal();
-  } catch (err) {
-    console.error("Save Product Error:", err);
-    alert("เกิดข้อผิดพลาดในการบันทึก: " + err.message);
   }
 }
 
@@ -6799,7 +6738,7 @@ function closeCustomAlert() {
   </script>
 
   <!-- Modal แจ้งเตือนกลางจอ (Custom Alert) -->
-  <div id="customAlertModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9999] transition-opacity">
+  <div id="customAlertModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[99999] transition-opacity">
     <div class="bg-white p-6 rounded-3xl max-w-sm w-full text-center space-y-4 shadow-2xl border-2 border-[#DEDACB]">
       <div class="w-14 h-14 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
         <i data-lucide="alert-triangle" class="w-8 h-8"></i>

@@ -1572,13 +1572,14 @@
             <option value="อาหารพร้อมทาน/เดลิเวอรี">🛵 อาหารพร้อมทาน / เดลิเวอรี</option>
             <option value="อาหารจานเดียว">🍲 อาหารจานเดียว</option>
             <option value="กับข้าว">🥘 กับข้าว</option>
-            <option value="ของทานเล่น">ขนม / ของทานเล่น</option>
+            <option value="ของทานเล่น">🍭 ขนม / ของทานเล่น</option>
             <option value="กล่องพัสดุ">📦 กล่องพัสดุ / อุปกรณ์แพ็ค</option>
             <option value="อาหาร/เครื่องดื่ม">🍹 อาหาร / เครื่องดื่ม</option>
             <option value="เครื่องสำอาง">💄 เครื่องสำอาง / เสริมความงาม</option>
             <option value="ยา/เวชภัณฑ์">💊 ยา / สินค้าสุขภาพ</option>
             <option value="เนื้อสัตว์/ของสด">🥩 เนื้อสัตว์ / ของสด</option>
             <option value="ของใช้">🧹 ของใช้ในบ้าน</option>
+            <option value="เชื้อเพลิง/พลังงาน">🔥 เชื้อเพลิง/พลังงาน</option>
             <option value="สัตว์เลี้ยง">🐾 สินค้าสัตว์เลี้ยง</option>
           </select>
         </div>
@@ -3893,9 +3894,11 @@ function setPosCategory(cat) {
     return;
   }
 
-  let displayProducts = products;
+  // 🎯 1. คัดลอกอาร์เรย์ออกมาใหม่ (Clone) ป้องกันไม่ให้ไปสลับตำแหน่งอาร์เรย์หลัก products
+  let displayProducts = [...products];
+
   if (selectedPosCategory !== 'ทั้งหมด') {
-    displayProducts = products.filter(p => p.category === selectedPosCategory);
+    displayProducts = displayProducts.filter(p => p.category === selectedPosCategory);
   }
 
   const searchRaw = document.getElementById('scanInput')?.value || '';
@@ -3915,15 +3918,29 @@ function setPosCategory(cat) {
     return;
   }
 
+  // 🎯 2. จัดเรียงลำดับแบบล็อกตำแหน่งนิ่ง:
+  // - สินค้าหมด / ปิดขาย โดนดันไปล่างสุด
+  // - กลุ่มสินค้าจัดเรียงตามหมวดหมู่
+  // - เรียงตามชื่อ ก-ฮ
   displayProducts.sort((a, b) => {
-    const aStock = (a.isSubProduct && a.parentId) ? (products.find(p => p.id === a.parentId)?.stock || 0) : a.stock;
-    const bStock = (b.isSubProduct && b.parentId) ? (products.find(p => p.id === b.parentId)?.stock || 0) : b.stock;
+    const aStock = (a.isSubProduct && a.parentId) ? (products.find(p => p.id === a.parentId)?.stock || 0) : (a.stock || 0);
+    const bStock = (b.isSubProduct && b.parentId) ? (products.find(p => p.id === b.parentId)?.stock || 0) : (b.stock || 0);
 
-    const aOut = aStock <= 0 || (a.category === 'อาหารพร้อมทาน/เดลิเวอรี' && a.isClosed);
-    const bOut = bStock <= 0 || (b.category === 'อาหารพร้อมทาน/เดลิเวอรี' && b.isClosed);
+    const aOut = aStock <= 0.001 || (a.category === 'อาหารพร้อมทาน/เดลิเวอรี' && a.isClosed);
+    const bOut = bStock <= 0.001 || (b.category === 'อาหารพร้อมทาน/เดลิเวอรี' && b.isClosed);
 
     if (aOut !== bOut) return aOut ? 1 : -1;
-    return a.name.localeCompare(b.name, 'th');
+
+    // จัดกลุ่มตามหมวดหมู่นิ่งๆ
+    const catCompare = (a.category || '').localeCompare(b.category || '', 'th');
+    if (catCompare !== 0) return catCompare;
+
+    // เรียงตามชื่อสินค้า ก-ฮ
+    const nameCompare = (a.name || '').localeCompare(b.name || '', 'th');
+    if (nameCompare !== 0) return nameCompare;
+
+    // ล็อกตำแหน่งด้วย ID กันการสลับโชว์
+    return String(a.id || '').localeCompare(String(b.id || ''));
   });
 
   const totalPages = Math.ceil(displayProducts.length / itemsPerPage);
@@ -3940,16 +3957,22 @@ function setPosCategory(cat) {
 
     if (p.isSubProduct && p.parentId) {
       const parent = products.find(prod => prod.id === p.parentId);
-      const parentStock = parent ? parent.stock : 0;
-      isOutOfStock = parentStock <= 0;
+      const parentStock = parent ? (parent.stock || 0) : 0;
+      isOutOfStock = parentStock <= 0.001;
       stockLabel = isOutOfStock ? 'หมด' : `คลังหลักเหลือ ${fmtStk(parentStock)}`;
     } else {
-      isOutOfStock = p.stock <= 0 || (isFoodCategory && p.isClosed);
-      stockLabel = (isFoodCategory && p.isClosed) ? '🔴 ปิดขาย' : (p.stock <= 0 ? 'หมด' : `เหลือ ${fmtStk(p.stock)}`);
+      isOutOfStock = (p.stock || 0) <= 0.001 || (isFoodCategory && p.isClosed);
+      stockLabel = (isFoodCategory && p.isClosed) ? '🔴 ปิดขาย' : (isOutOfStock ? 'หมด' : `เหลือ ${fmtStk(p.stock)}`);
     }
 
     return `
-      <button onclick="addToCart('${p.id}')" class="text-left bg-[#F5F3EE] p-3 sm:p-3.5 rounded-2xl border-2 border-[#DEDACB] hover:border-[#0F5C52] transition flex flex-col items-center justify-between relative shadow-sm">
+      <button onclick="addToCart('${p.id}')" 
+        class="text-left p-3 sm:p-3.5 rounded-2xl border-2 transition flex flex-col items-center justify-between relative shadow-sm ${
+          isOutOfStock 
+            ? 'bg-gray-200 border-gray-300 grayscale opacity-75' 
+            : 'bg-[#F5F3EE] border-[#DEDACB] hover:border-[#0F5C52]'
+        }">
+        
         <div class="flex justify-between items-center w-full absolute top-2 px-2 z-10">
           <span class="text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-bold ${isFoodCategory ? 'bg-orange-500 text-white shadow-sm' : 'bg-[#1C2321]/80 text-white'} truncate max-w-[90px]">
             ${isFoodCategory ? '🛵 พร้อมทาน' : (p.category || 'ทั่วไป')}
@@ -3962,10 +3985,12 @@ function setPosCategory(cat) {
         </div>
 
         <div class="w-full aspect-square bg-white rounded-xl mb-2 mt-4 overflow-hidden flex items-center justify-center border border-[#DEDACB] relative">
-          ${p.imageUrl ? `<img src="${p.imageUrl}" class="w-full h-full object-cover ${isOutOfStock ? 'grayscale opacity-60' : ''}">` : `<i data-lucide="package" class="w-10 h-10 text-gray-400 ${isOutOfStock ? 'grayscale opacity-60' : ''}"></i>`}
+          ${p.imageUrl ? `<img src="${p.imageUrl}" class="w-full h-full object-cover">` : `<i data-lucide="package" class="w-10 h-10 text-gray-400"></i>`}
           ${isOutOfStock ? `
-            <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
-              <span class="bg-[#B3432B] text-white text-xs sm:text-base font-bold px-2.5 py-0.5 rounded-xl shadow-md font-display">${p.isClosed ? 'ปิดขาย' : 'หมด'}</span>
+            <div class="absolute inset-0 bg-black/50 flex items-center justify-center z-20 rounded-xl">
+              <span class="bg-[#B3432B] text-white text-xs sm:text-base font-bold px-3 py-1 rounded-xl shadow-md font-display">
+                ${p.isClosed ? 'ปิดขาย' : 'หมด'}
+              </span>
             </div>
           ` : ''}
         </div>

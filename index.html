@@ -273,6 +273,12 @@
             <div class="flex items-center gap-3"><i data-lucide="globe" class="w-5 h-5"></i><span>ออเดอร์ออนไลน์</span></div>
             <span id="onlineOrdersBadge" class="bg-amber-500 text-black text-xs px-2 py-0.5 rounded-full font-bold hidden animate-pulse">0</span>
           </button>
+
+          <!-- 🖼️ ปุ่มจัดการป้ายโฆษณา -->
+<button onclick="showTab('banners')" id="btn-banners" class="w-full text-left px-3.5 py-2.5 rounded-xl font-bold flex items-center gap-3 text-gray-300 hover:bg-white/10 hover:text-white transition">
+  <i data-lucide="image" class="w-5 h-5"></i><span>จัดการป้ายโฆษณา</span>
+</button>
+
         </div>
 
         <div class="space-y-1">
@@ -869,6 +875,52 @@
         </div>
       </div>
     </div>
+
+<!-- 🖼️ แท็บจัดการป้ายโฆษณา / แบนเนอร์สื่อโปรโมชัน -->
+<div id="tab-banners" class="hidden bg-white p-6 rounded-2xl border-2 border-[#DEDACB] space-y-6">
+  <div class="flex justify-between items-center border-b pb-4">
+    <div>
+      <h2 class="font-bold text-2xl font-display flex items-center gap-2 text-[#0F5C52]">
+        <i data-lucide="image" class="w-7 h-7 text-amber-500"></i> จัดการป้ายโฆษณา & แบนเนอร์โปรโมชัน
+      </h2>
+      <p class="text-sm text-gray-500 mt-1">อัปเดตรูปสื่อโฆษณาเพื่อนำไปแสดงผลบนแอปสั่งซื้อสินค้าฝั่งลูกค้า</p>
+    </div>
+  </div>
+
+  <!-- ฟอร์มเพิ่มรูปโฆษณา -->
+  <form onsubmit="saveBannerAd(event)" class="bg-[#F5F3EE] p-5 rounded-2xl border-2 border-[#DEDACB] space-y-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="text-sm font-bold text-gray-700 block mb-1">ชื่อรูป / สื่อโฆษณา (ไว้จำในระบบ)</label>
+        <input type="text" id="bannerTitleInput" placeholder="เช่น โปรโมชันเซ็ตไก่ทอด KFCPepsi..." class="w-full p-3 rounded-xl border-2 bg-white text-base font-bold focus:outline-none focus:border-[#0F5C52]">
+      </div>
+
+      <div>
+        <label class="text-sm font-bold text-gray-700 block mb-1">เลือกไฟล์รูปภาพโฆษณา *</label>
+        <input type="file" id="bannerFileInput" accept="image/*" onchange="previewBannerImage(event)" class="w-full text-sm p-2 bg-white rounded-xl border-2 border-gray-300 cursor-pointer" required>
+      </div>
+    </div>
+
+    <!-- กล่องพรีวิวรูปภาพ (ยืดหยุ่นตามสเกลจริง ไม่ฟิกขนาด) -->
+    <div id="bannerPreviewBox" class="hidden bg-white p-4 rounded-2xl border-2 border-dashed border-[#0F5C52] text-center">
+      <div class="text-xs font-bold text-gray-500 mb-2 font-display">🖼️ ตัวอย่างการแสดงผลรูปโฆษณา (สเกลตามรูปจริง):</div>
+      <img id="bannerImgPreview" src="" class="max-w-full h-auto max-h-[350px] mx-auto rounded-2xl shadow-md border object-contain">
+    </div>
+
+    <button type="submit" class="w-full bg-[#0F5C52] hover:bg-[#0c4941] text-white py-3.5 rounded-xl font-bold text-lg font-display transition shadow-md">
+      🚀 อัปโหลดรูปโฆษณาขึ้นระบบ
+    </button>
+  </form>
+
+  <!-- รายการแบนเนอร์ทั้งหมดในระบบ -->
+  <div class="space-y-3">
+    <div class="font-bold font-display text-lg text-gray-800">รายการป้ายโฆษณาที่เปิดใช้งานอยู่</div>
+    <div id="bannersGridContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <p class="col-span-full text-center py-8 text-gray-400 font-bold">กำลังดึงข้อมูลป้ายโฆษณา...</p>
+    </div>
+  </div>
+</div>
+
 <!-- Modal ตั้งค่าพิกัดตำแหน่งร้านค้า -->
 <div id="shopLocationModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
   <div class="bg-white p-6 rounded-3xl max-w-xl w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
@@ -2450,6 +2502,11 @@ function downloadMemberCardImage() {
     const db = firebase.firestore();
 
     let products = [], cart = [], staff = [], sales = [], expenses = [], debtPayments = [], dailyFloats = [], cashMovements = [], onlineOrders = [], rewardsList = [];
+// 🟢 เพิ่มการประกาศตัวแปรโฆษณาไว้ตรงนี้เพื่อป้องกันโปรแกรมสะดุด
+    let bannersList = [];
+    let uploadedBannerBase64 = "";
+    let editingBannerId = null;
+    let unsubscribeBanners = null;
     let currentMethod = 'cash';
     let editingProductId = null;
     let editingRewardId = null;
@@ -3302,7 +3359,9 @@ function handleSearchInput() {
         s.forEach(doc => rewardsList.push({ id: doc.id, ...doc.data() }));
         renderAdminRewards();
       });
-    }
+
+      listenBannersData();
+}
 
     initRealtimeListeners();
 
@@ -6613,7 +6672,7 @@ if (item.type === 'sale') {
 }
 
     function showTab(name) {
-      ['pos', 'stock', 'lowstock', 'rewards', 'debts', 'expenses', 'reports', 'staff'].forEach(t => {
+  ['pos', 'stock', 'lowstock', 'rewards', 'debts', 'expenses', 'reports', 'staff', 'banners'].forEach(t => {
         const el = document.getElementById(`tab-${t}`);
         if(el) el.classList.add('hidden');
         
@@ -6760,6 +6819,206 @@ function closeCustomAlert() {
   const modal = document.getElementById('customAlertModal');
   if (modal) modal.classList.add('hidden');
 }
+
+// ----------------------------------------------------
+// 🖼️ ระบบจัดการป้ายโฆษณา HD (มีระบบแก้ไข + คมชัดสูง)
+// ----------------------------------------------------
+// 1. บีบอัดภาพความละเอียดสูง HD (สูงสุด 1920px ความคมชัด 90%)
+function compressAndResizeBannerImage(file, callback) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+      const maxDim = 1920; // 🎯 ภาพคมชัดระดับ Full HD 1920px
+
+      if (width > height) {
+        if (width > maxDim) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        }
+      } else {
+        if (height > maxDim) {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // 🎯 คุณภาพภาพ 90% คมชัดไม่แตก
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.90);
+      callback(compressedDataUrl);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function previewBannerImage(e) {
+  const file = e.target.files[0];
+  if (file) {
+    compressAndResizeBannerImage(file, function(base64Result) {
+      uploadedBannerBase64 = base64Result;
+      const previewImg = document.getElementById('bannerImgPreview');
+      const previewBox = document.getElementById('bannerPreviewBox');
+      if (previewImg && previewBox) {
+        previewImg.src = uploadedBannerBase64;
+        previewBox.classList.remove('hidden');
+      }
+    });
+  }
+}
+
+// 2. บันทึก / แก้ไขโฆษณา
+function saveBannerAd(e) {
+  e.preventDefault();
+  const title = document.getElementById('bannerTitleInput').value.trim() || 'ป้ายโฆษณาหน้าร้าน';
+
+  // ถ้าแก้ไขรายการเดิมแต่ไม่ได้เลือกรูปใหม่ ให้ใช้รูปเดิม
+  let finalImgUrl = uploadedBannerBase64;
+  if (editingBannerId && !finalImgUrl) {
+    const currentItem = bannersList.find(b => b.id === editingBannerId);
+    if (currentItem) finalImgUrl = currentItem.imageUrl;
+  }
+
+  if (!finalImgUrl) {
+    return alert('กรุณาเลือกไฟล์รูปภาพโฆษณาก่อนครับ');
+  }
+
+  const bannerData = {
+    title: title,
+    imageUrl: finalImgUrl,
+    isActive: true,
+    ts: Date.now()
+  };
+
+  if (editingBannerId) {
+    // ✏️ เคสแก้ไขรายการเดิม
+    db.collection("banners").doc(editingBannerId).update(bannerData).then(() => {
+      resetBannerForm();
+      alert('✏️ แก้ไขป้ายโฆษณาเรียบร้อยแล้ว!');
+    }).catch(err => alert('เกิดข้อผิดพลาด: ' + err.message));
+  } else {
+    // 🚀 เคสเพิ่มรายการใหม่
+    db.collection("banners").add(bannerData).then(() => {
+      resetBannerForm();
+      alert('🚀 อัปโหลดป้ายโฆษณาขึ้นระบบเรียบร้อยแล้ว!');
+    }).catch(err => alert('เกิดข้อผิดพลาด: ' + err.message));
+  }
+}
+
+function resetBannerForm() {
+  editingBannerId = null;
+  uploadedBannerBase64 = "";
+  document.getElementById('bannerTitleInput').value = '';
+  document.getElementById('bannerFileInput').value = '';
+  document.getElementById('bannerFileInput').required = true;
+  document.getElementById('bannerPreviewBox').classList.add('hidden');
+  
+  const submitBtn = document.querySelector('#tab-banners form button[type="submit"]');
+  if (submitBtn) submitBtn.innerText = '🚀 อัปโหลดรูปโฆษณาขึ้นระบบ';
+}
+
+// 3. ดึงข้อมูล Realtime
+function listenBannersData() {
+  if (unsubscribeBanners) unsubscribeBanners();
+  unsubscribeBanners = db.collection("banners").onSnapshot(snapshot => {
+    bannersList = [];
+    snapshot.forEach(doc => {
+      bannersList.push({ id: doc.id, ...doc.data() });
+    });
+    renderBannersList();
+  }, err => {
+    console.error("Banners error:", err);
+  });
+}
+
+// 4. แสดงรายการโฆษณาพร้อมปุ่มแก้ไขและลบ
+function renderBannersList() {
+  const container = document.getElementById('bannersGridContainer');
+  if (!container) return;
+
+  const sortedList = [...bannersList].sort((a, b) => (b.ts || 0) - (a.ts || 0));
+
+  if (sortedList.length === 0) {
+    container.innerHTML = `<p class="col-span-full text-center py-10 text-gray-400 font-bold">ยังไม่มีป้ายโฆษณาในระบบ สามารถเพิ่มรูปภาพใหม่ด้านบนได้เลยครับ</p>`;
+    return;
+  }
+
+  container.innerHTML = sortedList.map(b => `
+    <div class="bg-gray-50 p-4 rounded-2xl border-2 flex flex-col justify-between space-y-3 shadow-sm relative">
+      <div class="space-y-2">
+        <div class="flex justify-between items-center border-b pb-2">
+          <span class="font-bold text-base text-gray-800 font-display truncate">${b.title}</span>
+          <button type="button" onclick="toggleBannerStatus('${b.id}', ${!b.isActive})" class="text-xs px-2.5 py-1 rounded-full font-bold transition ${b.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-200 text-gray-600'}">
+            ${b.isActive ? '🟢 เปิดแสดงผล' : '⚪ ซ่อนไว้'}
+          </button>
+        </div>
+
+        <div class="w-full bg-white rounded-xl overflow-hidden border p-2 flex items-center justify-center min-h-[150px]">
+          <img src="${b.imageUrl}" class="w-full h-auto max-h-[300px] object-contain rounded-lg">
+        </div>
+        
+        <div class="text-[11px] text-gray-400 font-medium">
+          อัปโหลดเมื่อ: ${new Date(b.ts).toLocaleString('th-TH')}
+        </div>
+      </div>
+
+      <div class="flex justify-end items-center gap-2 pt-2 border-t">
+        <button type="button" onclick="editBannerAd('${b.id}')" class="bg-amber-100 hover:bg-amber-200 text-amber-900 px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1 transition">
+          ✏️ แก้ไข
+        </button>
+        <button type="button" onclick="deleteBannerAd('${b.id}')" class="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1 transition">
+          🗑️ ลบ
+        </button>
+      </div>
+    </div>
+  `).join('');
+
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+// 5. ดึงข้อมูลแบนเนอร์เดิมขึ้นฟอร์มเพื่อแก้ไข
+function editBannerAd(id) {
+  const item = bannersList.find(b => b.id === id);
+  if (!item) return;
+
+  editingBannerId = id;
+  uploadedBannerBase64 = ""; // Reset base64 ใหม่ เผื่อผู้ใช้ไม่เลือกไฟล์ใหม่
+
+  document.getElementById('bannerTitleInput').value = item.title || '';
+  document.getElementById('bannerFileInput').required = false; // แก้ไขไม่ต้องบังคับเลือกไฟล์ใหม่
+  
+  const previewImg = document.getElementById('bannerImgPreview');
+  const previewBox = document.getElementById('bannerPreviewBox');
+  if (previewImg && previewBox) {
+    previewImg.src = item.imageUrl;
+    previewBox.classList.remove('hidden');
+  }
+
+  const submitBtn = document.querySelector('#tab-banners form button[type="submit"]');
+  if (submitBtn) submitBtn.innerText = '💾 บันทึกการแก้ไขป้ายโฆษณา';
+
+  // เลื่อนหน้าจอขึ้นไปที่ฟอร์ม
+  document.getElementById('tab-banners').scrollIntoView({ behavior: 'smooth' });
+}
+
+function toggleBannerStatus(id, newStatus) {
+  db.collection("banners").doc(id).update({ isActive: newStatus });
+}
+
+function deleteBannerAd(id) {
+  if (confirm('คุณต้องการลบป้ายโฆษณานี้ใช่หรือไม่?')) {
+    db.collection("banners").doc(id).delete();
+  }
+}
+
   </script>
 
   <!-- Modal แจ้งเตือนกลางจอ (Custom Alert) -->

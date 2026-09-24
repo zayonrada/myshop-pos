@@ -128,6 +128,17 @@
         </div>
       </div>
 
+<!-- 🖼️ โซนแบนเนอร์ป้ายโฆษณา (สไลด์เลื่อนอัตโนมัติ 5 วิ + จุดไข่ปลา) -->
+      <div id="customerBannersContainer" class="p-3 md:p-6 pb-1 hidden">
+        <div class="relative overflow-hidden rounded-2xl md:rounded-3xl shadow-sm bg-white border border-gray-100">
+          <div id="customerBannersSlider" onscroll="updateBannerDotsOnScroll()" class="flex overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-smooth">
+            <!-- รูปแบนเนอร์จะถูกดึงมาแสดงตรงนี้ -->
+          </div>
+        </div>
+        <!-- 🟢 จุดไข่ปลาแสดงตำแหน่งภาพ (Dots Indicator) -->
+        <div id="customerBannerDots" class="flex justify-center items-center gap-1.5 mt-2.5"></div>
+      </div>
+
       <!-- 🛵 โซนหมวดหมู่สินค้า -->
       <div class="p-3 md:p-6 pt-2">
         <div class="flex items-center justify-between mb-2">
@@ -2772,6 +2783,106 @@
     });
 
     if (window.lucide) lucide.createIcons();
-  </script>
+
+// ----------------------------------------------------
+// 🖼️ ดึงข้อมูลแบนเนอร์โฆษณา + สไลด์เลื่อนอัตโนมัติ 5 วิ + จุดไข่ปลา
+// ----------------------------------------------------
+let customerBanners = [];
+let bannerSlideTimer = null;
+let currentBannerIndex = 0;
+
+// ดึงข้อมูล Realtime จาก Firestore Collection "banners"
+db.collection("banners").onSnapshot(s => {
+  customerBanners = [];
+  s.forEach(doc => {
+    const data = doc.data();
+    if (data.isActive !== false) {
+      customerBanners.push({ id: doc.id, ...data });
+    }
+  });
+  renderCustomerBanners();
+}, err => {
+  console.error("Fetch banners error:", err);
+});
+
+function renderCustomerBanners() {
+  const container = document.getElementById('customerBannersContainer');
+  const slider = document.getElementById('customerBannersSlider');
+  const dotsBox = document.getElementById('customerBannerDots');
+  if (!container || !slider) return;
+
+  if (customerBanners.length === 0) {
+    container.classList.add('hidden');
+    if (bannerSlideTimer) clearInterval(bannerSlideTimer);
+    return;
+  }
+
+  const sortedBanners = [...customerBanners].sort((a, b) => (b.ts || 0) - (a.ts || 0));
+
+  slider.innerHTML = sortedBanners.map(b => `
+    <div class="snap-center flex-shrink-0 w-full bg-white flex items-center justify-center">
+      <img src="${b.imageUrl}" alt="${b.title || 'โฆษณา'}" class="w-full h-auto max-h-[380px] md:max-h-[480px] object-contain rounded-2xl md:rounded-3xl">
+    </div>
+  `).join('');
+
+  // วาดจุดไข่ปลา (Dots)
+  if (dotsBox) {
+    dotsBox.innerHTML = sortedBanners.map((_, idx) => `
+      <span id="bannerDot_${idx}" class="h-2 rounded-full transition-all duration-300 ${idx === 0 ? 'bg-[#008B47] w-5' : 'bg-gray-300 w-2'}"></span>
+    `).join('');
+  }
+
+  container.classList.remove('hidden');
+  currentBannerIndex = 0;
+  startAutoBannerSlider(sortedBanners.length);
+}
+
+// ⏱️ ระบบวนสไลด์รูปภาพอัตโนมัติทุก 5 วินาที
+function startAutoBannerSlider(totalItems) {
+  if (bannerSlideTimer) clearInterval(bannerSlideTimer);
+  if (totalItems <= 1) return;
+
+  bannerSlideTimer = setInterval(() => {
+    currentBannerIndex = (currentBannerIndex + 1) % totalItems;
+    scrollToBannerIndex(currentBannerIndex, totalItems);
+  }, 5000);
+}
+
+function scrollToBannerIndex(index, totalItems) {
+  const slider = document.getElementById('customerBannersSlider');
+  if (!slider) return;
+  const slideWidth = slider.clientWidth;
+  slider.scrollTo({ left: slideWidth * index, behavior: 'smooth' });
+
+  updateDotHighlights(index, totalItems);
+}
+
+function updateDotHighlights(activeIndex, totalItems) {
+  for (let i = 0; i < totalItems; i++) {
+    const dot = document.getElementById(`bannerDot_${i}`);
+    if (dot) {
+      if (i === activeIndex) {
+        dot.className = "h-2 w-5 rounded-full bg-[#008B47] transition-all duration-300";
+      } else {
+        dot.className = "h-2 w-2 rounded-full bg-gray-300 transition-all duration-300";
+      }
+    }
+  }
+}
+
+// อัปเดตจุดไข่ปลาเมื่อลูกค้านิ้วปัดสไลด์เอง
+function updateBannerDotsOnScroll() {
+  const slider = document.getElementById('customerBannersSlider');
+  if (!slider || customerBanners.length === 0) return;
+  const slideWidth = slider.clientWidth;
+  if (slideWidth === 0) return;
+
+  const newIdx = Math.round(slider.scrollLeft / slideWidth);
+  if (newIdx !== currentBannerIndex && newIdx >= 0 && newIdx < customerBanners.length) {
+    currentBannerIndex = newIdx;
+    updateDotHighlights(newIdx, customerBanners.length);
+  }
+}
+</script>
 </body>
 </html>

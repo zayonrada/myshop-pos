@@ -82,11 +82,11 @@
 
       <div class="flex items-center gap-1.5">
         <div class="relative">
-          <select id="langSelect" onchange="changeAppLanguage(this.value)" class="bg-emerald-50 border border-[#008B47] text-[#008B47] font-bold text-xs rounded-full px-2 py-1.5 focus:outline-none cursor-pointer shadow-sm">
-            <option value="th">🇹🇭 TH</option>
-            <option value="en">🇬🇧 EN</option>
-            <option value="lo">🇱ående LO</option>
-            <option value="my">🇲🇲 MY</option>
+          <select id="langSelect" translate="no" onchange="changeAppLanguage(this.value)" class="notranslate bg-emerald-50 border border-[#008B47] text-[#008B47] font-bold text-xs rounded-full px-2 py-1.5 focus:outline-none cursor-pointer shadow-sm">
+            <option value="th" translate="no">🇹🇭 TH - ไทย</option>
+            <option value="en" translate="no">🇬🇧 EN - English</option>
+            <option value="lo" translate="no">🇱🇦 LO - ลาว</option>
+            <option value="my" translate="no">🇲🇲 MY - พม่า</option>
           </select>
         </div>
 
@@ -138,12 +138,14 @@
         </div>
       </div>
 
-      <!-- 🖼️ โซนแบนเนอร์ป้ายโฆษณา -->
+<!-- 🖼️ โซนแบนเนอร์ป้ายโฆษณา (สไลด์เลื่อนอัตโนมัติ 5 วิ + จุดไข่ปลา) -->
       <div id="customerBannersContainer" class="p-3 md:p-6 pb-1 hidden">
         <div class="relative overflow-hidden rounded-2xl md:rounded-3xl shadow-sm bg-white border border-gray-100">
           <div id="customerBannersSlider" onscroll="updateBannerDotsOnScroll()" class="flex overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-smooth">
+            <!-- รูปแบนเนอร์จะถูกดึงมาแสดงตรงนี้ -->
           </div>
         </div>
+        <!-- 🟢 จุดไข่ปลาแสดงตำแหน่งภาพ (Dots Indicator) -->
         <div id="customerBannerDots" class="flex justify-center items-center gap-1.5 mt-2.5"></div>
       </div>
 
@@ -208,7 +210,7 @@
       </div>
     </div>
 
-    <!-- 🐱 ปุ่มน้องแมวกลับขึ้นด้านบน -->
+<!-- 🐱 ปุ่มน้องแมวกลับขึ้นด้านบน (ดุ๊กดิ๊ก) -->
     <button id="backToTopBtn" onclick="scrollToTop()" class="hidden fixed bottom-28 right-4 md:right-8 z-50 bg-white/95 backdrop-blur-md border-2 border-[#008B47] p-2.5 rounded-full shadow-2xl transition-all duration-300 active:scale-90 flex flex-col items-center justify-center cursor-pointer hover:bg-emerald-50">
       <span class="text-2xl animate-wiggle">🐱</span>
       <span class="text-[9px] font-black font-display text-[#008B47] -mt-0.5 tracking-wider">▲ TOP</span>
@@ -353,10 +355,11 @@
       </div>
     </div>
 
-    <!-- 🍡 Modal เลือกตัวเลือก/ท็อปปิ้ง -->
+    <!-- 🍡 Modal เลือกตัวเลือก/ท็อปปิ้ง + รูปภาพสินค้า + เพิ่มจำนวน + ช้อนส้อม + หมายเหตุ -->
     <div id="custOptionSelectModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
       <div class="bg-white p-5 md:p-6 rounded-3xl max-w-md w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar">
         
+        <!-- หัวข้อ Pop-up + รูปภาพสินค้า -->
         <div class="flex gap-3 items-start border-b pb-3 relative">
           <div class="w-20 h-20 md:w-24 md:h-24 bg-gray-50 rounded-2xl border overflow-hidden flex items-center justify-center flex-shrink-0 shadow-sm">
             <img id="custOptModalImg" src="" class="w-full h-full object-cover hidden">
@@ -372,6 +375,7 @@
           </button>
         </div>
 
+        <!-- ➕➖ ปุ่มเพิ่ม/ลด จำนวนชิ้นที่จะสั่ง -->
         <div class="flex items-center justify-between bg-emerald-50 p-3 rounded-2xl border border-emerald-200 shadow-sm">
           <span class="text-xs font-bold text-emerald-900 font-display">จำนวนที่ต้องการสั่งซื้อ:</span>
           <div class="flex items-center gap-3 bg-white px-3 py-1 rounded-xl border border-emerald-300">
@@ -381,8 +385,10 @@
           </div>
         </div>
 
+        <!-- 🍡 รายการท็อปปิ้ง/น้ำจิ้ม (ซ่อนอัตโนมัติถ้าไม่มีตัวเลือก) -->
         <div id="custOptModalContent" class="space-y-3"></div>
 
+        <!-- 🍴 ตัวเลือกช้อนส้อม (ซ่อนอัตโนมัติถ้าไม่ใช่อาหารพร้อมทาน) -->
         <div id="custCutlerySection" class="bg-gray-50 p-3 rounded-2xl border space-y-1.5">
           <label class="text-xs font-bold text-gray-700 font-display flex items-center gap-1">
             <i data-lucide="utensils-crossed" class="w-4 h-4 text-[#008B47]"></i> ช้อนส้อมพลาสติก
@@ -399,6 +405,7 @@
           </div>
         </div>
 
+        <!-- 📝 ช่องระบุเพิ่มเติมถึงร้านค้า -->
         <div>
           <label class="text-xs font-bold text-gray-700 font-display block mb-1">📝 ข้อความเพิ่มเติมถึงร้านค้า (ถ้ามี)</label>
           <textarea id="custItemNote" rows="2" placeholder="เช่น ขอถุงแยก, ฝากแช่เย็น..." class="w-full p-2.5 rounded-xl border text-xs font-bold focus:outline-none focus:border-[#008B47] bg-gray-50"></textarea>
@@ -493,7 +500,7 @@
           </div>
         </div>
 
-        <!-- 📍 คำสั่งเพิ่มเติมสำหรับการจัดส่ง -->
+        <!-- 📍 คำสั่งเพิ่มเติมสำหรับการจัดส่ง (3 ตัวเลือก) -->
         <div id="dropOptionBox" class="bg-gray-50 p-3 rounded-2xl border space-y-2">
           <div class="text-xs font-bold text-gray-700 font-display flex items-center gap-1">
             <i data-lucide="map-pin" class="w-4 h-4 text-[#008B47]"></i> คำสั่งเพิ่มเติมสำหรับการจัดส่ง *
@@ -569,6 +576,7 @@
               <span id="btnGpsText">🎯 กดตรงนี้เพื่อดึงตำแหน่งบ้านปัจจุบัน (GPS)</span>
             </button>
 
+            <!-- 🔍 ช่องค้นหาสถานที่/หมู่บ้านบนแผนที่ -->
             <div class="flex gap-2">
               <input type="text" id="mapSearchInput" onkeydown="if(event.key==='Enter'){event.preventDefault();searchMapLocation();}" placeholder="พิมพ์ค้นหาชื่อหมู่บ้าน / สถานที่จัดส่ง..." class="flex-1 p-2.5 rounded-xl border bg-white font-bold text-xs md:text-sm focus:outline-none focus:border-[#008B47]">
               <button type="button" onclick="searchMapLocation()" class="bg-[#008B47] text-white px-3.5 py-2.5 rounded-xl font-bold text-xs font-display whitespace-nowrap shadow-sm hover:bg-[#007438] active:scale-95 transition flex items-center gap-1">
@@ -605,9 +613,6 @@
           <button onclick="toggleTrackingModal(false)" class="p-1 rounded-full bg-gray-100"><i data-lucide="x" class="w-6 h-6 text-gray-500"></i></button>
         </div>
 
-        <!-- 🏷️ แท็บสลับออเดอร์ (กรณีมีหลายออเดอร์) -->
-        <div id="orderTabsContainer"></div>
-
         <div class="bg-gray-50 p-3 rounded-2xl border space-y-2">
           <div class="text-xs font-bold text-gray-700 text-center font-display" id="modalStepTitleText">รับออเดอร์แล้ว</div>
           <div class="flex items-center justify-between relative px-2 py-1">
@@ -643,9 +648,6 @@
             <span id="trackTotalAmt" class="text-lg font-display text-[#F37021]">฿0.00</span>
           </div>
         </div>
-
-        <!-- 🚫 ปุ่มยกเลิกออเดอร์ -->
-        <div id="cancelOrderBtnContainer"></div>
       </div>
     </div>
 
@@ -1041,7 +1043,7 @@
 
     const STORE_LOCATION = { lat: 13.867726, lng: 100.113623 }; 
     const FREE_DISTANCE_LIMIT_KM = 3; 
-    const EXTRA_FEE_PER_KM = 10;        
+    const EXTRA_FEE_PER_KM = 10;       
 
     const firebaseConfig = {
       apiKey: "AIzaSyCGMxESjF8ZDAAm7xL_uDvz4hEa7EpZD6Y",
@@ -1075,16 +1077,7 @@
     let rewards = [];
     let custCart = [];
     let selectedCategory = 'ทั้งหมด';
-    
-    // 🟢 ระบบจัดการติดตามหลายออเดอร์พร้อมกัน
-    let myActiveOrders = JSON.parse(localStorage.getItem('myActiveOrders') || '[]');
-    let legacyOrderId = localStorage.getItem('lastOrderId');
-    if (legacyOrderId && !myActiveOrders.includes(legacyOrderId)) {
-      myActiveOrders.push(legacyOrderId);
-      localStorage.setItem('myActiveOrders', JSON.stringify(myActiveOrders));
-    }
-    let currentOrderId = myActiveOrders.length > 0 ? myActiveOrders[myActiveOrders.length - 1] : null;
-
+    let currentOrderId = localStorage.getItem('lastOrderId') || null;
     let unsubscribeOrderTracking = null;
     let userLocation = { ...STORE_LOCATION };
     let deliveryType = 'delivery';
@@ -1614,6 +1607,7 @@
       updateLocationStatus(defaultLat, defaultLng);
     }
 
+    // 🔍 ฟังก์ชันค้นหาชื่อหมู่บ้าน / สถานที่จัดส่งบนแผนที่
     function searchMapLocation() {
       const query = document.getElementById('mapSearchInput')?.value.trim();
       if (!query) return alert('กรุณากรอกชื่อหมู่บ้าน หรือสถานที่ที่ต้องการค้นหาครับ');
@@ -1852,6 +1846,7 @@
       }
     }
 
+    // 🛵 ระบบสลับวิธีการชำระเงิน + ล็อกความปลอดภัยจำกัดยอดเงินสดสูงสุด 300 บาท
     function setPayOption(opt) {
       const subtotal = custCart.reduce((sum, c) => sum + (c.price * c.qty), 0);
       let deliveryFee = 0;
@@ -1864,6 +1859,7 @@
       }
       const totalNet = subtotal + deliveryFee;
 
+      // 🛡️ บล็อกไม่ให้กดเลือกเงินสดปลายทาง ถ้ายอดรวมเกิน 300 บาท
       if (opt === 'cash' && totalNet > 300) {
         alert('⚠️ ยอดสั่งซื้อรวมค่าจัดส่งเกิน 300 บาท เพื่อความปลอดภัยทางร้านรับเฉพาะ "โอนเงินผ่านบัญชี" เท่านั้นครับ');
         opt = 'transfer';
@@ -1883,6 +1879,7 @@
         btnTransfer.className = "py-2.5 px-3 rounded-xl font-bold text-xs md:text-sm border-2 border-gray-200 bg-white text-gray-700 flex items-center justify-center gap-1.5 transition";
         transferBox.classList.add('hidden');
 
+        // 🛑 ถ้าจ่ายเงินสดปลายทาง แล้วดันเลือก "แขวนวางไว้" อยู่ ให้เด้งสลับไปเป็น "ส่งถึงมือ" ทันที
         const currentDropVal = document.querySelector('input[name="custDropOption"]:checked')?.value;
         if (currentDropVal === 'dropoff') {
           const handRadio = document.querySelector('input[name="custDropOption"][value="hand"]');
@@ -2086,6 +2083,7 @@
       const searchVal = normalizeThaiText(searchRaw);
       const t = translations[currentLang] || translations.th;
 
+      // 1. กรองเฉพาะสินค้าที่ไม่ซ่อนเดลิเวอรี (hideInDelivery != true)
       let displayList = products.filter(p => !p.hideInDelivery);
 
       if (selectedCategory !== 'ทั้งหมด') {
@@ -2099,6 +2097,7 @@
         });
       }
 
+      // 2. จัดเรียง: สินค้าหมด หรือ ปิดขายชั่วคราว (isClosed) ให้ตกไปอยู่ล่างสุด
       displayList.sort((a, b) => {
         const aStock = (a.isSubProduct && a.parentId) ? (products.find(p => String(p.id) === String(a.parentId))?.stock || 0) : a.stock;
         const bStock = (b.isSubProduct && b.parentId) ? (products.find(p => String(p.id) === String(b.parentId))?.stock || 0) : b.stock;
@@ -2124,6 +2123,7 @@
           availStock = p.stock || 0;
         }
 
+        // 🟢 เช็กทั้งสต็อกจริงและสวิตช์ iOS ปิดขาย
         const isOutOfStock = availStock <= 0 || p.isClosed === true;
         const statusBadgeText = p.isClosed ? '🔴 ปิดขาย' : (availStock <= 0 ? t.outOfStock : `${t.leftQty} ${fmtStk(availStock)} ${t.unit}`);
         const overlayText = p.isClosed ? '🔴 ปิดขายชั่วคราว' : t.outOfStock;
@@ -2162,6 +2162,7 @@
       const p = products.find(prod => String(prod.id) === String(id));
       if (!p) return;
 
+      // 🔴 บล็อกเมื่อร้านค้าเปิดสวิตช์ปิดการขายชั่วคราว (isClosed = true)
       if (p.isClosed) {
         return alert('ขออภัยครับ เมนูอาหารนี้ปิดการขายชั่วคราว');
       }
@@ -2192,6 +2193,7 @@
                              catVal.includes('กับข้าว') || 
                              catVal.includes('ของทานเล่น');
 
+      // ซ่อน/แสดงตัวเลือกช้อนส้อมตามหมวดหมู่อาหาร
       const cutlerySec = document.getElementById('custCutlerySection');
       if (cutlerySec) {
         if (isFoodCategory) {
@@ -2201,6 +2203,7 @@
         }
       }
 
+      // อัปเดตรูปภาพสินค้า
       const imgEl = document.getElementById('custOptModalImg');
       const placeholderEl = document.getElementById('custOptModalPlaceholder');
       if (p.imageUrl) {
@@ -2439,6 +2442,7 @@
 
       const totalNet = subtotal + deliveryFee;
 
+      // 🛡️ เช็กถ้ายอดรวมเกิน 300 บาท แล้วเลือกเงินสดอยู่ ให้เด้งสลับไปโอนเงินทันที
       if (totalNet > 300 && payOption === 'cash') {
         setPayOption('transfer');
       }
@@ -2524,133 +2528,132 @@
       if (window.lucide) lucide.createIcons();
     }
 
-    let isSubmittingOrder = false; // 🔒 ตัวแปรป้องกันการกดส่งออเดอร์ซ้ำ
+let isSubmittingOrder = false; // 🔒 ตัวแปรป้องกันการกดส่งออเดอร์ซ้ำ
 
-    function submitOrderFromCustomer() {
-      if (isSubmittingOrder) return;
+function submitOrderFromCustomer() {
+  // 🛑 1. เช็กระบบล็อก: ถ้ากำลังส่งออเดอร์อยู่ ให้หยุดทำงานทันที
+  if (isSubmittingOrder) return;
 
-      const name = document.getElementById('custName').value.trim();
-      const phone = document.getElementById('custPhone').value.trim();
-      let address = document.getElementById('custAddress').value.trim();
+  const name = document.getElementById('custName').value.trim();
+  const phone = document.getElementById('custPhone').value.trim();
+  let address = document.getElementById('custAddress').value.trim();
 
-      if (deliveryType === 'pickup') {
-        address = "🏪 มารับสินค้าเองที่เคาน์เตอร์หน้าร้าน";
-      }
+  if (deliveryType === 'pickup') {
+    address = "🏪 มารับสินค้าเองที่เคาน์เตอร์หน้าร้าน";
+  }
 
-      if (!name || !phone || (!address && deliveryType === 'delivery')) {
-        return alert('กรุณากรอกชื่อ เบอร์โทร และที่อยู่จัดส่งให้ครบถ้วนครับ');
-      }
+  if (!name || !phone || (!address && deliveryType === 'delivery')) {
+    return alert('กรุณากรอกชื่อ เบอร์โทร และที่อยู่จัดส่งให้ครบถ้วนครับ');
+  }
 
-      const subtotal = custCart.reduce((sum, c) => sum + (c.price * c.qty), 0);
-      let deliveryFee = 0;
-      let distanceKm = 0;
-      if (deliveryType === 'delivery') {
-        distanceKm = calculateDistanceInKm(STORE_LOCATION.lat, STORE_LOCATION.lng, userLocation.lat, userLocation.lng);
-        const baseFee = subtotal >= 100 ? 0 : 20;
-        const extraDist = Math.max(0, distanceKm - FREE_DISTANCE_LIMIT_KM);
-        const extraFee = Math.ceil(extraDist) * EXTRA_FEE_PER_KM;
-        deliveryFee = baseFee + extraFee;
-      }
-      const totalNet = subtotal + deliveryFee;
+  const subtotal = custCart.reduce((sum, c) => sum + (c.price * c.qty), 0);
+  let deliveryFee = 0;
+  let distanceKm = 0;
+  if (deliveryType === 'delivery') {
+    distanceKm = calculateDistanceInKm(STORE_LOCATION.lat, STORE_LOCATION.lng, userLocation.lat, userLocation.lng);
+    const baseFee = subtotal >= 100 ? 0 : 20;
+    const extraDist = Math.max(0, distanceKm - FREE_DISTANCE_LIMIT_KM);
+    const extraFee = Math.ceil(extraDist) * EXTRA_FEE_PER_KM;
+    deliveryFee = baseFee + extraFee;
+  }
+  const totalNet = subtotal + deliveryFee;
 
-      if (payOption === 'cash' && totalNet > 300) {
-        setPayOption('transfer');
-        return alert('⚠️ ยอดสั่งซื้อรวมค่าจัดส่งเกิน 300 บาท บังคับชำระด้วยการโอนเงินผ่านบัญชีเท่านั้นครับ');
-      }
+  // 🛡️ ตรวจเช็กระบบความปลอดภัย ยอดเกิน 300 บาท บังคับโอนเงินเท่านั้น
+  if (payOption === 'cash' && totalNet > 300) {
+    setPayOption('transfer');
+    return alert('⚠️ ยอดสั่งซื้อรวมค่าจัดส่งเกิน 300 บาท บังคับชำระด้วยการโอนเงินผ่านบัญชีเท่านั้นครับ');
+  }
 
-      if (payOption === 'transfer' && !slipBase64) {
-        if (!confirm('คุณยังไม่ได้แนบหลักฐานสลิปโอนเงิน ยืนยันที่จะส่งออเดอร์โดยไม่แนบสลิปใช่หรือไม่?')) return;
-      }
+  if (payOption === 'transfer' && !slipBase64) {
+    if (!confirm('คุณยังไม่ได้แนบหลักฐานสลิปโอนเงิน ยืนยันที่จะส่งออเดอร์โดยไม่แนบสลิปใช่หรือไม่?')) return;
+  }
 
-      isSubmittingOrder = true;
-      const submitBtn = document.getElementById('btnSubmitOrderText') || document.querySelector('button[onclick*="submitOrderFromCustomer"]');
-      let originalBtnText = "🚀 ยืนยันการสั่งซื้อ";
-      if (submitBtn) {
-        originalBtnText = submitBtn.innerText;
-        submitBtn.disabled = true;
-        submitBtn.innerText = "⏳ กำลังส่งออเดอร์...";
-        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
-      }
+  // 🔒 2. สั่งล็อกปุ่มและเปลี่ยนสถานะปุ่มทันทีเพื่อป้องกันการกดซ้ำ
+  isSubmittingOrder = true;
+  const submitBtn = document.getElementById('btnConfirmOrder') || document.querySelector('button[onclick*="submitOrderFromCustomer"]');
+  let originalBtnText = "🛒 ยืนยันสั่งซื้อ";
+  if (submitBtn) {
+    originalBtnText = submitBtn.innerText;
+    submitBtn.disabled = true;
+    submitBtn.innerText = "⏳ กำลังส่งออเดอร์...";
+    submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+  }
 
-      const resetSubmitState = () => {
-        isSubmittingOrder = false;
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.innerText = originalBtnText;
-          submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-        }
-      };
-
-      const dropOptVal = document.querySelector('input[name="custDropOption"]:checked')?.value || 'hand';
-      let dropInstructionText = "";
-
-      if (dropOptVal === 'dropoff') {
-        dropInstructionText = " [คำสั่งส่ง: 🚪 แขวน/วางไว้จุดที่ระบุ]";
-      } else if (dropOptVal === 'proxy') {
-        const proxyName = document.getElementById('proxyNameInput')?.value.trim() || 'ไม่ระบุ';
-        dropInstructionText = ` [คำสั่งส่ง: 👤 ฝากไว้กับคนอื่น -> ${proxyName}]`;
-      } else {
-        dropInstructionText = " [คำสั่งส่ง: 🤝 ส่งถึงมือ/รับเอง]";
-      }
-
-      db.collection("members").doc(phone).set({
-        phone: phone,
-        name: name,
-        address: address,
-        customerLineId: customerLineUserId || '',
-        lastOrderTs: Date.now()
-      }, { merge: true });
-
-      const shortOrderId = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
-
-      let finalAddress = address + dropInstructionText;
-      if (deliveryType === 'delivery' && new Date().getHours() >= 18) {
-        finalAddress += " ⚠️ (สั่งหลัง 18:00 น. - จัดส่งรอบเช้าวันถัดไป)";
-      }
-
-      const orderData = {
-        ts: Date.now(),
-        orderCode: shortOrderId,
-        customerName: name,
-        customerPhone: phone,
-        customerAddress: finalAddress,
-        customerLineId: customerLineUserId || '',
-        deliveryType: deliveryType,
-        deliveryFee: deliveryFee,
-        distanceKm: Number(distanceKm.toFixed(2)),
-        payOption: payOption,
-        slipUrl: slipBase64,
-        location: userLocation,
-        items: custCart,
-        subtotal: subtotal,
-        totalAmount: totalNet,
-        status: 'pending',
-        stepLevel: 1
-      };
-
-      db.collection("orders").add(orderData).then(docRef => {
-        // 🟢 เพิ่มบันทึกลง Array ออเดอร์ที่กำลังดำเนินการ (รองรับหลายออเดอร์)
-        let myOrders = JSON.parse(localStorage.getItem('myActiveOrders') || '[]');
-        if (!myOrders.includes(docRef.id)) {
-          myOrders.push(docRef.id);
-          localStorage.setItem('myActiveOrders', JSON.stringify(myOrders));
-        }
-
-        currentOrderId = docRef.id;
-        sendLineNotification(orderData);
-
-        custCart = [];
-        slipBase64 = "";
-        updateCartSummaryUI();
-        closeCustomerCartModal();
-
-        trackOrderRealtime(docRef.id);
-        resetSubmitState();
-      }).catch(err => {
-        alert('เกิดข้อผิดพลาดในการสั่งซื้อ: ' + err.message);
-        resetSubmitState();
-      });
+  // ฟังก์ชันสั้นสำหรับปลดล็อกระบบ
+  const resetSubmitState = () => {
+    isSubmittingOrder = false;
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerText = originalBtnText;
+      submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
     }
+  };
+
+  const dropOptVal = document.querySelector('input[name="custDropOption"]:checked')?.value || 'hand';
+  let dropInstructionText = "";
+
+  if (dropOptVal === 'dropoff') {
+    dropInstructionText = " [คำสั่งส่ง: 🚪 แขวน/วางไว้จุดที่ระบุ]";
+  } else if (dropOptVal === 'proxy') {
+    const proxyName = document.getElementById('proxyNameInput')?.value.trim() || 'ไม่ระบุ';
+    dropInstructionText = ` [คำสั่งส่ง: 👤 ฝากไว้กับคนอื่น -> ${proxyName}]`;
+  } else {
+    dropInstructionText = " [คำสั่งส่ง: 🤝 ส่งถึงมือ/รับเอง]";
+  }
+
+  db.collection("members").doc(phone).set({
+    phone: phone,
+    name: name,
+    address: address,
+    customerLineId: customerLineUserId || '',
+    lastOrderTs: Date.now()
+  }, { merge: true });
+
+  const shortOrderId = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
+
+  let finalAddress = address + dropInstructionText;
+  if (deliveryType === 'delivery' && new Date().getHours() >= 18) {
+    finalAddress += " ⚠️ (สั่งหลัง 18:00 น. - จัดส่งรอบเช้าวันถัดไป)";
+  }
+
+  const orderData = {
+    ts: Date.now(),
+    orderCode: shortOrderId,
+    customerName: name,
+    customerPhone: phone,
+    customerAddress: finalAddress,
+    customerLineId: customerLineUserId || '',
+    deliveryType: deliveryType,
+    deliveryFee: deliveryFee,
+    distanceKm: Number(distanceKm.toFixed(2)),
+    payOption: payOption,
+    slipUrl: slipBase64,
+    location: userLocation,
+    items: custCart,
+    subtotal: subtotal,
+    totalAmount: totalNet,
+    status: 'pending',
+    stepLevel: 1
+  };
+
+  db.collection("orders").add(orderData).then(docRef => {
+    localStorage.setItem('lastOrderId', docRef.id);
+    currentOrderId = docRef.id;
+    
+    sendLineNotification(orderData);
+
+    custCart = [];
+    slipBase64 = "";
+    updateCartSummaryUI();
+    closeCustomerCartModal();
+
+    trackOrderRealtime(docRef.id);
+    resetSubmitState(); // 🔓 ปลดล็อกระบบหลังส่งข้อมูลเรียบร้อย
+  }).catch(err => {
+    alert('เกิดข้อผิดพลาดในการสั่งซื้อ: ' + err.message);
+    resetSubmitState(); // 🔓 ปลดล็อกระบบเพื่อให้กดลองใหม่ได้หากเกิดข้อผิดพลาด
+  });
+}
 
     function openRedeemCatalogModal() {
       renderRedeemCatalog();
@@ -2717,43 +2720,6 @@
       });
     }
 
-    // 🚫 ฟังก์ชันยกเลิกออเดอร์ฝั่งลูกค้า
-    function cancelCustomerOrder(orderId) {
-      if (!confirm('คุณต้องการยกเลิกออเดอร์นี้ใช่หรือไม่?')) return;
-
-      db.collection("orders").doc(orderId).get().then(doc => {
-        if (!doc.exists) return;
-        const data = doc.data();
-
-        if (data.status !== 'pending') {
-          alert('⚠️ ไม่สามารถยกเลิกได้ เนื่องจากร้านค้าได้กดรับออเดอร์แล้วครับ');
-          return;
-        }
-
-        db.collection("orders").doc(orderId).update({
-          status: 'cancelled',
-          cancelledBy: 'customer',
-          cancelledAt: Date.now()
-        }).then(() => {
-          alert('ยกเลิกออเดอร์เรียบร้อยแล้วครับ');
-          
-          let myOrders = JSON.parse(localStorage.getItem('myActiveOrders') || '[]');
-          myOrders = myOrders.filter(id => id !== orderId);
-          localStorage.setItem('myActiveOrders', JSON.stringify(myOrders));
-
-          if (myOrders.length > 0) {
-            trackOrderRealtime(myOrders[myOrders.length - 1]);
-          } else {
-            document.getElementById('miniOrderStatusCard')?.classList.add('hidden');
-            toggleTrackingModal(false);
-          }
-        }).catch(err => {
-          alert('เกิดข้อผิดพลาดในการยกเลิก: ' + err.message);
-        });
-      });
-    }
-
-    // 📱 ติดตามสถานะออเดอร์แบบ Realtime + แท็บสลับหลายออเดอร์ + ปุ่มยกเลิก
     function trackOrderRealtime(orderId) {
       if (unsubscribeOrderTracking) unsubscribeOrderTracking();
 
@@ -2761,39 +2727,26 @@
         const card = document.getElementById('miniOrderStatusCard');
 
         if (!doc.exists) {
-          let myOrders = JSON.parse(localStorage.getItem('myActiveOrders') || '[]');
-          myOrders = myOrders.filter(id => id !== orderId);
-          localStorage.setItem('myActiveOrders', JSON.stringify(myOrders));
-
-          if (myOrders.length > 0) {
-            trackOrderRealtime(myOrders[myOrders.length - 1]);
-          } else {
-            card.classList.add('hidden');
-            toggleTrackingModal(false);
-            currentOrderId = null;
-          }
+          card.classList.add('hidden');
+          toggleTrackingModal(false);
+          localStorage.removeItem('lastOrderId');
+          currentOrderId = null;
           return;
         }
 
         const o = doc.data();
 
         if (o.status === 'cancelled' || o.status === 'completed') {
-          let myOrders = JSON.parse(localStorage.getItem('myActiveOrders') || '[]');
-          myOrders = myOrders.filter(id => id !== orderId);
-          localStorage.setItem('myActiveOrders', JSON.stringify(myOrders));
+          card.classList.add('hidden');
+          toggleTrackingModal(false);
 
           if (o.status === 'cancelled' && !notifiedCancelledMap[orderId]) {
             notifiedCancelledMap[orderId] = true;
-            alert(`❌ ออเดอร์ ${o.orderCode || ''} ถูกยกเลิกแล้วครับ`);
+            alert('❌ ออเดอร์ของคุณถูกยกเลิกแล้วครับ');
           }
 
-          if (myOrders.length > 0) {
-            trackOrderRealtime(myOrders[myOrders.length - 1]);
-          } else {
-            card.classList.add('hidden');
-            toggleTrackingModal(false);
-            currentOrderId = null;
-          }
+          localStorage.removeItem('lastOrderId');
+          currentOrderId = null;
           return;
         }
 
@@ -2814,51 +2767,6 @@
         document.getElementById('modalStepTitleText').innerText = statusTitle;
 
         updateStepperUI(step);
-
-        // 🏷️ แสดงแท็บสลับดูออเดอร์กรณีลูกค้ามีหลายรายการกำลังดำเนินการ
-        let myOrders = JSON.parse(localStorage.getItem('myActiveOrders') || '[]');
-        const tabsBox = document.getElementById('orderTabsContainer');
-        if (tabsBox) {
-          if (myOrders.length > 1) {
-            tabsBox.innerHTML = `
-              <div class="flex items-center gap-2 overflow-x-auto pb-1 mb-2 no-scrollbar">
-                <span class="text-xs font-bold text-gray-500 whitespace-nowrap">เลือกออเดอร์:</span>
-                ${myOrders.map((id, idx) => `
-                  <button type="button" onclick="trackOrderRealtime('${id}')" 
-                    class="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition ${id === orderId ? 'bg-[#008B47] text-white shadow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}">
-                    ออเดอร์ #${idx + 1}
-                  </button>
-                `).join('')}
-              </div>
-            `;
-          } else {
-            tabsBox.innerHTML = '';
-          }
-        }
-
-        // 🚫 ปุ่มยกเลิกออเดอร์ (โชว์เฉพาะสถานะ pending)
-        const cancelBox = document.getElementById('cancelOrderBtnContainer');
-        if (cancelBox) {
-          if (o.status === 'pending') {
-            cancelBox.innerHTML = `
-              <div class="mt-3 pt-3 border-t border-gray-200 text-center">
-                <button type="button" onclick="cancelCustomerOrder('${orderId}')" 
-                  class="w-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold py-2.5 rounded-2xl text-xs transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer">
-                  <span>❌</span> ยกเลิกออเดอร์นี้ (สั่งผิด)
-                </button>
-                <p class="text-[10px] text-gray-400 mt-1">*สามารถยกเลิกได้เฉพาะก่อนที่ร้านค้าจะกดรับออเดอร์เท่านั้น</p>
-              </div>
-            `;
-          } else {
-            cancelBox.innerHTML = `
-              <div class="mt-3 pt-3 border-t border-gray-200 text-center">
-                <p class="text-xs font-bold text-amber-700 bg-amber-50 py-2 px-3 rounded-xl border border-amber-200">
-                  👩‍🍳 ร้านค้ารับออเดอร์แล้ว ไม่สามารถยกเลิกผ่านหน้าเว็บได้
-                </p>
-              </div>
-            `;
-          }
-        }
 
         document.getElementById('trackDeliveryType').innerText = o.deliveryType === 'pickup' ? '🏪 มารับเองที่ร้าน' : '🛵 ให้ไปส่งที่บ้าน';
         document.getElementById('trackPayType').innerText = o.payOption === 'transfer' ? '📱 โอนเงินผ่านบัญชี' : '💵 เงินสดปลายทาง';
@@ -2920,102 +2828,111 @@
 
     if (window.lucide) lucide.createIcons();
 
-    let customerBanners = [];
-    let bannerSlideTimer = null;
-    let currentBannerIndex = 0;
+// ----------------------------------------------------
+// 🖼️ ดึงข้อมูลแบนเนอร์โฆษณา + สไลด์เลื่อนอัตโนมัติ 5 วิ + จุดไข่ปลา
+// ----------------------------------------------------
+let customerBanners = [];
+let bannerSlideTimer = null;
+let currentBannerIndex = 0;
 
-    db.collection("banners").onSnapshot(s => {
-      customerBanners = [];
-      s.forEach(doc => {
-        const data = doc.data();
-        if (data.isActive !== false) {
-          customerBanners.push({ id: doc.id, ...data });
-        }
-      });
-      renderCustomerBanners();
-    }, err => {
-      console.error("Fetch banners error:", err);
-    });
-
-    function renderCustomerBanners() {
-      const container = document.getElementById('customerBannersContainer');
-      const slider = document.getElementById('customerBannersSlider');
-      const dotsBox = document.getElementById('customerBannerDots');
-      if (!container || !slider) return;
-
-      if (customerBanners.length === 0) {
-        container.classList.add('hidden');
-        if (bannerSlideTimer) clearInterval(bannerSlideTimer);
-        return;
-      }
-
-      const sortedBanners = [...customerBanners].sort((a, b) => (b.ts || 0) - (a.ts || 0));
-
-      slider.innerHTML = sortedBanners.map(b => `
-        <div class="snap-center flex-shrink-0 w-full bg-white flex items-center justify-center">
-          <img src="${b.imageUrl}" alt="${b.title || 'โฆษณา'}" class="w-full h-auto max-h-[380px] md:max-h-[480px] object-contain rounded-2xl md:rounded-3xl">
-        </div>
-      `).join('');
-
-      if (dotsBox) {
-        dotsBox.innerHTML = sortedBanners.map((_, idx) => `
-          <span id="bannerDot_${idx}" class="h-2 rounded-full transition-all duration-300 ${idx === 0 ? 'bg-[#008B47] w-5' : 'bg-gray-300 w-2'}"></span>
-        `).join('');
-      }
-
-      container.classList.remove('hidden');
-      currentBannerIndex = 0;
-      startAutoBannerSlider(sortedBanners.length);
+// ดึงข้อมูล Realtime จาก Firestore Collection "banners"
+db.collection("banners").onSnapshot(s => {
+  customerBanners = [];
+  s.forEach(doc => {
+    const data = doc.data();
+    if (data.isActive !== false) {
+      customerBanners.push({ id: doc.id, ...data });
     }
+  });
+  renderCustomerBanners();
+}, err => {
+  console.error("Fetch banners error:", err);
+});
 
-    function startAutoBannerSlider(totalItems) {
-      if (bannerSlideTimer) clearInterval(bannerSlideTimer);
-      if (totalItems <= 1) return;
+function renderCustomerBanners() {
+  const container = document.getElementById('customerBannersContainer');
+  const slider = document.getElementById('customerBannersSlider');
+  const dotsBox = document.getElementById('customerBannerDots');
+  if (!container || !slider) return;
 
-      bannerSlideTimer = setInterval(() => {
-        currentBannerIndex = (currentBannerIndex + 1) % totalItems;
-        scrollToBannerIndex(currentBannerIndex, totalItems);
-      }, 5000);
-    }
+  if (customerBanners.length === 0) {
+    container.classList.add('hidden');
+    if (bannerSlideTimer) clearInterval(bannerSlideTimer);
+    return;
+  }
 
-    function scrollToBannerIndex(index, totalItems) {
-      const slider = document.getElementById('customerBannersSlider');
-      if (!slider) return;
-      const slideWidth = slider.clientWidth;
-      slider.scrollTo({ left: slideWidth * index, behavior: 'smooth' });
+  const sortedBanners = [...customerBanners].sort((a, b) => (b.ts || 0) - (a.ts || 0));
 
-      updateDotHighlights(index, totalItems);
-    }
+  slider.innerHTML = sortedBanners.map(b => `
+    <div class="snap-center flex-shrink-0 w-full bg-white flex items-center justify-center">
+      <img src="${b.imageUrl}" alt="${b.title || 'โฆษณา'}" class="w-full h-auto max-h-[380px] md:max-h-[480px] object-contain rounded-2xl md:rounded-3xl">
+    </div>
+  `).join('');
 
-    function updateDotHighlights(activeIndex, totalItems) {
-      for (let i = 0; i < totalItems; i++) {
-        const dot = document.getElementById(`bannerDot_${i}`);
-        if (dot) {
-          if (i === activeIndex) {
-            dot.className = "h-2 w-5 rounded-full bg-[#008B47] transition-all duration-300";
-          } else {
-            dot.className = "h-2 w-2 rounded-full bg-gray-300 transition-all duration-300";
-          }
-        }
-      }
-    }
+  // วาดจุดไข่ปลา (Dots)
+  if (dotsBox) {
+    dotsBox.innerHTML = sortedBanners.map((_, idx) => `
+      <span id="bannerDot_${idx}" class="h-2 rounded-full transition-all duration-300 ${idx === 0 ? 'bg-[#008B47] w-5' : 'bg-gray-300 w-2'}"></span>
+    `).join('');
+  }
 
-    function updateBannerDotsOnScroll() {
-      const slider = document.getElementById('customerBannersSlider');
-      if (!slider || customerBanners.length === 0) return;
-      const slideWidth = slider.clientWidth;
-      if (slideWidth === 0) return;
+  container.classList.remove('hidden');
+  currentBannerIndex = 0;
+  startAutoBannerSlider(sortedBanners.length);
+}
 
-      const newIdx = Math.round(slider.scrollLeft / slideWidth);
-      if (newIdx !== currentBannerIndex && newIdx >= 0 && newIdx < customerBanners.length) {
-        currentBannerIndex = newIdx;
-        updateDotHighlights(newIdx, customerBanners.length);
+// ⏱️ ระบบวนสไลด์รูปภาพอัตโนมัติทุก 5 วินาที
+function startAutoBannerSlider(totalItems) {
+  if (bannerSlideTimer) clearInterval(bannerSlideTimer);
+  if (totalItems <= 1) return;
+
+  bannerSlideTimer = setInterval(() => {
+    currentBannerIndex = (currentBannerIndex + 1) % totalItems;
+    scrollToBannerIndex(currentBannerIndex, totalItems);
+  }, 5000);
+}
+
+function scrollToBannerIndex(index, totalItems) {
+  const slider = document.getElementById('customerBannersSlider');
+  if (!slider) return;
+  const slideWidth = slider.clientWidth;
+  slider.scrollTo({ left: slideWidth * index, behavior: 'smooth' });
+
+  updateDotHighlights(index, totalItems);
+}
+
+function updateDotHighlights(activeIndex, totalItems) {
+  for (let i = 0; i < totalItems; i++) {
+    const dot = document.getElementById(`bannerDot_${i}`);
+    if (dot) {
+      if (i === activeIndex) {
+        dot.className = "h-2 w-5 rounded-full bg-[#008B47] transition-all duration-300";
+      } else {
+        dot.className = "h-2 w-2 rounded-full bg-gray-300 transition-all duration-300";
       }
     }
+  }
+}
 
+// อัปเดตจุดไข่ปลาเมื่อลูกค้านิ้วปัดสไลด์เอง
+function updateBannerDotsOnScroll() {
+  const slider = document.getElementById('customerBannersSlider');
+  if (!slider || customerBanners.length === 0) return;
+  const slideWidth = slider.clientWidth;
+  if (slideWidth === 0) return;
+
+  const newIdx = Math.round(slider.scrollLeft / slideWidth);
+  if (newIdx !== currentBannerIndex && newIdx >= 0 && newIdx < customerBanners.length) {
+    currentBannerIndex = newIdx;
+    updateDotHighlights(newIdx, customerBanners.length);
+  }
+}
+
+// 🐱 ระบบตรวจจับ Scroll หน้าจอ + ปุ่มกลับขึ้นด้านบนนุ่มนวล
     window.addEventListener('scroll', function() {
       const topBtn = document.getElementById('backToTopBtn');
       if (topBtn) {
+        // เมื่อไถจอลงมาเกิน 300px ให้โชว์ปุ่มน้องแมว
         if (window.scrollY > 300) {
           topBtn.classList.remove('hidden');
         } else {
@@ -3030,6 +2947,6 @@
         behavior: 'smooth'
       });
     }
-  </script>
+</script>
 </body>
 </html>

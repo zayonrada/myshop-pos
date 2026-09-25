@@ -1300,6 +1300,27 @@
       if (currentMember) updateMemberUI();
     }
 
+// 🟢 ระบบดึงแต้มสมาชิกเรียลไทม์จาก Firebase (แต้มตรงกับ POS ทันที 100%)
+let unsubscribeCurrentMember = null;
+
+function listenCurrentMember(phone) {
+  if (!phone) return;
+  if (unsubscribeCurrentMember) unsubscribeCurrentMember();
+
+  unsubscribeCurrentMember = db.collection("members").doc(phone).onSnapshot(doc => {
+    if (doc.exists) {
+      currentMember = doc.data();
+      localStorage.setItem('memberProfile', JSON.stringify(currentMember));
+      updateMemberUI();
+    }
+  });
+}
+
+// สั่งให้ระบบดึงแต้มเรียลไทม์ทันทีเมื่อเปิดหน้าเว็บ
+if (currentMember && currentMember.phone) {
+  listenCurrentMember(currentMember.phone);
+}
+
     function fmtStk(num) {
       const n = Number(num) || 0;
       return (n % 1 === 0) ? n.toString() : n.toFixed(2);

@@ -31,6 +31,25 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   
   <style>
+
+/* 🚫 ซ่อน Scrollbar ของเบราว์เซอร์ แต่ยังไถเลื่อนดูได้ปกติ */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 🚫 ซ่อนแถบ Scrollbar บนป๊อปอัปใบเสร็จไม่ให้กินพื้นที่ */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none !important;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+  }
+
     :root {
       --paper: #F5F3EE;
       --surface: #FFFFFF;
@@ -198,28 +217,55 @@
 </head>
 <body class="h-screen flex flex-row relative bg-[#E5E7EB] overflow-hidden">
 
-  <!-- 🔔 ป๊อปอัปแจ้งเตือนออเดอร์เข้าใหม่ -->
-  <div id="newOrderAlertToast" class="hidden fixed top-20 right-6 z-[999] max-w-sm w-full bg-white border-4 border-amber-400 p-4 rounded-3xl shadow-2xl animate-pop-in no-print">
-    <div class="flex items-start gap-3">
-      <div class="w-12 h-12 rounded-2xl bg-amber-400 text-[#0F5C52] flex items-center justify-center font-bold flex-shrink-0 shadow animate-bounce">
-        <i data-lucide="bell-ring" class="w-7 h-7"></i>
+    <!-- 🔔 คอนเทนเนอร์แสดงการแจ้งเตือนออเดอร์ใหม่เรียงซ้อนแนวตั้ง (รองรับหลายออเดอร์พร้อมกัน) -->
+<div id="toastContainer" class="fixed top-5 right-4 md:right-6 z-[9999] w-[360px] max-w-[92vw] flex flex-col gap-3 max-h-[85vh] overflow-y-auto no-scrollbar no-print pointer-events-auto">
+  
+  <!-- 🟢 การ์ดแจ้งเตือน (มีกรอบ bg-white หุ้มเนื้อหาทั้งหมดให้อยู่ในป๊อปอัป) -->
+  <div id="newOrderAlertToast" class="hidden w-full bg-white border-4 border-amber-400 p-3.5 md:p-4 rounded-3xl shadow-2xl animate-pop-in relative">
+    <div class="flex items-start gap-3 relative">
+      
+      <!-- ❌ ปุ่มกากบาท (X) มุมขวาบน กดปิดแจ้งเตือนและดับเสียง -->
+      <button type="button" onclick="dismissOrderToast()" class="absolute -top-1 -right-1 text-gray-400 hover:text-black p-1.5 rounded-full hover:bg-gray-100 transition cursor-pointer z-10" title="ปิดแจ้งเตือน">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <!-- 🔔 ไอคอนกระดิ่ง -->
+      <div class="w-10 h-10 md:w-11 md:h-11 rounded-2xl bg-amber-400 text-[#0F5C52] flex items-center justify-center font-bold flex-shrink-0 shadow animate-bounce mt-1">
+        <i data-lucide="bell-ring" class="w-5 h-5 md:w-6 md:h-6"></i>
       </div>
-      <div class="flex-1">
-        <div class="flex justify-between items-center">
-          <span class="bg-amber-100 text-amber-900 text-xs font-bold px-2.5 py-0.5 rounded-full font-display">🛒 มีออเดอร์ใหม่เข้า!</span>
-          <button onclick="dismissOrderToast()" class="text-gray-400 hover:text-black"><i data-lucide="x" class="w-5 h-5"></i></button>
+
+      <!-- 📝 โซนเนื้อหา -->
+      <div class="flex-1 min-w-0 pr-4">
+        <div class="flex items-center gap-1.5">
+          <span class="bg-amber-100 text-amber-900 text-[10px] font-bold px-2.5 py-0.5 rounded-full font-display">🛒 มีออเดอร์ใหม่เข้า!</span>
         </div>
-        <div class="font-bold text-lg text-[#0F5C52] font-display mt-1" id="toastCustName">คุณลูกค้า</div>
-        <div class="text-xs text-gray-600 font-semibold truncate" id="toastItemsSummary">กำลังโหลดรายการ...</div>
-        <div class="flex justify-between items-center mt-2 pt-2 border-t border-dashed">
-          <span class="text-xl font-bold font-display text-[#B3432B]" id="toastTotalAmount">฿0.00</span>
-          <button onclick="dismissOrderToast(); openOnlineOrdersModal();" class="bg-[#0F5C52] hover:bg-[#0d4d43] text-white px-4 py-1.5 rounded-xl font-bold text-xs font-display shadow transition">
-            เปิดดูออเดอร์
-          </button>
+
+        <div class="font-bold text-sm md:text-base text-[#0F5C52] font-display mt-1 truncate" id="toastCustName">คุณลูกค้า</div>
+        
+        <!-- 🟢 ข้อความรายการสินค้า: ตัดขึ้นบรรทัดใหม่อัตโนมัติสูงสุด 2 บรรทัดอยู่ในกรอบสวยงาม -->
+        <div class="text-xs text-gray-600 font-semibold leading-tight mt-1 line-clamp-2 break-words" id="toastItemsSummary">
+          กำลังโหลดรายการ...
         </div>
+        
+        <!-- 💰 ยอดรวม + 🔘 ปุ่มกดรับออเดอร์ & ดูรายละเอียด -->
+        <div class="flex flex-wrap items-center justify-between mt-3 pt-2.5 border-t border-dashed border-gray-200 gap-2">
+          <span class="text-base md:text-lg font-bold font-display text-[#B3432B]" id="toastTotalAmount">฿0.00</span>
+          
+          <div class="flex items-center gap-1.5">
+            <button type="button" onclick="acceptOrderDirectFromToast()" class="bg-[#0F5C52] hover:bg-[#0d4d43] text-white px-3 py-1.5 rounded-xl font-bold text-xs font-display shadow transition active:scale-95 whitespace-nowrap">
+              ✅ รับออเดอร์
+            </button>
+            <button type="button" onclick="viewOrderDetailsFromToast()" class="bg-amber-100 hover:bg-amber-200 text-amber-900 px-2 py-1.5 rounded-xl font-bold text-xs font-display shadow-sm transition active:scale-95 whitespace-nowrap">
+              ดูรายละเอียด
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
+
+</div>
 
   <!-- หน้าจอใส่รหัสผ่านก่อนเข้าใช้งาน -->
   <div id="pinLockOverlay" class="fixed inset-0 bg-[#1C2321] z-[9999] flex items-center justify-center p-4">
@@ -923,7 +969,7 @@
 
 <!-- Modal ตั้งค่าพิกัดตำแหน่งร้านค้า -->
 <div id="shopLocationModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
-  <div class="bg-white p-6 rounded-3xl max-w-xl w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+  <div class="bg-white p-6 rounded-3xl max-w-xl w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar">
     <div class="flex justify-between items-center border-b pb-3">
       <h3 class="font-bold text-xl font-display text-[#1C2321] flex items-center gap-2">
         <i data-lucide="map-pin" class="text-[#0F5C52] w-6 h-6"></i> ตั้งค่าพิกัดตำแหน่งร้านค้า
@@ -974,7 +1020,7 @@
 
   <!-- Modal ออเดอร์ออนไลน์ -->
   <div id="onlineOrdersModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 no-print">
-    <div class="bg-[#F5F3EE] p-6 rounded-3xl max-w-3xl w-full space-y-4 shadow-2xl max-h-[85vh] overflow-y-auto">
+    <div class="bg-[#F5F3EE] p-6 rounded-3xl max-w-3xl w-full space-y-4 shadow-2xl max-h-[85vh] overflow-y-auto no-scrollbar">
       <div class="flex justify-between items-center border-b-2 border-[#DEDACB] pb-3">
         <div class="flex items-center gap-2">
           <h3 class="font-bold text-2xl font-display text-[#0F5C52]">🛒 ออเดอร์ออนไลน์</h3>
@@ -992,7 +1038,7 @@
 
   <!-- Modal ดูรายละเอียดสมุดบัญชีเชื่อประจำตัวลูกหนี้ -->
   <div id="debtDetailModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 no-print">
-    <div class="bg-white p-6 md:p-7 rounded-3xl max-w-2xl w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div class="bg-white p-6 md:p-7 rounded-3xl max-w-2xl w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar">
       <!-- ส่วนหัว Modal สมุดบัญชีเชื่อ (ฝังปุ่มพิมพ์ไว้มุมขวาบนถาวร) -->
       <div class="flex justify-between items-center border-b pb-3">
         <div>
@@ -1029,7 +1075,7 @@
         <span id="debtSelectedCount" class="text-xs font-bold text-gray-500">เลือก 0 รายการ</span>
       </div>
 
-      <div id="debtItemsList" class="divide-y divide-gray-100 bg-gray-50 p-3 rounded-2xl border max-h-60 overflow-y-auto"></div>
+      <div id="debtItemsList" class="divide-y divide-gray-100 bg-gray-50 p-3 rounded-2xl border max-h-60 overflow-y-auto no-scrollbar"></div>
 
       <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 space-y-3">
         <div class="flex justify-between items-center font-bold text-base">
@@ -1343,7 +1389,7 @@
 
   <!-- Modal ดูรายละเอียดประวัติเงินยืมส่วนตัวทั้งหมด -->
   <div id="borrowDetailModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 no-print">
-    <div class="bg-white p-6 md:p-7 rounded-3xl max-w-2xl w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div class="bg-white p-6 md:p-7 rounded-3xl max-w-2xl w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar">
       <div class="flex justify-between items-center border-b pb-3">
         <div>
           <div class="text-xs font-bold text-gray-400">รายละเอียดเงินหมุนเวียนส่วนตัว</div>
@@ -1502,7 +1548,7 @@
 
   <!-- Modal ใบเสร็จ / สลิปพิมพ์หน้าร้าน -->
   <div id="receiptModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-    <div class="bg-white p-7 rounded-3xl max-w-[440px] w-full space-y-4 print-area receipt-print-box text-center text-lg shadow-2xl max-h-[90vh] overflow-y-auto relative">
+  <div class="bg-white p-7 rounded-3xl max-w-[440px] w-full space-y-4 print-area receipt-print-box text-center text-lg shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar relative">
       
       <!-- ❌ ปุ่มกากบาทมุมขวาบน (กดปิดได้ตลอดเวลา และไม่แสดงผลบนสลิปที่ปริ้น) -->
       <button onclick="closeReceiptModal()" class="absolute top-4 right-4 text-gray-400 hover:text-black p-1.5 rounded-full no-print transition">
@@ -1754,6 +1800,47 @@
 
   <script>
   let currentCardPhone = "";
+
+  // ✏️ ฟังก์ชันแก้ไขแต้มสมาชิกแบบกำหนดเอง
+function editMemberPoints(phone, currentPoints, name) {
+  const newPointsStr = prompt(`แก้ไขแต้มสะสมของ คุณ${name} (${phone})\nแต้มปัจจุบัน: ${currentPoints} แต้ม\n\nระบุจำนวนแต้มใหม่ที่ต้องการ:`, currentPoints);
+  
+  if (newPointsStr === null) return; // กด Cancel
+  
+  const newPoints = parseInt(newPointsStr, 10);
+  if (isNaN(newPoints) || newPoints < 0) {
+    alert("กรุณาระบุจำนวนแต้มเป็นตัวเลขที่ถูกต้องครับ");
+    return;
+  }
+
+  db.collection("members").doc(phone).update({
+    points: newPoints
+  }).then(() => {
+    alert(`อัปเดตแต้มของคุณ ${name} เป็น ${newPoints} แต้ม เรียบร้อยครับ!`);
+    if (typeof renderMembersList === 'function') renderMembersList();
+  }).catch(err => {
+    alert("เกิดข้อผิดพลาดในการอัปเดตแต้ม: " + err.message);
+  });
+}
+
+  // 🔓 สคริปต์ปลดล็อกระบบเสียงอัตโนมัติเมื่อมีการสัมผัสหน้าจอครั้งแรก
+function unlockAudioContext() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  // เมื่อปลดล็อกสำเร็จแล้ว ให้ยกเลิกการดักฟังทันที
+  document.removeEventListener('click', unlockAudioContext);
+  document.removeEventListener('touchstart', unlockAudioContext);
+  document.removeEventListener('keydown', unlockAudioContext);
+}
+
+// ดักจับการแตะ คลิก หรือกดคีย์บอร์ดครั้งแรกที่เปิดเว็บขึ้นมา
+document.addEventListener('click', unlockAudioContext);
+document.addEventListener('touchstart', unlockAudioContext);
+document.addEventListener('keydown', unlockAudioContext);
 
   function openCopyOptionsModal() {
   const listContainer = document.getElementById('copyOptionsList');
@@ -2122,14 +2209,40 @@ function listenMembersData() {
   });
 }
 
+// ✏️ ฟังก์ชันสำหรับกดแก้ไขแต้มสมาชิกแบบกำหนดเอง
+function editMemberPoints(phone, currentPoints, name) {
+  const newPointsStr = prompt(`แก้ไขแต้มสะสมของ คุณ${name} (${phone})\nแต้มปัจจุบันในฐานข้อมูล: ${currentPoints} แต้ม\n\nระบุจำนวนแต้มใหม่ที่ต้องการ:`, currentPoints);
+  
+  if (newPointsStr === null) return; // กด Cancel
+  
+  const newPoints = parseInt(newPointsStr, 10);
+  if (isNaN(newPoints) || newPoints < 0) {
+    alert("กรุณาระบุจำนวนแต้มเป็นตัวเลขที่ถูกต้องครับ");
+    return;
+  }
+
+  db.collection("members").doc(phone).update({
+    points: newPoints
+  }).then(() => {
+    alert(`อัปเดตแต้มของคุณ ${name} เป็น ${newPoints} แต้ม เรียบร้อยครับ!`);
+    // รีโหลดตารางสมาชิกใหม่ทันที
+    if (typeof renderMembersList === 'function') {
+      renderMembersList();
+    }
+  }).catch(err => {
+    alert("เกิดข้อผิดพลาดในการอัปเดตแต้ม: " + err.message);
+  });
+}
+
+// 📋 ฟังก์ชันแสดงรายชื่อสมาชิก (ระบบหักแต้มหนี้ + เพิ่มปุ่ม ✏️ แก้แต้ม)
 async function renderMembersList() {
   const searchVal = (document.getElementById('memberSearchInput')?.value || '').trim().toLowerCase();
   const tbody = document.getElementById('membersListTableBody');
   if (!tbody) return;
 
-  let filtered = membersList;
+  let filtered = typeof membersList !== 'undefined' ? membersList : [];
   if (searchVal) {
-    filtered = membersList.filter(m => 
+    filtered = filtered.filter(m => 
       (m.name || '').toLowerCase().includes(searchVal) || 
       (m.phone || m.id || '').includes(searchVal)
     );
@@ -2176,15 +2289,18 @@ async function renderMembersList() {
     const memPhone = m.phone || m.id;
     const memName = (m.name || '').trim();
     const penalty = (penaltiesMap[memPhone] || 0) + (penaltiesMap[memName] || 0);
-    const netPoints = (m.points || 0) - penalty;
-    return { ...m, netPoints, penalty };
+    const rawPoints = m.points || 0;
+    const netPoints = rawPoints - penalty;
+    return { ...m, rawPoints, netPoints, penalty };
   });
 
-  // 3. จัดเรียงตามแต้มสุทธิ (ลูกค้าชั้นดีอยู่บนสุด / ลูกค้าติดหนี้เกินกำหนดจะตกไปอยู่ล่างสุด)
+  // 3. จัดเรียงตามแต้มสุทธิ (ลูกค้าชั้นดีอยู่บนสุด / ติดหนี้ตกไปล่างสุด)
   memberWithNetPoints.sort((a, b) => b.netPoints - a.netPoints);
 
   tbody.innerHTML = memberWithNetPoints.map(m => {
     const memPhone = m.phone || m.id;
+    const memName = m.name || 'ไม่ระบุชื่อ';
+    const safeName = memName.replace(/'/g, "\\'"); // กันเครื่องหมาย ' ทำสคริปต์พัง
     
     let statusBadge = '';
     if (m.netPoints < 0) {
@@ -2197,15 +2313,22 @@ async function renderMembersList() {
 
     return `
       <tr class="border-b hover:bg-amber-50/50 transition ${m.netPoints < 0 ? 'bg-red-50/50' : ''}">
-        <td class="py-3 font-bold text-gray-800">${m.name || 'ไม่ระบุชื่อ'}</td>
+        <td class="py-3 font-bold text-gray-800">${memName}</td>
         <td class="py-3 font-mono text-gray-600 font-bold">${memPhone}</td>
         <td class="py-3 text-center">
           ${statusBadge}
         </td>
         <td class="py-3 text-right">
-          <button onclick="openMemberCardFromList('${memPhone}')" class="bg-[#0F5C52] text-white px-3 py-1 rounded-xl text-xs font-bold font-display hover:opacity-90 shadow-sm">
-            🎴 ดูบัตร
-          </button>
+          <div class="flex items-center justify-end gap-1.5">
+            <!-- 🟢 ปุ่มแก้ไขแต้มด่วน -->
+            <button type="button" onclick="editMemberPoints('${memPhone}', ${m.rawPoints}, '${safeName}')" class="bg-amber-500 hover:bg-amber-600 text-white px-2.5 py-1 rounded-xl text-xs font-bold font-display shadow-sm transition active:scale-95 cursor-pointer">
+              ✏️ แก้แต้ม
+            </button>
+            <!-- 🎴 ปุ่มดูบัตรสมาชิกเดิม -->
+            <button type="button" onclick="openMemberCardFromList('${memPhone}')" class="bg-[#0F5C52] hover:bg-[#0d4d43] text-white px-3 py-1 rounded-xl text-xs font-bold font-display hover:opacity-90 shadow-sm transition active:scale-95 cursor-pointer">
+              🎴 ดูบัตร
+            </button>
+          </div>
         </td>
       </tr>
     `;
@@ -3224,21 +3347,173 @@ function handleSearchInput() {
       }
     }
 
-    function showNewOrderToast(orderObj) {
-      document.getElementById('toastCustName').innerText = orderObj.customerName + ' (' + orderObj.customerPhone + ')';
-      const itemsText = orderObj.items ? orderObj.items.map(i => `${i.name} x${i.qty}`).join(', ') : 'มีรายการสั่งซื้อใหม่';
-      document.getElementById('toastItemsSummary').innerText = itemsText;
-      document.getElementById('toastTotalAmount').innerText = '฿' + orderObj.totalAmount.toFixed(2);
-      
-      const toast = document.getElementById('newOrderAlertToast');
-      toast.classList.remove('hidden');
+    // ----------------------------------------------------
+// 🔔 ระบบเสียงเตือนวนลูป และป๊อปอัปแจ้งเตือนออเดอร์ใหม่
+// ----------------------------------------------------
+let orderAlarmInterval = null;
+let pendingToastOrderId = null;
 
-      playOrderBellSound();
-    }
+function playOrderBellSound() {
+  try {
+    initAudioContext();
+    if (!audioCtx) return;
 
-    function dismissOrderToast() {
-      document.getElementById('newOrderAlertToast').classList.add('hidden');
-    }
+    const playBeep = (freq, startTime, duration) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'square'; // เสียงเตือนแหลมดังชัดเจน
+      osc.frequency.setValueAtTime(freq, startTime);
+      gain.gain.setValueAtTime(1, startTime); // ดังสูงสุด
+      gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    };
+
+    const now = audioCtx.currentTime;
+    playBeep(850, now, 0.25);
+    playBeep(1050, now + 0.3, 0.5);
+
+    if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+  } catch (e) {
+    console.log("Audio alert playback error:", e);
+  }
+}
+
+function startOrderAlarm() {
+  if (orderAlarmInterval) clearInterval(orderAlarmInterval);
+  playOrderBellSound();
+  
+  // ร้องเตือนวนลูปซ้ำทุกๆ 4 วินาที
+  orderAlarmInterval = setInterval(() => {
+    playOrderBellSound();
+  }, 4000);
+
+  if ("Notification" in window && Notification.permission === "granted") {
+    new Notification("🛒 มีออเดอร์ใหม่เข้า!", {
+      body: "ลูกค้าสั่งสินค้าเข้ามากรุณากดรับออเดอร์",
+      icon: "logo.jpg.png",
+      requireInteraction: true
+    });
+  }
+}
+
+function stopOrderAlarm() {
+  if (orderAlarmInterval) {
+    clearInterval(orderAlarmInterval);
+    orderAlarmInterval = null;
+  }
+}
+
+// ----------------------------------------------------
+// 🔔 ระบบแจ้งเตือนหลายออเดอร์พร้อมกัน (Stack Notification)
+// ----------------------------------------------------
+let activeToastOrders = new Map(); // เก็บรายการออเดอร์ที่ค้างเตือนอยู่
+
+// แสดงป๊อปอัปแจ้งเตือน (ถ้ารายการใหม่เข้ามาจะต่อแถวลงมาเรื่อยๆ)
+function showNewOrderToast(orderObj) {
+  if (!orderObj || !orderObj.id) return;
+  
+  // เพิ่มออเดอร์เข้าคิวแจ้งเตือน
+  activeToastOrders.set(orderObj.id, orderObj);
+  
+  renderToastList();
+  startOrderAlarm(); // เล่นเสียงเตือนดังวนลูป
+}
+
+// วาดการ์ดแจ้งเตือนตามจำนวนออเดอร์ที่เข้ามา
+function renderToastList() {
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+
+  if (activeToastOrders.size === 0) {
+    container.innerHTML = '';
+    stopOrderAlarm(); // 🛑 ดับเสียงเตือนอัตโนมัติเมื่อไม่มีออเดอร์ค้างเตือนแล้ว
+    return;
+  }
+
+  let html = '';
+  activeToastOrders.forEach((orderObj, orderId) => {
+    const itemsText = orderObj.items ? orderObj.items.map(i => `${i.name} x${i.qty}`).join(', ') : 'มีรายการสั่งซื้อใหม่';
+    const totalAmt = Number(orderObj.totalAmount || orderObj.total || 0).toFixed(2);
+    const custName = orderObj.customerName || 'คุณลูกค้า';
+    const custPhone = orderObj.customerPhone ? ` (${orderObj.customerPhone})` : '';
+
+    html += `
+      <div id="toast-card-${orderId}" class="w-full bg-white border-4 border-amber-400 p-3.5 rounded-3xl shadow-2xl animate-pop-in relative">
+        <div class="flex items-start gap-3 relative">
+          
+          <!-- ❌ ปุ่มปิดเฉพาะการ์ดใบนี้ -->
+          <button type="button" onclick="dismissSingleToast('${orderId}')" class="absolute -top-1 -right-1 text-gray-400 hover:text-black p-1.5 rounded-full hover:bg-gray-100 transition cursor-pointer z-10" title="ปิดแจ้งเตือนนี้">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+
+          <!-- 🔔 ไอคอน -->
+          <div class="w-10 h-10 rounded-2xl bg-amber-400 text-[#0F5C52] flex items-center justify-center font-bold flex-shrink-0 shadow animate-bounce mt-1">
+            <i data-lucide="bell-ring" class="w-5 h-5"></i>
+          </div>
+
+          <div class="flex-1 min-w-0 pr-4">
+            <div class="flex items-center gap-1.5">
+              <span class="bg-amber-100 text-amber-900 text-[10px] font-bold px-2.5 py-0.5 rounded-full font-display">🛒 มีออเดอร์ใหม่เข้า!</span>
+            </div>
+            
+            <div class="font-bold text-sm text-[#0F5C52] font-display mt-1 truncate">${custName}${custPhone}</div>
+            
+            <div class="text-xs text-gray-600 font-semibold leading-tight mt-1 line-clamp-2 break-words">
+              ${itemsText}
+            </div>
+            
+            <div class="flex flex-wrap items-center justify-between mt-3 pt-2.5 border-t border-dashed border-gray-200 gap-2">
+              <span class="text-base font-bold font-display text-[#B3432B]">฿${totalAmt}</span>
+              
+              <div class="flex items-center gap-1.5">
+                <button type="button" onclick="acceptSingleOrderFromToast('${orderId}')" class="bg-[#0F5C52] hover:bg-[#0d4d43] text-white px-3 py-1.5 rounded-xl font-bold text-xs font-display shadow transition active:scale-95 whitespace-nowrap">
+                  ✅ รับออเดอร์
+                </button>
+                <button type="button" onclick="viewOrderDetailsFromToast()" class="bg-amber-100 hover:bg-amber-200 text-amber-900 px-2 py-1.5 rounded-xl font-bold text-xs font-display shadow-sm transition active:scale-95 whitespace-nowrap">
+                  ดูรายละเอียด
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+// 🟢 กดรับออเดอร์เฉพาะใบที่เลือก
+function acceptSingleOrderFromToast(orderId) {
+  activeToastOrders.delete(orderId); // ลบป้ายแจ้งเตือนใบนี้ออก
+  renderToastList(); // วาดป้ายที่เหลือใหม่
+
+  db.collection("orders").doc(orderId).update({
+    status: 'preparing'
+  }).then(() => {
+    openOnlineOrdersModal();
+  }).catch(err => {
+    console.error("Update status error:", err);
+    openOnlineOrdersModal();
+  });
+}
+
+// ❌ กดปิดเฉพาะป้ายแจ้งเตือนใบที่เลือก
+function dismissSingleToast(orderId) {
+  activeToastOrders.delete(orderId);
+  renderToastList();
+}
+
+// ❌ ปิดป้ายเตือนทั้งหมด
+function dismissOrderToast() {
+  activeToastOrders.clear();
+  renderToastList();
+}
 
     // Realtime Subscriptions
     let unsubscribeProducts = null;
@@ -3328,30 +3603,48 @@ function handleSearchInput() {
         renderReports();
       });
 
-      if(unsubscribeOrders) unsubscribeOrders();
-      unsubscribeOrders = db.collection("orders").onSnapshot(s => {
-        const newOrdersList = [];
-        s.forEach(doc => newOrdersList.push({ id: doc.id, ...doc.data() }));
+      // 🟢 ดึงเฉพาะ 100 ออเดอร์ล่าสุด พร้อมระบบแจ้งเตือนออเดอร์ใหม่ที่แม่นยำ 100%
+      if (unsubscribeOrders) unsubscribeOrders();
 
-        const pendingOrders = newOrdersList.filter(o => o.status !== 'completed' && o.status !== 'cancelled');
-        
-        if (previousOrderIdsCount >= 0 && pendingOrders.length > previousOrderIdsCount) {
-          const newestOrder = pendingOrders.sort((a,b) => b.ts - a.ts)[0];
-          if (newestOrder) {
-            showNewOrderToast(newestOrder);
+      unsubscribeOrders = db.collection("orders")
+        .orderBy("ts", "desc")
+        .limit(100)
+        .onSnapshot(s => {
+          const newOrdersList = [];
+          s.forEach(doc => newOrdersList.push({ id: doc.id, ...doc.data() }));
+
+          const pendingOrders = newOrdersList.filter(o => o.status !== 'completed' && o.status !== 'cancelled');
+
+          // 🎯 ระบบตรวจจับออเดอร์ใหม่แบบแม่นยำ (เช็กจาก ID ที่ไม่เคยเห็นมาก่อน)
+          if (previousOrderIdsCount === -1) {
+            // โหลดครั้งแรก: จดจำ ID ปัจจุบันไว้ จะได้ไม่เด้งเตือนของเก่าซ้ำ
+            window.knownPendingIds = new Set(pendingOrders.map(o => o.id));
+            previousOrderIdsCount = pendingOrders.length;
+          } else {
+            if (!window.knownPendingIds) window.knownPendingIds = new Set();
+            
+            pendingOrders.forEach(o => {
+              // ถ้าเจอ ID ใหม่ที่ไม่เคยมีในระบบ -> สั่งเด้งแจ้งเตือนและเล่นเสียงทันที!
+              if (!window.knownPendingIds.has(o.id)) {
+                showNewOrderToast(o);
+                window.knownPendingIds.add(o.id);
+              }
+            });
+            // อัปเดตรายการ ID ให้เป็นปัจจุบันเสมอ
+            window.knownPendingIds = new Set(pendingOrders.map(o => o.id));
           }
-        }
-        previousOrderIdsCount = pendingOrders.length;
 
-        onlineOrders = newOrdersList;
+          onlineOrders = newOrdersList;
 
-        const badge = document.getElementById('onlineOrdersBadge');
-        if (badge) {
-          badge.innerText = pendingOrders.length;
-          badge.classList.toggle('hidden', pendingOrders.length === 0);
-        }
-        renderOnlineOrdersList();
-      });
+          const badge = document.getElementById('onlineOrdersBadge');
+          if (badge) {
+            badge.innerText = pendingOrders.length;
+            badge.classList.toggle('hidden', pendingOrders.length === 0);
+          }
+          renderOnlineOrdersList();
+        }, err => {
+          console.error("Fetch orders error:", err);
+        });
 
       if(unsubscribeRewards) unsubscribeRewards();
       unsubscribeRewards = db.collection("rewards").onSnapshot(s => {
@@ -3452,10 +3745,27 @@ function handleSearchInput() {
       if (confirm('ต้องการลบของรางวัลนี้ใช่หรือไม่?')) db.collection("rewards").doc(id).delete();
     }
 
-    function openOnlineOrdersModal() {
-      renderOnlineOrdersList();
-      document.getElementById('onlineOrdersModal').classList.remove('hidden');
-    }
+  // ❌ ฟังก์ชันปิดป๊อปอัปแจ้งเตือนออเดอร์ใหม่ (เมื่อกด X หรือกดรับออเดอร์สำเร็จ)
+function dismissOrderToast() {
+  const toast = document.getElementById('newOrderAlertToast');
+  if (toast) {
+    toast.classList.add('hidden');
+  }
+  stopOrderAlarm(); // 🛑 เสียงเตือนจะดับลงเฉพาะตอนกดปิดกากบาท หรือกดรับออเดอร์เท่านั้น
+}
+
+// 🔍 เมื่อกดปุ่ม "ดูรายละเอียด" บนป้ายแจ้งเตือนมุมขวา
+function viewOrderDetailsFromToast() {
+  // 🟢 เสียงเตือนจะยังดังต่อไปเรื่อยๆ ไม่ดับ และป๊อปอัปจะยังค้างอยู่มุมขวา
+  renderOnlineOrdersList();
+  document.getElementById('onlineOrdersModal').classList.remove('hidden');
+}
+
+// 🛒 เปิดหน้าต่างออเดอร์ออนไลน์ (เมื่อกดจากเมนูซ้าย)
+function openOnlineOrdersModal() {
+  renderOnlineOrdersList();
+  document.getElementById('onlineOrdersModal').classList.remove('hidden');
+}
 
     function closeOnlineOrdersModal() {
       document.getElementById('onlineOrdersModal').classList.add('hidden');
@@ -3487,215 +3797,332 @@ function handleSearchInput() {
       }
     }
 
-    function cancelOnlineOrder(orderId) {
+    // 🚫 ยกเลิกออเดอร์ -> คืนสต็อก + หักแต้มสะสมคืนให้อัตโนมัติ
+function cancelOnlineOrder(orderId) {
   const o = onlineOrders.find(item => item.id === orderId);
   if (!o) return;
 
-  if (confirm(`คุณต้องการยกเลิกออเดอร์ของ ${o.customerName} ใช่หรือไม่?\n\nหากเคยหักสต็อกไปแล้ว ระบบจะบวกสต็อกคืนเข้าคลังให้อัตโนมัติ`)) {
-    // ถ้าออเดอร์นั้นถูกตัดสต็อกไปแล้ว (status === 'completed') ให้คืนสต็อกกลับเข้าคลัง
-    if (o.status === 'completed' && o.items && o.items.length > 0) {
-      o.items.forEach(item => {
-        if (!item.isCustom && item.productId) {
-          refundStockToProduct(item.productId, item.qty);
-        }
-      });
+  if (confirm(`คุณต้องการยกเลิกออเดอร์ของ ${o.customerName} ใช่หรือไม่?\n\nหากเคยตัดสต็อก/คำนวณแต้มไปแล้ว ระบบจะคืนสินค้าเข้าคลังและหักแต้มสะสมคืนให้อัตโนมัติ`)) {
+    
+    // 1. ถ้าออเดอร์เคยมียอดขายและคำนวณแต้มไปแล้ว (status === 'completed')
+    if (o.status === 'completed') {
+      
+      // 📦 คืนสต็อกสินค้าเข้าคลัง
+      if (o.items && o.items.length > 0) {
+        o.items.forEach(item => {
+          if (!item.isCustom && item.productId) {
+            refundStockToProduct(item.productId, item.qty);
+          }
+        });
+      }
+
+      // 🪙 คำนวณแต้มที่เคยแจกไปแล้วหักคืน
+      const earnedPoints = Math.floor((o.subtotal || o.totalAmount) / 100);
+      if (o.customerPhone && earnedPoints > 0) {
+        db.collection("members").doc(o.customerPhone).get().then(mDoc => {
+          if (mDoc.exists) {
+            const currentPoints = mDoc.data().points || 0;
+            const updatedPoints = Math.max(0, currentPoints - earnedPoints); // ไม่ให้แต้มติดลบ
+            db.collection("members").doc(o.customerPhone).update({
+              points: updatedPoints
+            });
+          }
+        });
+      }
     }
 
+    // 2. ปรับสถานะเป็นยกเลิก
     db.collection("orders").doc(orderId).update({ status: 'cancelled' }).then(() => {
-      alert('ยกเลิกออเดอร์เรียบร้อย คืนสินค้าเข้าสต็อกให้เรียบร้อยแล้วครับ');
+      alert(`ยกเลิกออเดอร์ คืนสินค้าเข้าสต็อก และหักแต้มคืนเรียบร้อยครับ!`);
+      if (typeof renderOnlineOrdersList === 'function') renderOnlineOrdersList();
     }).catch(err => {
       alert('เกิดข้อผิดพลาด: ' + err.message);
     });
   }
 }
 
-    function renderOnlineOrdersList() {
-      const list = document.getElementById('onlineOrdersList');
-      if (!list) return;
+    let onlineOrderMonthFilter = 'current'; // 'current' = เดือนนี้, 'prev' = เดือนที่แล้ว, 'all' = ทั้งหมด
 
-      let displayList = [];
-      if (currentOnlineOrdersFilter === 'pending') {
-        displayList = onlineOrders.filter(o => o.status !== 'completed' && o.status !== 'cancelled').sort((a,b) => b.ts - a.ts);
-      } else {
-        displayList = onlineOrders.filter(o => o.status === 'completed' || o.status === 'cancelled').sort((a,b) => b.ts - a.ts);
+// 📅 ฟังก์ชันสลับตัวกรองเดือนประวัติออเดอร์
+function changeOnlineOrderMonthFilter(val) {
+  onlineOrderMonthFilter = val;
+  renderOnlineOrdersList();
+}
+
+// 📋 ฟังก์ชันวาดรายการออเดอร์ออนไลน์ (อ่านค่าเวลาแม่นยำ + แสดงผลถูกต้อง)
+function renderOnlineOrdersList() {
+  const container = document.getElementById('onlineOrdersContainer') || document.getElementById('onlineOrdersList');
+  if (!container) return;
+
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  // 1. กรองออเดอร์ตามแท็บ
+  let displayOrders = onlineOrders.filter(o => {
+    if (currentOnlineOrdersFilter === 'pending') {
+      return o.status !== 'completed' && o.status !== 'cancelled';
+    } else {
+      if (o.status !== 'completed' && o.status !== 'cancelled') return false;
+
+      // 🗓️ อ่านค่าเวลาแบบยืดหยุ่น (รองรับทั้ง Number, String, และ Firestore Timestamp)
+      let oDate = new Date();
+      if (o.ts) {
+        if (typeof o.ts.toDate === 'function') oDate = o.ts.toDate();
+        else if (typeof o.ts === 'number' || typeof o.ts === 'string') oDate = new Date(Number(o.ts) || o.ts);
       }
 
-      if (displayList.length === 0) {
-        list.innerHTML = `<p class="py-12 text-center text-gray-500 font-bold">ไม่มีรายการออเดอร์ในหมวดหมู่นี้</p>`;
-        return;
+      if (onlineOrderMonthFilter === 'current') {
+        return oDate.getMonth() === currentMonth && oDate.getFullYear() === currentYear;
+      } else if (onlineOrderMonthFilter === 'prev') {
+        const prevDate = new Date(currentYear, currentMonth - 1, 1);
+        return oDate.getMonth() === prevDate.getMonth() && oDate.getFullYear() === prevDate.getFullYear();
       }
+      return true; // 'all' แสดงทั้งหมด
+    }
+  });
 
-      list.innerHTML = displayList.map(o => {
-        const isDelivery = o.deliveryType !== 'pickup';
-        const hasGps = o.location && o.location.lat && o.location.lng;
-        const mapsUrl = hasGps ? `https://www.google.com/maps/search/?api=1&query=${o.location.lat},${o.location.lng}` : '';
-        const orderCodeText = o.orderCode || ('#ORD-' + o.id.substring(0, 6).toUpperCase());
+  // 2. โซนหัวแท็บ + ยอดขายรวมประจำเดือน
+  let headerHtml = '';
+  if (currentOnlineOrdersFilter === 'history') {
+    const totalMonthAmt = displayOrders
+      .filter(o => o.status === 'completed')
+      .reduce((sum, o) => sum + Number(o.totalAmount || o.total || 0), 0);
 
-        return `
-          <div class="bg-white p-4 rounded-2xl border-2 border-[#0F5C52] space-y-3 shadow-sm relative">
-            <div class="flex justify-between items-start border-b pb-2">
-              <div>
-                <div class="flex items-center gap-2 mb-1">
-                  <span class="bg-[#0F5C52] text-white text-xs px-2.5 py-0.5 rounded-md font-bold font-mono">${orderCodeText}</span>
-                  <span class="text-xs ${isDelivery ? 'bg-amber-100 text-amber-900' : 'bg-blue-100 text-blue-900'} px-2 py-0.5 rounded-full font-bold">
-                    ${isDelivery ? '🛵 ส่งที่บ้าน' : '🏪 รับที่ร้าน'}
-                  </span>
-                  ${o.status === 'cancelled' ? '<span class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded-full font-bold">❌ ยกเลิกแล้ว</span>' : ''}
-                </div>
-                <div class="font-bold text-lg text-[#0F5C52]">${o.customerName} (${o.customerPhone})</div>
-                <div class="text-xs text-gray-600 font-semibold mt-0.5">📍 ที่อยู่/หมายเหตุ: ${o.customerAddress}</div>
-                <div class="text-xs text-gray-400 mt-0.5">${new Date(o.ts).toLocaleString('th-TH')}</div>
-              </div>
+    headerHtml = `
+      <div class="flex flex-wrap items-center justify-between gap-2 bg-amber-50 p-3 rounded-2xl border border-amber-200 mb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold text-amber-900 font-display">📅 เลือกดูประวัติ:</span>
+          <select onchange="changeOnlineOrderMonthFilter(this.value)" class="bg-white border border-amber-300 text-amber-900 font-bold text-xs rounded-xl px-2.5 py-1.5 focus:outline-none cursor-pointer shadow-sm">
+            <option value="current" ${onlineOrderMonthFilter === 'current' ? 'selected' : ''}>🗓️ เดือนนี้ (${displayOrders.length} บิล)</option>
+            <option value="prev" ${onlineOrderMonthFilter === 'prev' ? 'selected' : ''}>⏮️ เดือนที่แล้ว</option>
+            <option value="all" ${onlineOrderMonthFilter === 'all' ? 'selected' : ''}>📁 ทั้งหมด</option>
+          </select>
+        </div>
+        <div class="text-xs font-bold text-[#0F5C52]">
+          ยอดขายเดลิเวอรีรวม: <span class="text-sm font-extrabold text-[#B3432B]">฿${totalMonthAmt.toFixed(2)}</span>
+        </div>
+      </div>
+    `;
+  }
 
-              <div class="flex items-center gap-1">
-                ${hasGps ? `
-                  <a href="${mapsUrl}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2.5 py-1.5 rounded-xl font-bold flex items-center gap-1 shadow transition whitespace-nowrap">
-                    <i data-lucide="map-pin" class="w-3.5 h-3.5"></i> Maps
-                  </a>
-                ` : ''}
-                
-                <button onclick="deleteOnlineOrder('${o.id}')" class="text-gray-400 hover:text-[#B3432B] p-1.5 transition" title="ลบออเดอร์นี้ทิ้ง">
-                  <i data-lucide="trash-2" class="w-5 h-5"></i>
-                </button>
-              </div>
-            </div>
+  if (displayOrders.length === 0) {
+    container.innerHTML = headerHtml + `
+      <div class="text-center py-12 text-gray-400 font-bold font-display">
+        ${currentOnlineOrdersFilter === 'pending' ? '🎉 ไม่มีออเดอร์ค้างรอจัดส่ง' : '📂 ไม่พบประวัติออเดอร์ในเดือนที่เลือก'}
+      </div>
+    `;
+    return;
+  }
 
-            <div class="space-y-1 text-sm bg-gray-50 p-2.5 rounded-xl border">
-              ${o.items.map(i => `<div class="flex justify-between font-semibold"><span>${i.name} x${i.qty}</span><span>฿${(i.price * i.qty).toFixed(2)}</span></div>`).join('')}
-              ${o.deliveryFee > 0 ? `<div class="flex justify-between text-xs text-[#B3432B] font-bold"><span>ค่าจัดส่ง</span><span>฿${o.deliveryFee.toFixed(2)}</span></div>` : ''}
-              <div class="border-t pt-1 flex justify-between font-bold text-base text-[#B3432B]">
-                <span>ยอดรวมสุทธิ (${o.payOption === 'transfer' ? '📱 โอนเงิน' : '💵 เงินสด'})</span>
-                <span>฿${o.totalAmount.toFixed(2)}</span>
-              </div>
-            </div>
+  // 3. วาดการ์ดออเดอร์
+  container.innerHTML = headerHtml + displayOrders.map(o => {
+    const isCompleted = o.status === 'completed';
+    const isCancelled = o.status === 'cancelled';
+    
+    let dateStr = '';
+    if (o.ts) {
+      const d = typeof o.ts.toDate === 'function' ? o.ts.toDate() : new Date(Number(o.ts) || o.ts);
+      dateStr = d.toLocaleString('th-TH');
+    }
 
-            ${o.status !== 'cancelled' ? `
-              <div class="flex items-center justify-between gap-2 pt-1 border-t">
-                <span class="text-xs font-bold text-gray-500">อัปเดตสถานะให้ลูกค้า:</span>
-                <div class="flex gap-1 flex-wrap">
-                  <button onclick="updateOrderStatus('${o.id}', 'preparing')" class="text-xs ${o.status==='preparing'?'bg-amber-600 text-white':'bg-gray-100 text-gray-700'} px-2.5 py-1 rounded-lg font-bold">จัดเตรียมของ</button>
-                  <button onclick="updateOrderStatus('${o.id}', 'ready')" class="text-xs ${o.status==='ready'?'bg-blue-600 text-white':'bg-gray-100 text-gray-700'} px-2.5 py-1 rounded-lg font-bold">จัดเสร็จรอส่ง</button>
-                  <button onclick="updateOrderStatus('${o.id}', 'delivering')" class="text-xs ${o.status==='delivering'?'bg-purple-600 text-white':'bg-gray-100 text-gray-700'} px-2.5 py-1 rounded-lg font-bold">กำลังไปส่ง</button>
-                </div>
-              </div>
-            ` : ''}
+    const itemsList = o.items ? o.items.map(i => `<div class="flex justify-between text-xs py-0.5"><span>${i.name} x${i.qty}</span><span class="font-mono">฿${(i.price * i.qty).toFixed(2)}</span></div>`).join('') : '';
 
-            <div class="grid grid-cols-3 gap-2 pt-1">
-              <button onclick="printOnlineOrderReceipt('${o.id}')" class="py-2 bg-gray-800 text-white hover:bg-black rounded-xl font-bold text-xs transition flex items-center justify-center gap-1 font-display shadow-sm">
-                <i data-lucide="printer" class="w-3.5 h-3.5"></i> พิมพ์สลิป
-              </button>
-
-              ${o.status !== 'completed' && o.status !== 'cancelled' ? `
-                <button onclick="acceptOnlineOrder('${o.id}')" class="py-2 bg-[#0F5C52] text-white hover:opacity-90 rounded-xl font-bold text-xs transition shadow-sm font-display">
-                  ✅ รับ & ตัดสต็อก
-                </button>
-              ` : `
-                <div class="py-2 bg-emerald-100 text-emerald-800 font-bold text-xs rounded-xl flex items-center justify-center">
-                  ${o.status === 'cancelled' ? '❌ ยกเลิกแล้ว' : '✅ สำเร็จแล้ว'}
-                </div>
-              `}
-
-              ${o.status !== 'cancelled' ? `
-                <button onclick="cancelOnlineOrder('${o.id}')" class="py-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-xl font-bold text-xs transition font-display">
-                  🚫 ยกเลิก/คืนสต็อก
-                </button>
-              ` : `
-                <button onclick="deleteOnlineOrder('${o.id}')" class="py-2 bg-gray-200 text-gray-700 hover:bg-red-600 hover:text-white rounded-xl font-bold text-xs transition font-display">
-                  🗑️ ลบทิ้ง
-                </button>
-              `}
+    let actionButtonsHtml = '';
+    if (isCompleted) {
+      actionButtonsHtml = `
+        <div class="flex items-center justify-between gap-2 pt-2 border-t border-dashed">
+          <button type="button" onclick="printOnlineOrderSlip('${o.id}')" class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold font-display shadow transition">
+            🖨️ พิมพ์สลิป
+          </button>
+          <span class="bg-emerald-100 text-emerald-800 font-bold px-4 py-2 rounded-xl text-xs font-display flex items-center gap-1 shadow-sm">
+            ✅ ออเดอร์นี้สำเร็จแล้ว
+          </span>
+        </div>
+      `;
+    } else if (isCancelled) {
+      actionButtonsHtml = `
+        <div class="flex items-center justify-between pt-2 border-t border-dashed gap-2">
+          <button type="button" onclick="deleteOnlineOrder('${o.id}')" class="flex items-center gap-1 text-gray-400 hover:text-red-600 bg-gray-50 hover:bg-red-50 px-3 py-2 rounded-xl text-xs font-bold transition shadow-sm border border-gray-100">
+            <i data-lucide="trash-2" class="w-4 h-4 inline-block"></i> ลบทิ้ง
+          </button>
+          <span class="bg-red-100 text-red-800 font-bold px-4 py-2 rounded-xl text-xs font-display">
+            ❌ ออเดอร์นี้ถูกยกเลิกแล้ว
+          </span>
+        </div>
+      `;
+    } else {
+      actionButtonsHtml = `
+        <div class="space-y-2 pt-2 border-t border-dashed">
+          <div class="flex items-center justify-between gap-1 text-xs">
+            <span class="font-bold text-gray-500">อัปเดตสถานะให้ลูกค้า:</span>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="updateOrderStatus('${o.id}', 'preparing')" class="px-2.5 py-1 rounded-lg font-bold text-[11px] ${o.status === 'preparing' ? 'bg-[#0F5C52] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}">จัดเตรียมของ</button>
+              <button type="button" onclick="updateOrderStatus('${o.id}', 'ready')" class="px-2.5 py-1 rounded-lg font-bold text-[11px] ${o.status === 'ready' ? 'bg-[#0F5C52] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}">จัดเสร็จรอส่ง</button>
+              <button type="button" onclick="updateOrderStatus('${o.id}', 'delivering')" class="px-2.5 py-1 rounded-lg font-bold text-[11px] ${o.status === 'delivering' ? 'bg-[#0F5C52] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}">กำลังไปส่ง</button>
             </div>
           </div>
-        `;
-      }).join('');
-      lucide.createIcons();
+          
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="printOnlineOrderSlip('${o.id}')" class="flex-1 bg-slate-700 hover:bg-slate-800 text-white py-2.5 rounded-xl text-xs font-bold font-display shadow transition">
+              🖨️ พิมพ์สลิป
+            </button>
+            <button type="button" onclick="completeOnlineOrder('${o.id}')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl text-xs font-bold font-display shadow transition">
+              ✅ รับ & ตัดสต็อก
+            </button>
+            <button type="button" onclick="cancelOnlineOrder('${o.id}')" class="flex-1 bg-red-100 hover:bg-red-200 text-red-700 py-2.5 rounded-xl text-xs font-bold font-display transition">
+              🚫 ยกเลิก/คืนสต็อก
+            </button>
+          </div>
+        </div>
+      `;
     }
+
+    return `
+      <div class="bg-white border-2 border-emerald-800/20 p-4 rounded-2xl shadow-sm space-y-3 mb-3 relative">
+        <div class="flex justify-between items-start">
+          <div>
+            <span class="bg-[#0F5C52] text-white text-xs font-bold px-2.5 py-1 rounded-lg font-mono">${o.orderCode || o.id}</span>
+            <span class="ml-1 bg-amber-100 text-amber-900 text-xs font-bold px-2 py-0.5 rounded-full">${o.deliveryType === 'pickup' ? '🏪 รับที่ร้าน' : '🛵 ส่งที่บ้าน'}</span>
+            <div class="font-bold text-base text-[#0F5C52] mt-1">${o.customerName} (${o.customerPhone || 'ไม่ระบุเบอร์'})</div>
+            <div class="text-xs text-gray-500">${o.customerAddress || ''}</div>
+            <div class="text-[10px] text-gray-400 font-mono mt-0.5">${dateStr}</div>
+          </div>
+          ${o.location ? `<a href="https://www.google.com/maps/search/?api=1&query=${o.location.lat},${o.location.lng}" target="_blank" class="bg-blue-600 text-white px-2.5 py-1 rounded-xl text-xs font-bold flex items-center gap-1 shadow-sm">📍 Maps</a>` : ''}
+        </div>
+
+        <div class="bg-gray-50 p-3 rounded-xl border border-gray-100 space-y-1">
+          ${itemsList}
+          <div class="flex justify-between text-sm font-bold text-[#B3432B] pt-1.5 border-t border-dashed">
+            <span>ยอดรวมสุทธิ (${o.payOption === 'transfer' ? '📱 โอนเงิน' : '💵 เงินสด'})</span>
+            <span class="font-mono">฿${(Number(o.totalAmount || o.total || 0)).toFixed(2)}</span>
+          </div>
+        </div>
+
+        ${actionButtonsHtml}
+      </div>
+    `;
+  }).join('');
+}
 
     function updateOrderStatus(orderId, status) {
       db.collection("orders").doc(orderId).update({ status: status });
     }
 
-    function printOnlineOrderReceipt(orderId) {
-      const o = onlineOrders.find(item => item.id === orderId);
-      if (!o) return;
+    // 🖨️ ฟังก์ชันพิมพ์สลิปออเดอร์ออนไลน์ (พร้อมสูตรคำนวณแต้มไปโชว์ในสลิป)
+function printOnlineOrderSlip(orderId) {
+  const o = onlineOrders.find(item => item.id === orderId);
+  if (!o) return;
 
-      showReceipt({
-        ts: o.ts,
-        cashierName: 'สั่งซื้อออนไลน์ (' + o.customerName + ')',
-        items: o.items,
-        total: o.totalAmount,
-        subtotal: o.subtotal || o.totalAmount,
-        discount: 0,
-        method: 'online',
-        cashReceived: o.totalAmount,
-        change: 0,
-        debtorName: o.customerPhone
-      });
-    }
+  const totalAmt = Number(o.totalAmount || o.total || 0);
+  const earnedPoints = Math.floor(totalAmt / 100); // 🌟 สูตรคำนวณแจกแต้ม (ทุก 100 บาท = 1 แต้ม)
+  
+  // ค้นหาแต้มสะสมเดิมของลูกค้าจากเบอร์โทร
+  let oldPts = 0;
+  if (o.customerPhone && typeof membersList !== 'undefined') {
+    const member = membersList.find(m => String(m.id) === String(o.customerPhone) || String(m.phone) === String(o.customerPhone));
+    if (member) oldPts = member.points || 0;
+  }
 
-    function acceptOnlineOrder(orderId) {
-      const o = onlineOrders.find(item => item.id === orderId);
-      if (!o) return;
+  showReceipt({
+    ts: o.ts || Date.now(),
+    cashierName: 'สั่งซื้อออนไลน์ (' + (o.customerName || 'ลูกค้า') + ')',
+    items: o.items || [],
+    total: totalAmt,
+    subtotal: Number(o.subtotal || o.totalAmount || 0),
+    discount: 0,
+    method: o.payOption === 'transfer' ? 'transfer' : 'cash',
+    cashReceived: totalAmt,
+    change: 0,
+    customerPhone: o.customerPhone || '',
+    earnedPoints: earnedPoints,              // 🌟 ส่งแต้มรอบนี้ไปโชว์
+    oldMemberPoints: oldPts,                 // 🌟 ส่งแต้มเดิมไปโชว์
+    totalMemberPoints: oldPts + earnedPoints // 🌟 ส่งแต้มรวมสุทธิไปโชว์
+  });
+}
 
-      if (confirm(`ยืนยันการรับออเดอร์ของคุณ ${o.customerName} ยอด ฿${o.totalAmount.toFixed(2)} ใช่หรือไม่?\n\nระบบจะตัดสต็อก บันทึกยอดขาย และคำนวณแต้มสะสมให้อัตโนมัติ`)) {
-        const orderCartList = o.items.map(item => ({
-          productId: item.productId,
-          name: item.name,
-          price: item.price,
-          qty: item.qty
-        }));
+// 🟢 ฟังก์ชันปิดงานออเดอร์ออนไลน์
+function acceptOnlineOrder(orderId) {
+  completeOnlineOrder(orderId);
+}
 
-        const totalCostSum = calculateTotalCostAndDeductStock(orderCartList);
-        const staffName = currentSelectedStaff || "รับผ่านเว็บออนไลน์";
+// 🟢 ฟังก์ชันบันทึกยอดขาย ตัดสต็อก และแจกแต้มสะสมเข้าฐานข้อมูล
+function completeOnlineOrder(orderId) {
+  const o = onlineOrders.find(item => item.id === orderId);
+  if (!o) return;
 
-        const earnedPoints = Math.floor((o.subtotal || o.totalAmount) / 100);
+  if (!confirm(`ยืนยันการรับออเดอร์ #${o.orderCode || orderId} และตัดสต็อกสินค้าใช่หรือไม่?`)) return;
 
-        if (o.customerPhone && earnedPoints > 0) {
-          db.collection("members").doc(o.customerPhone).get().then(mDoc => {
-            if (mDoc.exists) {
-              db.collection("members").doc(o.customerPhone).update({
-                points: firebase.firestore.FieldValue.increment(earnedPoints)
-              });
-            } else {
-              db.collection("members").doc(o.customerPhone).set({
-                phone: o.customerPhone,
-                name: o.customerName,
-                address: o.customerAddress,
-                points: earnedPoints,
-                ts: Date.now()
-              });
+  const totalAmt = Number(o.totalAmount || o.total || 0);
+  const earnedPoints = Math.floor(totalAmt / 100); // 🌟 คำนวณแต้มเพื่อเตรียมแจกจริง
+
+  // 1. บันทึกลงรายงานยอดขายหลัก (sales)
+  const saleData = {
+    ts: Date.now(),
+    cashierName: 'สั่งซื้อออนไลน์ (' + (o.customerName || 'ลูกค้า') + ')',
+    items: o.items || [],
+    total: totalAmt,
+    subtotal: Number(o.subtotal || o.totalAmount || 0),
+    discount: 0,
+    method: o.payOption === 'transfer' ? 'transfer' : 'cash',
+    cashReceived: totalAmt,
+    change: 0,
+    customerPhone: o.customerPhone || '',
+    debtorName: o.customerName || '',
+    isOnlineOrder: true,
+    onlineOrderId: orderId,
+    earnedPoints: earnedPoints // บันทึกประวัติแต้มลงในบิลยอดขาย
+  };
+
+  db.collection("sales").add(saleData).then(() => {
+    // 2. 🔒 เปลี่ยนสถานะออเดอร์เป็น 'completed'
+    return db.collection("orders").doc(orderId).update({
+      status: 'completed',
+      completedAt: Date.now()
+    });
+  }).then(() => {
+    // 3. ตัดสต็อกสินค้าตามรายการที่สั่งซื้อ
+    if (o.items && o.items.length > 0) {
+      o.items.forEach(item => {
+        if (item.productId) {
+          db.collection("products").doc(item.productId).get().then(pDoc => {
+            if (pDoc.exists) {
+              const pData = pDoc.data();
+              const newStock = Math.max(0, (pData.stock || 0) - item.qty);
+              db.collection("products").doc(item.productId).update({ stock: newStock });
             }
           });
         }
-
-        const saleData = {
-          ts: Date.now(),
-          items: orderCartList,
-          subtotal: o.totalAmount,
-          discount: 0,
-          total: o.totalAmount,
-          totalCost: totalCostSum,
-          cashPart: o.totalAmount,
-          transferPart: 0,
-          creditPart: 0,
-          method: 'online',
-          cashReceived: o.totalAmount,
-          change: 0,
-          debtorName: null,
-          settled: true,
-          cashierName: staffName,
-          customerName: o.customerName,
-          customerPhone: o.customerPhone
-        };
-
-        db.collection("sales").add(saleData).then(() => {
-          db.collection("orders").doc(orderId).update({ status: 'completed' }).then(() => {
-            clearSearchInput();
-            alert(`รับออเดอร์ออนไลน์ ตัดสต็อก บันทึกยอดขาย และเพิ่มแต้มสะสม (+${earnedPoints} แต้ม) เรียบร้อยครับ!`);
-          });
-        });
-      }
+      });
     }
+
+    // 4. 🎁 แจกแต้มสะสมเข้าสู่ฐานข้อมูลลูกค้าตัวจริง
+    if (o.customerPhone && earnedPoints > 0) {
+      const memberRef = db.collection("members").doc(o.customerPhone);
+      memberRef.get().then(mDoc => {
+        if (mDoc.exists) {
+          memberRef.update({ points: firebase.firestore.FieldValue.increment(earnedPoints) });
+        } else {
+          // ถ้าลูกค้าคนนี้ยังไม่เคยสมัครสมาชิก ระบบจะสร้างบัญชีให้ใหม่จากเบอร์สั่งอาหารอัตโนมัติ
+          memberRef.set({
+            phone: o.customerPhone,
+            name: o.customerName || 'ลูกค้าออนไลน์',
+            points: earnedPoints,
+            ts: Date.now()
+          });
+        }
+      });
+    }
+
+    // ปิดป๊อปอัปแจ้งเตือนออเดอร์ใหม่ (ถ้ามี)
+    if (typeof dismissOrderToast === 'function') dismissOrderToast();
+
+    alert('✅ บันทึกยอดขาย ปิดออเดอร์ แจกแต้ม และตัดสต็อกเรียบร้อยแล้วครับ');
+  }).catch(err => {
+    console.error("Complete order error:", err);
+    alert("เกิดข้อผิดพลาดในการปิดงาน: " + err.message);
+  });
+}
 
     function openStaffShiftModal() {
       renderStaffShiftModal();
@@ -5304,9 +5731,9 @@ function saveProduct() {
   }
 }
 
-// 🔄 ฟังก์ชันกลางสำหรับคืนสินค้ากลับเข้าสต็อกและคืนลงลอตย่อยให้อัตโนมัติ
+// 🔄 ฟังก์ชันกลางสำหรับคืนสินค้ากลับเข้าสต็อกและคืนลงลอตย่อยให้อัตโนมัติ (จำเป็นมาก)
 function refundStockToProduct(productId, qtyToRefund) {
-  const p = products.find(prod => prod.id === productId);
+  const p = products.find(prod => String(prod.id) === String(productId));
   if (!p) return;
 
   let targetId = productId;
@@ -5314,14 +5741,14 @@ function refundStockToProduct(productId, qtyToRefund) {
 
   // ถ้าเป็นสินค้าแบ่งขาย ให้ไปคืนที่ตัวสินค้าหลัก
   if (p.isSubProduct && p.parentId) {
-    const parent = products.find(prod => prod.id === p.parentId);
+    const parent = products.find(prod => String(prod.id) === String(p.parentId));
     if (parent) {
       targetId = parent.id;
       actualQty = qtyToRefund / (p.ratio || 1);
     }
   }
 
-  const targetProd = products.find(prod => prod.id === targetId);
+  const targetProd = products.find(prod => String(prod.id) === String(targetId));
   if (!targetProd) return;
 
   let batches = targetProd.batches ? JSON.parse(JSON.stringify(targetProd.batches)) : [];
@@ -7490,7 +7917,7 @@ function bindPhoneToDebtor(debtorName) {
 
 <!-- 👥 Modal 3: ดูรายชื่อสมาชิกทั้งหมด & เช็กแต้ม -->
 <div id="allMembersModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[9999] no-print">
-  <div class="bg-white p-6 rounded-3xl max-w-2xl w-full space-y-4 shadow-2xl max-h-[85vh] overflow-y-auto">
+  <div class="bg-white p-6 rounded-3xl max-w-3xl w-full space-y-4 shadow-2xl max-h-[85vh] overflow-y-auto no-scrollbar">
     <div class="flex justify-between items-center border-b pb-3">
       <h3 class="font-bold text-2xl font-display text-[#0F5C52] flex items-center gap-2">
         <i data-lucide="users" class="w-6 h-6 text-amber-500"></i> รายชื่อสมาชิก & แต้มสะสม
